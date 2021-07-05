@@ -1,0 +1,5 @@
+useDynLib(VegaMC)
+export(vegaMC)
+export(sortData)
+import(Biobase)
+import(biomaRt)

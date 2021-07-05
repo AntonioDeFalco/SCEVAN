@@ -1,0 +1,33 @@
+Package: VegaMC
+Type: Package
+Title: VegaMC: A Package Implementing a Variational Piecewise Smooth
+        Model for Identification of Driver Chromosomal Imbalances in
+        Cancer
+Version: 3.30.0
+Date: 2015-03-03
+Author: S. Morganella and M. Ceccarelli
+Maintainer: Sandro Morganella <morganellaalx@gmail.com>
+Description: This package enables the detection of driver chromosomal
+        imbalances including loss of heterozygosity (LOH) from array
+        comparative genomic hybridization (aCGH) data. VegaMC performs
+        a joint segmentation of a dataset and uses a statistical
+        framework to distinguish between driver and passenger mutation.
+        VegaMC has been implemented so that it can be immediately
+        integrated with the output produced by PennCNV tool. In
+        addition, VegaMC produces in output two web pages that allows a
+        rapid navigation between both the detected regions and the
+        altered genes. In the web page that summarizes the altered
+        genes, the link to the respective Ensembl gene web page is
+        reported.
+License: GPL-2
+Depends: R (>= 2.10.0), biomaRt, Biobase
+Imports: methods
+LazyLoad: yes
+biocViews: aCGH, CopyNumberVariation
+Packaged: 2021-05-19 23:04:29 UTC; biocbuild
+git_url: https://git.bioconductor.org/packages/VegaMC
+git_branch: RELEASE_3_13
+git_last_commit: 37e7f4f
+git_last_commit_date: 2021-05-19
+Date/Publication: 2021-05-19
+NeedsCompilation: yes
