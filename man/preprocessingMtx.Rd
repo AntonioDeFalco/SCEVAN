@@ -6,7 +6,6 @@
 \usage{
 preprocessingMtx(
   count_mtx,
-  id.type = "SYMBOL",
   ngene.chr = 5,
   LOW.DR = 0.05,
   UP.DR = 0.1,
@@ -21,5 +20,6 @@ preprocessingMtx(
 func
 }
 \examples{
+
 
 }

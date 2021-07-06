@@ -8,10 +8,13 @@
 #' test.count_mtx_annot <- annotateGenes(mat=matx)
 #' @export
 annotateGenes <- function(mtx){
+library(dplyr)
+library(EnsDb.Hsapiens.v86)  
   
 edb <- EnsDb.Hsapiens.v86 %>% genes() %>% as.data.frame()  
 chr <- 1:22  
 edb <- (edb[edb$seqnames %in% chr,c(1,2,3,6,7)])
+edb$seqnames <- as.numeric(as.character(edb$seqnames))
 
 if (any(rownames(mtx) %in% edb$gene_name)){
   use_geneID <- "gene_name"
@@ -45,8 +48,6 @@ return(mtx_annot)
 #' @export
 preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par_cores=20, SMOOTH = TRUE){
   
-  load("~/singleCell/AllData/ClassTumorCells/copyKAT/sysdata.rda")
-  
   start_time <- Sys.time()
   set.seed(1)
   
@@ -77,7 +78,7 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
   
   print("3) Annotations gene coordinates")
   
-  count_mtx_annot <- annotateGenes(mat = count_mtx) #SYMBOL or ENSEMBLE
+  count_mtx_annot <- annotateGenes(count_mtx) #SYMBOL or ENSEMBLE
   #count_mtx_annot <- count_mtx_annot[order(count_mtx_annot$abspos, decreasing = FALSE),]
   
   count_mtx_annot <- count_mtx_annot[
@@ -88,7 +89,7 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
   
   print("4) Filter: genes involved in the cell cycle")
   HLAs <- count_mtx_annot$gene_name[grep("^HLA-", count_mtx_annot$gene_name)]
-  toRev <- which(count_mtx_annot$gene_name %in% c(as.vector(cyclegenes[[1]]), HLAs))
+  toRev <- which(count_mtx_annot$gene_name %in% c(as.vector(reactome_cellcycle), HLAs))
   if(length(toRev)>0){
     count_mtx_annot <- count_mtx_annot[-toRev, ]
   }

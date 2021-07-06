@@ -8,10 +8,12 @@ Maintainer: A. De Falco <antoniodf92na@gmail.com>
 Description: CNAvegaMC.
 License: GPL-2
 Imports:
+    dplyr,
     methods,
     yaGST,
-    EnsDb.Hsapiens.v86,
-    dplyr
+    EnsDb.Hsapiens.v86
 LazyLoad: yes
 NeedsCompilation: yes
 RoxygenNote: 7.1.1
+Depends: 
+    R (>= 2.10)

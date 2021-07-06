@@ -294,3 +294,56 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
 
 
 
+
+createGeneSetNormal <- function(){
+  
+  #ESTIMATE
+  load("/storage/qnap_home/adefalco/singleCell/AllData/ClassTumorCells/SI_geneset.RData") #from https://sourceforge.net/projects/estimateproject/
+  geneSet <- c()
+  geneSet$stromal <- as.character(unlist(SI_geneset["StromalSignature",-1]))
+  geneSet$immune <- as.character(unlist(SI_geneset["ImmuneSignature",-1]))
+  
+  #FRANCESCA & CANCER CELLS
+  load("/storage/qnap_home/caruso/Analisi2021/signatures/scTHI_c8_signatures_968.RData")
+  load("/storage/qnap_home/caruso/Analisi2021/CPTAC/FgesSignature/fges_signature.RData")
+  
+  findSign <- function(Phenotype){
+    all_sign <- rownames(signature_Colors[signature_Colors$ALLPhenotypeFinal==Phenotype,])
+    ind <- which(names(signature) %in% all_sign)
+    subset_sign <- signature[ind]
+    num_sin <- length(subset_sign)/2
+    subset_sign <- unlist(subset_sign)
+    
+    i <- 1
+    while( (length(unique(subset_sign)) > 200) & (i < num_sin)){
+      subset_sign <- subset_sign[duplicated(subset_sign)]
+      i <- i + 1
+    }
+    
+    return(unique(subset_sign))
+  }
+  
+  all_sign <- rownames(signature_Colors[signature_Colors$ALLPhenotypeFinal=="Oligodendrocytes",])
+  ind <- which(names(signature) %in% all_sign)
+  subset_sign <- signature[ind]
+  
+  geneSet$olig_Myelinating <- union(subset_sign$Anna_PreMyelinatingOligo, subset_sign$Anna_MyelinatingOligo)
+  geneSet$olig_Myelinating <- union(geneSet$olig_Myelinating, subset_sign$CNS_Myelinating.Oligodendrocytes) 
+  
+  geneSet$olig <- union(subset_sign$Anna_OligoLineage, subset_sign$CNS_Oligodendrocytes)
+  geneSet$olig <- union(geneSet$olig, subset_sign$CNS_Newly.Formed.Oligodendrocyte)
+  
+  #geneSet$olig <- findSign("Oligodendrocytes")
+  geneSet$Tcell <- findSign("Tcell")
+  #geneSet$astro <- findSign("Astrocytes")
+  geneSet$macro <-findSign("Macrophages")
+  geneSet$micro <-findSign("Microglia")
+  geneSet$neuro <-findSign("Neurons")
+  
+  GO2 <- gmt2GO("~/singleCell/GSEA/c2.cp.reactome.v7.4.symbols.gmt")
+  reactome_cellcycle <- GO2$REACTOME_CELL_CYCLE
+  
+  usethis::use_data(geneSet, reactome_cellcycle, internal = TRUE, overwrite = TRUE)
+  
+}
+
