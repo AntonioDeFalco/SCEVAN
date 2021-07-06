@@ -23,7 +23,17 @@ top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_
   return(Class)
 }
 
-
+#' func
+#'
+#' @param 
+#' @param 
+#' @param 
+#'
+#' @return
+#'
+#' @examples
+#' 
+#' @export
 createGeneSetNormal <- function(){
   
   #ESTIMATE
@@ -44,7 +54,7 @@ createGeneSetNormal <- function(){
     subset_sign <- unlist(subset_sign)
     
     i <- 1
-    while( (length(unique(subset_sign)) > 400) & (i < num_sin)){
+    while( (length(unique(subset_sign)) > 200) & (i < num_sin)){
       subset_sign <- subset_sign[duplicated(subset_sign)]
       i <- i + 1
     }
@@ -74,10 +84,20 @@ createGeneSetNormal <- function(){
 }
 
 
-
-getConfidentNormalCells <- function(mtx, geneSet, n.cores = 20){
+#' func
+#'
+#' @param 
+#' @param 
+#' @param 
+#'
+#' @return
+#'
+#' @examples
+#' 
+#' @export
+getConfidentNormalCells <- function(mtx, geneSet, par_cores = 20){
   
-  system.time(ssMwwGst(geData = mtx, geneSet = geneSet , ncore = n.cores, minLenGeneSet = 5, filename = "confidentNormal", standardize = FALSE))
+  system.time(ssMwwGst(geData = mtx, geneSet = geneSet , ncore = par_cores, minLenGeneSet = 5, filename = "confidentNormal", standardize = FALSE))
   load("confidentNormal_MWW.RData")
   norm.cell.names <- top30classification(NES = NES, FDR = FDR, pValue = pValue, fdr_filter = TRUE, pval_filter = TRUE, pval_cutoff = 0.0005, nes_cutoff = 0.5, nNES = 1)
   

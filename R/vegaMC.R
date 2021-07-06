@@ -84,10 +84,11 @@ vegaMC <- function(dataset, output_file_name="output",
   
   
   segmentation[,1] <- gsub("X", "23", segmentation[,1])
-  maxINT <- 2147483647
-  ind_overflow <- which(as.numeric(segmentation[,2])<1)
-  segmentation[ind_overflow,2] <- segmentation[ind_overflow,2] + (2 * (maxINT + 1))
-  segmentation[ind_overflow,3] <- segmentation[ind_overflow,3] + (2 * (maxINT + 1))
+  
+  #maxINT <- 2147483647
+  #ind_overflow <- which(as.numeric(segmentation[,2])<1)
+  #segmentation[ind_overflow,2] <- segmentation[ind_overflow,2] + (2 * (maxINT + 1))
+  #segmentation[ind_overflow,3] <- segmentation[ind_overflow,3] + (2 * (maxINT + 1))
   
   write.table(segmentation, output_file_name, sep="\t", row.names=FALSE,
               col.names=TRUE, quote=FALSE, eol="\n")

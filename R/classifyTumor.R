@@ -3,17 +3,17 @@
 #'
 #' @param norm.mat smoothed data matrix; genes in rows; cell names in columns.
 #' @param min.cells minimal number of cells per cluster.
-#' @param n.cores number of cores for parallel computing.
+#' @param par_cores number of cores for parallel computing.
 #'
 #' @return 1) relative gene expression; 2) synthetic baseline profiles; 3) clustering results.
 #'
 #' @examples
 #'
-#' norm.mat.relat <- test.relt$expr.relat
+#' count_mtx_relat <- test.relt$expr.relat
 #' @export
-baseline.synthetic <- function(norm.mat=norm.mat, min.cells=10, n.cores = 20){ 
+baseline.synthetic <- function(norm.mat=norm.mat, min.cells=10, par_cores = 20){ 
   
-  d <- parallelDist::parDist(t(norm.mat), threads = n.cores) 
+  d <- parallelDist::parDist(t(norm.mat), threads = par_cores) 
   
   fit <- hclust(d, method="ward.D2")
   
@@ -51,7 +51,7 @@ baseline.synthetic <- function(norm.mat=norm.mat, min.cells=10, n.cores = 20){
 
 
 
-computeCNAmtx <- function(mtx, BR, n.cores){
+computeCNAmtx <- function(mtx, BR, par_cores){
   
   n <- nrow(mtx)
   
@@ -62,32 +62,42 @@ computeCNAmtx <- function(mtx, BR, n.cores){
       i<- i+1
     }
     return(x)
-  }, mc.cores = n.cores)
+  }, mc.cores = par_cores)
   
   CNA <- matrix(unlist(seg.test), ncol = ncol(mtx), byrow = FALSE)
   
   return(CNA)
 }
 
-
-classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, distance="euclidean", n.cores=20, ground_truth = NULL, norm.cell.names = NULL, UP.DR = 0.1, ngene.chr=5, WRITE = FALSE, SEGMENTATION_CLASS = TRUE){
+#' func
+#'
+#' @param 
+#' @param 
+#' @param 
+#'
+#' @return
+#'
+#' @examples
+#' 
+#' @export
+classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot, sam.name, distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, UP.DR = 0.1, ngene.chr=5, WRITE = FALSE, SEGMENTATION_CLASS = TRUE){
   
   start_time <- Sys.time()
   set.seed(1)
   
   if (length(norm.cell.names) < 1){
     print("7): measuring baselines (pure tumor - synthetic normal cells)")
-    relt <- baseline.synthetic(norm.mat=norm.mat.smooth, n.cores=n.cores)
-    norm.mat.relat <- relt$expr.relat
-    colnames(norm.mat.relat) <- colnames(relt$expr.relat)
+    relt <- baseline.synthetic(norm.mat=count_mtx_smooth, par_cores=par_cores)
+    count_mtx_relat <- relt$expr.relat
+    colnames(count_mtx_relat) <- colnames(relt$expr.relat)
     CL <- relt$cl
     
   } else {
     print("7): measuring baselines (confident normal cells)")
     
-    basel <- apply(norm.mat.smooth[, which(colnames(norm.mat.smooth) %in% norm.cell.names)],1,median)
+    basel <- apply(count_mtx_smooth[, which(colnames(count_mtx_smooth) %in% norm.cell.names)],1,median)
     
-    d <- parallelDist::parDist(t(norm.mat.smooth),threads =n.cores, method="euclidean") ##use smooth and segmented data to detect intra-normal cells
+    d <- parallelDist::parDist(t(count_mtx_smooth),threads =par_cores, method="euclidean") ##use smooth and segmented data to detect intra-normal cells
     
     fit <- hclust(d, method="ward.D2")
     #CL <- cutree(fit, km)
@@ -106,44 +116,44 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     }
     
     ##relative expression using pred.normal cells
-    norm.mat.relat <- norm.mat.smooth-basel
+    count_mtx_relat <- count_mtx_smooth-basel
     
   }
   
   
   ###use a smaller set of genes to perform segmentation
-  DR2 <- apply(rawmat3,1,function(x)(sum(x>0)))/ncol(rawmat3)
+  DR2 <- apply(count_mtx_proc,1,function(x)(sum(x>0)))/ncol(count_mtx_proc)
   ##relative expression using pred.normal cells
-  norm.mat.relat <- norm.mat.relat[which(DR2>=UP.DR),]
+  count_mtx_relat <- count_mtx_relat[which(DR2>=UP.DR),]
   
   ###filter cells
-  anno.mat2 <- anno.mat[which(DR2>=UP.DR), ]
+  anno.mat2 <- count_mtx_annot[which(DR2>=UP.DR), ]
   
   ToRemov3 <- NULL
-  for(i in 8:ncol(anno.mat2)){
-    cell <- cbind(anno.mat2$chromosome_name, anno.mat2[,i])
+  for(i in 6:ncol(anno.mat2)){
+    cell <- cbind(anno.mat2$seqnames, anno.mat2[,i])
     cell <- cell[cell[,2]!=0,]
     if(length(as.numeric(cell))< 5){
       rm <- colnames(anno.mat2)[i]
       ToRemov3 <- c(ToRemov3, rm)
-    } else if(length(rle(cell[,1])$length)<23|min(rle(cell[,1])$length)< ngene.chr){
+    } else if(length(rle(cell[,1])$length)<22|min(rle(cell[,1])$length)< ngene.chr){
       rm <- colnames(anno.mat2)[i]
       ToRemov3 <- c(ToRemov3, rm)
     }
     i<- i+1
   }
   
-  if(length(ToRemov3)==ncol(norm.mat.relat)) stop ("all cells are filtered")
+  if(length(ToRemov3)==ncol(count_mtx_relat)) stop ("all cells are filtered")
   
-  if(length(ToRemov3)>0 & !length((which(colnames(norm.mat.relat) %in% ToRemov3))) == 0L){
-    norm.mat.relat <- norm.mat.relat[, -which(colnames(norm.mat.relat) %in% ToRemov3)]
+  if(length(ToRemov3)>0 & !length((which(colnames(count_mtx_relat) %in% ToRemov3))) == 0L){
+    count_mtx_relat <- count_mtx_relat[, -which(colnames(count_mtx_relat) %in% ToRemov3)]
     print(paste("filtered out ", length(ToRemov3), " cells with less than ",ngene.chr, " genes per chr", sep=""))
   }
   
-  print(paste("final segmentation: ", nrow(norm.mat.relat), " genes; ", ncol(norm.mat.relat), " cells", sep=""))
+  print(paste("final segmentation: ", nrow(count_mtx_relat), " genes; ", ncol(count_mtx_relat), " cells", sep=""))
   
-  CL <- CL[which(names(CL) %in% colnames(norm.mat.relat))]
-  CL <- CL[order(match(names(CL), colnames(norm.mat.relat)))]
+  CL <- CL[which(names(CL) %in% colnames(count_mtx_relat))]
+  CL <- CL[order(match(names(CL), colnames(count_mtx_relat)))]
   
   
   ##### Segmentation with VegaMC #####
@@ -152,24 +162,24 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     
     print("8) Segmentation (VegaMC)")
     
-    mtx_vega <- cbind(anno.mat2[,c(5,2,1)], norm.mat.relat)
+    mtx_vega <- cbind(anno.mat2[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    BR <- getBreaksVegaMC(mtx_vega, anno.mat2[, 1], sam.name)
+    BR <- getBreaksVegaMC(mtx_vega, anno.mat2[, 3], sam.name)
     
-    logCNA <- computeCNAmtx(norm.mat.relat, BR, n.cores)
+    logCNA <- computeCNAmtx(count_mtx_relat, BR, par_cores)
     
     results <- list(logCNA, BR)
     names(results) <- c("logCNA","breaks")
     
   }else{
-    results <- list(norm.mat.relat, c())
+    results <- list(count_mtx_relat, c())
     names(results) <- c("logCNA","breaks")
   }
   
-  colnames(results$logCNA) <- colnames(norm.mat.relat)
+  colnames(results$logCNA) <- colnames(count_mtx_relat)
   results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
-  RNA.copycat <- cbind(anno.mat2[, 1:7], results.com)
+  RNA.copycat <- cbind(anno.mat2[, 1:5], results.com)
   
   if(WRITE){
     write.table(RNA.copycat, paste(sam.name, "CNA_raw_results_gene_by_cell.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
@@ -179,14 +189,14 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
   
   if(length(norm.cell.names) < 1){
     
-    mat.adj <- data.matrix(RNA.copycat[8:ncol(RNA.copycat)])
+    mat.adj <- data.matrix(RNA.copycat[6:ncol(RNA.copycat)])
     
     if(WRITE){
       write.table(cbind(RNA.copycat[,c(5,2,1)], mat.adj), paste(sam.name, "CNA_results.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
     }
     
     if(distance=="euclidean"){
-      hcc <- hclust(parallelDist::parDist(t(mat.adj),threads =n.cores, method = distance), method = "ward.D")
+      hcc <- hclust(parallelDist::parDist(t(mat.adj),threads =par_cores, method = distance), method = "ward.D")
     }else {
       hcc <- hclust(as.dist(1-cor(mat.adj, method = distance)), method = "ward.D")
     }
@@ -199,7 +209,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     print("9) plot heatmap")
     my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
     
-    chr <- as.numeric(RNA.copycat$chromosome_name) %% 2+1
+    chr <- as.numeric(RNA.copycat$seqnames) %% 2+1
     rbPal1 <- colorRampPalette(c('black','grey'))
     CHR <- rbPal1(2)[as.numeric(chr)]
     chr1 <- cbind(CHR,CHR)
@@ -216,7 +226,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     jpeg(paste(sam.name,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
     
     if(distance=="euclidean"){
-      dist_func <- function(x) parallelDist::parDist(x,threads =n.cores, method = distance)
+      dist_func <- function(x) parallelDist::parDist(x,threads =par_cores, method = distance)
     } else {
       dist_func <- function(x) as.dist(1-cor(t(x), method = distance))
     }
@@ -224,7 +234,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     heatmap.3(t(mat.adj),dendrogram="r", distfun = dist_func, hclustfun = function(x) hclust(x, method="ward.D"),
               ColSideColors=chr1,Colv=NA, Rowv=TRUE,
               notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
-              keysize=1, density.info="none", trace="none", labCol = RNA.copycat$chromosome_name,
+              keysize=1, density.info="none", trace="none", labCol = RNA.copycat$seqnames,
               cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
               symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sam.name), cex.main=4, margins=c(10,10))
     
@@ -236,11 +246,11 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
   } else {
     
     
-    uber.mat.adj <- data.matrix(RNA.copycat[8:ncol(RNA.copycat)])
+    uber.mat.adj <- data.matrix(RNA.copycat[6:ncol(RNA.copycat)])
     
     ################removed baseline adjustment
     if(distance=="euclidean"){
-      hcc <- hclust(parallelDist::parDist(t(uber.mat.adj),threads =n.cores, method = distance), method = "ward.D")
+      hcc <- hclust(parallelDist::parDist(t(uber.mat.adj),threads =par_cores, method = distance), method = "ward.D")
     }else {
       hcc <- hclust(as.dist(1-cor(uber.mat.adj, method = distance)), method = "ward.D")
     }
@@ -275,7 +285,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     }
     
     
-    mc.adjN <-  parallel::mclapply(1:ncol(results.com.rat),adjN, mc.cores = n.cores)
+    mc.adjN <-  parallel::mclapply(1:ncol(results.com.rat),adjN, mc.cores = par_cores)
     adj.results <- matrix(unlist(mc.adjN), ncol = ncol(results.com.rat), byrow = FALSE)
     rm(mc.adjN)
     colnames(adj.results) <- colnames(results.com.rat)
@@ -286,7 +296,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     print("step 8: final prediction ...")
     
     if(distance=="euclidean"){
-      hcc <- hclust(parallelDist::parDist(t(mat.adj),threads =n.cores, method = distance), method = "ward.D")
+      hcc <- hclust(parallelDist::parDist(t(mat.adj),threads =par_cores, method = distance), method = "ward.D")
     }else {
       hcc <- hclust(as.dist(1-cor(mat.adj, method = distance)), method = "ward.D")
     }
@@ -327,7 +337,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
     
     
-    chr <- as.numeric(RNA.copycat$chromosome_name) %% 2+1
+    chr <- as.numeric(RNA.copycat$seqnames) %% 2+1
     rbPal1 <- colorRampPalette(c('black','grey'))
     CHR <- rbPal1(2)[as.numeric(chr)]
     chr1 <- cbind(CHR,CHR)
@@ -358,7 +368,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     jpeg(paste(sam.name,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
     
     if(distance=="euclidean"){
-      dist_func <- function(x) parallelDist::parDist(x,threads =n.cores, method = distance)
+      dist_func <- function(x) parallelDist::parDist(x,threads =par_cores, method = distance)
     } else {
       dist_func <- function(x) as.dist(1-cor(t(x), method = distance))
     }
@@ -366,7 +376,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     heatmap.3(t(mat.adj),dendrogram="r", distfun = dist_func, hclustfun = function(x) hclust(x, method="ward.D"),
               ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
               notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
-              keysize=1, density.info="none", trace="none",labCol = RNA.copycat$chromosome_name,
+              keysize=1, density.info="none", trace="none",labCol = RNA.copycat$seqnames,
               cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
               symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sam.name), cex.main=4, margins=c(10,10))
     
@@ -379,7 +389,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
     if(FALSE){
       ################removed baseline adjustment without segm ####
       
-      uber.mat.adj <- data.matrix(apply(norm.mat.relat,2, function(x)(x <- x-mean(x))))
+      uber.mat.adj <- data.matrix(apply(count_mtx_relat,2, function(x)(x <- x-mean(x))))
       
       results.com.rat <- uber.mat.adj-apply(uber.mat.adj[,which(com.pred=="non malignant")], 1, mean)
       results.com.rat <- apply(results.com.rat,2,function(x)(x <- x-mean(x)))
@@ -395,7 +405,7 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
         a
       }
       
-      mc.adjN <-  parallel::mclapply(1:ncol(results.com.rat),adjN, mc.cores = n.cores)
+      mc.adjN <-  parallel::mclapply(1:ncol(results.com.rat),adjN, mc.cores = par_cores)
       adj.results <- matrix(unlist(mc.adjN), ncol = ncol(results.com.rat), byrow = FALSE)
       rm(mc.adjN)
       colnames(adj.results) <- colnames(results.com.rat)
@@ -408,13 +418,13 @@ classifyTumorCells <- function(norm.mat.smooth,rawmat3, anno.mat, sam.name, dist
   
   
   if(length(norm.cell.names) < 1){
-    tum_cells <- colnames(RNA.copycat[,-c(1:7)])
+    tum_cells <- colnames(RNA.copycat[,-c(1:5)])
     tum_cells <- gsub("\\.","-",tum_cells)
   }else{
     tum_cells <- names(res[,2][res[,2] == "malignant"])
   }
   
-  ress <- list(tum_cells, cbind(RNA.copycat[,c(5,2,1)], mat.adj), norm.cell.names)
+  ress <- list(tum_cells, cbind(RNA.copycat[,c(4,1,3)], mat.adj), norm.cell.names)
   
   names(ress) <- c("tum_cells", "CNAmat", "confidentNormal")
   return(ress)

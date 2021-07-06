@@ -2,6 +2,15 @@
 
 
 
+#' Title
+#'
+#' @param pred 
+#' @param ground_truth 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 computeF1score <- function(pred, ground_truth){
   
   TP <- length(intersect(pred,ground_truth))
@@ -163,7 +172,17 @@ k_clusGap <- function(mtx){
 
 
 
-subclonesTumorCells <- function(tum_cells, CNAmat){
+#' Title
+#'
+#' @param tum_cells 
+#' @param CNAmat 
+#' @param sample 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+subclonesTumorCells <- function(tum_cells, CNAmat, sample){
   
   norm.mat.relat <- CNAmat[,-c(1:3)]
   info_mat <- CNAmat[,c(1:3)]
@@ -187,6 +206,8 @@ subclonesTumorCells <- function(tum_cells, CNAmat){
   hc.clus <- cutree(hcc, h = 15)
   
   n_subclones <- 0
+  results.com <- NULL
+  breaks_subclones <- NULL
   
   if(length(hc.clus) > 1){
     
@@ -195,8 +216,6 @@ subclonesTumorCells <- function(tum_cells, CNAmat){
     #text(1:length(sCalinsky), sCalinsky, paste(1:length(sCalinsky)))
     
     n_subclones <- which.max(sCalinsky)
-    
-    print(paste("Sample" , sam.name))
     
     print(paste("sCalinsky Max", sCalinsky[which.max(sCalinsky)]))
     
@@ -221,7 +240,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat){
         
         colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
         
-        breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(sam.name,"_subclone",i))
+        breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(sample,"_subclone",i))
       }
       
       BR <- c()
@@ -250,13 +269,13 @@ subclonesTumorCells <- function(tum_cells, CNAmat){
       my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
       col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
       
-      jpeg(paste(sam.name,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
+      jpeg(paste(sample,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
       heatmap.3(t(results.com),dendrogram="r", distfun = function(x) parallelDist::parDist(x,threads =n.cores, method = distance), hclustfun = function(x) hclust(x, method="ward.D"),
                 ColSideColors=chr1,RowSideColors=cells, Colv=NA, Rowv=TRUE,
                 notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
                 keysize=1, density.info="none", trace="none",
                 cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
-                symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Subclones ", sam.name), cex.main=4, margins=c(10,10))
+                symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Subclones ", sample), cex.main=4, margins=c(10,10))
       dev.off()
     }
   }
