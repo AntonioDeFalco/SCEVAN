@@ -1,12 +1,9 @@
-#' heatmap3 function.
-#'
-#' downloaded from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
+#' heatmap3 function modified from from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
 #'
 #' @export
 heatmap.3 <- function(x,
                       Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
-                      distfun = dist,
-                      hclustfun = hclust,
+                      hcr,
                       dendrogram = c("both","row", "column", "none"),
                       symm = FALSE,
                       scale = c("none","row", "column"),
@@ -14,6 +11,7 @@ heatmap.3 <- function(x,
                       revC = identical(Colv,"Rowv"),
                       add.expr,
                       breaks,
+                      chr_lab,
                       symbreaks = max(x < 0, na.rm = TRUE) || scale != "none",
                       col = "heat.colors",
                       colsep,
@@ -121,7 +119,6 @@ heatmap.3 <- function(x,
     rowInd <- order.dendrogram(ddr)
   }
   else if (is.integer(Rowv)) {
-    hcr <- hclustfun(distfun(x))
     ddr <- as.dendrogram(hcr)
     ddr <- reorder(ddr, Rowv)
     rowInd <- order.dendrogram(ddr)
@@ -130,7 +127,6 @@ heatmap.3 <- function(x,
   }
   else if (isTRUE(Rowv)) {
     Rowv <- rowMeans(x, na.rm = na.rm)
-    hcr <- hclustfun(distfun(x))
     ddr <- as.dendrogram(hcr)
     ddr <- reorder(ddr, Rowv)
     rowInd <- order.dendrogram(ddr)
@@ -154,10 +150,7 @@ heatmap.3 <- function(x,
     else colInd <- rowInd
   }
   else if (is.integer(Colv)) {
-    hcc <- hclustfun(distfun(if (symm)
-      x
-      else t(x)))
-    ddc <- as.dendrogram(hcc)
+    ddc <- as.dendrogram(hcr)
     ddc <- reorder(ddc, Colv)
     colInd <- order.dendrogram(ddc)
     if (nc != length(colInd))
@@ -165,10 +158,7 @@ heatmap.3 <- function(x,
   }
   else if (isTRUE(Colv)) {
     Colv <- colMeans(x, na.rm = na.rm)
-    hcc <- hclustfun(distfun(if (symm)
-      x
-      else t(x)))
-    ddc <- as.dendrogram(hcc)
+    ddc <- as.dendrogram(hcr)
     ddc <- reorder(ddc, Colv)
     colInd <- order.dendrogram(ddc)
     if (nc != length(colInd))
@@ -336,12 +326,14 @@ heatmap.3 <- function(x,
     image(1:nc, 1:nr, mmat, axes = FALSE, xlab = "", ylab = "",
           col = na.color, add = TRUE)
   }
-  axis(1, 1:nc, labels = labCol, las = 2, line = -0.5, tick = 0,
-       cex.axis = cexCol)
-  if (!is.null(xlab))
-    mtext(xlab, side = 1, line = margins[1] - 1.25)
-  axis(4, iy, labels = labRow, las = 2, line = -0.5, tick = 0,
-       cex.axis = cexRow)
+  
+  extr_chr <- unlist(lapply(1:22, function(x) max(which(chr_lab==x))))
+  abline(v=extr_chr, col="black")
+  
+  extr_chr <- append(1, extr_chr)
+  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
+       cex.axis = cexCol, gap.axis = 0)
+  
   if (!is.null(ylab))
     mtext(ylab, side = 4, line = margins[2] - 1.25)
   if (!missing(add.expr))

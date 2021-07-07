@@ -80,7 +80,7 @@ computeCNAmtx <- function(mtx, BR, par_cores){
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot, sam.name, distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, UP.DR = 0.1, ngene.chr=5, WRITE = FALSE, SEGMENTATION_CLASS = TRUE){
+classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot, sample, distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, UP.DR = 0.1, ngene.chr=5, WRITE = FALSE, SEGMENTATION_CLASS = TRUE){
   
   start_time <- Sys.time()
   set.seed(1)
@@ -165,7 +165,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     mtx_vega <- cbind(anno.mat2[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    BR <- getBreaksVegaMC(mtx_vega, anno.mat2[, 3], sam.name)
+    BR <- getBreaksVegaMC(mtx_vega, anno.mat2[, 3], sample)
     
     logCNA <- computeCNAmtx(count_mtx_relat, BR, par_cores)
     
@@ -182,7 +182,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
   RNA.copycat <- cbind(anno.mat2[, 1:5], results.com)
   
   if(WRITE){
-    write.table(RNA.copycat, paste(sam.name, "CNA_raw_results_gene_by_cell.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
+    write.table(RNA.copycat, paste(sample, "CNA_raw_results_gene_by_cell.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
   }
   
   print("8) Adjust baseline")
@@ -192,7 +192,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     mat.adj <- data.matrix(RNA.copycat[6:ncol(RNA.copycat)])
     
     if(WRITE){
-      write.table(cbind(RNA.copycat[,c(5,2,1)], mat.adj), paste(sam.name, "CNA_results.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
+      write.table(cbind(RNA.copycat[,c(5,2,1)], mat.adj), paste(sample, "CNA_results.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
     }
     
     if(distance=="euclidean"){
@@ -202,7 +202,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     }
     
     if(WRITE){
-      saveRDS(hcc, file = paste(sam.name,"clustering_results.rds",sep=""))
+      saveRDS(hcc, file = paste(sample,"clustering_results.rds",sep=""))
     }
     
     #plot heatmap
@@ -223,7 +223,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     
     col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
     
-    jpeg(paste(sam.name,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+    jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
     
     if(distance=="euclidean"){
       dist_func <- function(x) parallelDist::parDist(x,threads =par_cores, method = distance)
@@ -231,12 +231,13 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
       dist_func <- function(x) as.dist(1-cor(t(x), method = distance))
     }
     
-    heatmap.3(t(mat.adj),dendrogram="r", distfun = dist_func, hclustfun = function(x) hclust(x, method="ward.D"),
-              ColSideColors=chr1,Colv=NA, Rowv=TRUE,
-              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
-              keysize=1, density.info="none", trace="none", labCol = RNA.copycat$seqnames,
-              cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
-              symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sam.name), cex.main=4, margins=c(10,10))
+
+    heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
+              ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
+              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
+              keysize=1, density.info="none", trace="none",
+              cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+              symm=F,symkey=F,symbreaks=T,cex=3, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
     
     dev.off()
     
@@ -305,7 +306,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     names(hc.umap) <- colnames(results.com)
     
     if(WRITE){
-      saveRDS(hcc, file = paste(sam.name,"clustering_results.rds",sep=""))
+      saveRDS(hcc, file = paste(sample,"clustering_results.rds",sep=""))
     }
     
     cl.ID <- NULL
@@ -326,16 +327,15 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     colnames(res) <- c("cell.names", "copykat.pred")
     
     if(WRITE){
-      write.table(res, paste(sam.name, "prediction.txt",sep=""), sep="\t", row.names = FALSE, quote = FALSE)
+      write.table(res, paste(sample, "prediction.txt",sep=""), sep="\t", row.names = FALSE, quote = FALSE)
       
       ####save copycat CNA
-      write.table(cbind(RNA.copycat[,c(5,2,1)], mat.adj), paste(sam.name, "CNA_results.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
+      write.table(cbind(RNA.copycat[,c(5,2,1)], mat.adj), paste(sample, "CNA_results.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
     }
     
     ####%%%%%%%%%%%%%%%%%next heatmaps, subpopulations and tSNE overlay
     print("step 10: ploting heatmap ...")
     my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
-    
     
     chr <- as.numeric(RNA.copycat$seqnames) %% 2+1
     rbPal1 <- colorRampPalette(c('black','grey'))
@@ -365,54 +365,21 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     
     col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
     
-    jpeg(paste(sam.name,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+    jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
     
-    if(distance=="euclidean"){
-      dist_func <- function(x) parallelDist::parDist(x,threads =par_cores, method = distance)
-    } else {
-      dist_func <- function(x) as.dist(1-cor(t(x), method = distance))
-    }
-    
-    heatmap.3(t(mat.adj),dendrogram="r", distfun = dist_func, hclustfun = function(x) hclust(x, method="ward.D"),
+    heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
               ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
-              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
-              keysize=1, density.info="none", trace="none",labCol = RNA.copycat$seqnames,
-              cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
-              symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sam.name), cex.main=4, margins=c(10,10))
+              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
+              keysize=1, density.info="none", trace="none",
+              cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+              symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+    
     
     legend("topright", paste("pred.",names(table(com.preN)),sep=""), pch=15,col=RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1], cex=1)
     dev.off()
     
     end_time<- Sys.time()
     print(end_time -start_time)
-    
-    if(FALSE){
-      ################removed baseline adjustment without segm ####
-      
-      uber.mat.adj <- data.matrix(apply(count_mtx_relat,2, function(x)(x <- x-mean(x))))
-      
-      results.com.rat <- uber.mat.adj-apply(uber.mat.adj[,which(com.pred=="non malignant")], 1, mean)
-      results.com.rat <- apply(results.com.rat,2,function(x)(x <- x-mean(x)))
-      
-      results.com.rat.norm <- results.com.rat[,which(com.pred=="non malignant")]; dim(results.com.rat.norm)
-      
-      cf.h <- apply(results.com.rat.norm, 1, sd)
-      base <- apply(results.com.rat.norm, 1, mean)
-      
-      adjN <- function(j){
-        a <- results.com.rat[, j]
-        a[abs(a-base) <= 0.25*cf.h] <- mean(a)
-        a
-      }
-      
-      mc.adjN <-  parallel::mclapply(1:ncol(results.com.rat),adjN, mc.cores = par_cores)
-      adj.results <- matrix(unlist(mc.adjN), ncol = ncol(results.com.rat), byrow = FALSE)
-      rm(mc.adjN)
-      colnames(adj.results) <- colnames(results.com.rat)
-      
-      rang <- 0.5*(max(adj.results)-min(adj.results))
-      mat.adj <- adj.results/rang
-    }
     
   }
   

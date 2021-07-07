@@ -269,13 +269,17 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
       my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
       col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
       
+      hcc <- hclust(parallelDist::parDist(t(results.com),threads =n.cores, method = "euclidean"), method = "ward.D")
+      
       jpeg(paste(sample,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
-      heatmap.3(t(results.com),dendrogram="r", distfun = function(x) parallelDist::parDist(x,threads =n.cores, method = distance), hclustfun = function(x) hclust(x, method="ward.D"),
-                ColSideColors=chr1,RowSideColors=cells, Colv=NA, Rowv=TRUE,
-                notecol="black",col=my_palette,breaks=col_breaks, key=TRUE,
+
+      heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
+                ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
+                notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
                 keysize=1, density.info="none", trace="none",
-                cexRow=0.1,cexCol=0.1,cex.main=1,cex.lab=0.1,
-                symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Subclones ", sample), cex.main=4, margins=c(10,10))
+                cexRow=0.1,cexCol=1.0,cex.main=1.0,cex.lab=0.1,
+                symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+      
       dev.off()
     }
   }
