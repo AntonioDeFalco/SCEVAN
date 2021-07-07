@@ -217,15 +217,17 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
     
     n_subclones <- which.max(sCalinsky)
     
-    print(paste("sCalinsky Max", sCalinsky[which.max(sCalinsky)]))
+    #print(paste("sCalinsky Max", sCalinsky[which.max(sCalinsky)]))
     
     hc.clus <- cutree(hcc,n_subclones)
-    print(paste("found", n_subclones, "subclones", sep = " "))
+    
     perc_cells_subclones <- table(hc.clus)/length(hc.clus)
-    names(perc_cells_subclones) <- paste0("percentage_cells_subsclone_",names(perc_cells_subclones))
-    print(perc_cells_subclones)
     
     if(which.max(sCalinsky)>0.10 & all(perc_cells_subclones > 0.10)){
+      
+      print(paste("found", n_subclones, "subclones", sep = " "))
+      names(perc_cells_subclones) <- paste0("percentage_cells_subsclone_",names(perc_cells_subclones))
+      print(perc_cells_subclones)
       
       breaks_subclones <- list()
       
@@ -255,32 +257,11 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
       colnames(results$logCNA) <- colnames(norm.mat.relat)
       results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
       
-      rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_subclones])
-      subclones <- rbPal5(2)[as.numeric(factor(hc.clus))]
-      cells <- rbind(subclones,subclones)
+      plotSubclones(CNAmat[,2], results.com, n_subclones, sample)
       
-      
-      chr <- as.numeric(CNAmat[,2]) %% 2+1
-      
-      rbPal1 <- colorRampPalette(c('black','grey'))
-      CHR <- rbPal1(2)[as.numeric(chr)]
-      chr1 <- cbind(CHR,CHR)
-      
-      my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
-      col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
-      
-      hcc <- hclust(parallelDist::parDist(t(results.com),threads =n.cores, method = "euclidean"), method = "ward.D")
-      
-      jpeg(paste(sample,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
-
-      heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
-                ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
-                notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
-                keysize=1, density.info="none", trace="none",
-                cexRow=0.1,cexCol=1.0,cex.main=1.0,cex.lab=0.1,
-                symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
-      
-      dev.off()
+    }else{
+      n_subclones <- 0
+      print(paste("found", n_subclones, "subclones", sep = " "))
     }
   }
   
@@ -293,61 +274,3 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
   return(ress)
   
 }
-
-
-
-
-
-
-createGeneSetNormal <- function(){
-  
-  #ESTIMATE
-  load("/storage/qnap_home/adefalco/singleCell/AllData/ClassTumorCells/SI_geneset.RData") #from https://sourceforge.net/projects/estimateproject/
-  geneSet <- c()
-  geneSet$stromal <- as.character(unlist(SI_geneset["StromalSignature",-1]))
-  geneSet$immune <- as.character(unlist(SI_geneset["ImmuneSignature",-1]))
-  
-  #FRANCESCA & CANCER CELLS
-  load("/storage/qnap_home/caruso/Analisi2021/signatures/scTHI_c8_signatures_968.RData")
-  load("/storage/qnap_home/caruso/Analisi2021/CPTAC/FgesSignature/fges_signature.RData")
-  
-  findSign <- function(Phenotype){
-    all_sign <- rownames(signature_Colors[signature_Colors$ALLPhenotypeFinal==Phenotype,])
-    ind <- which(names(signature) %in% all_sign)
-    subset_sign <- signature[ind]
-    num_sin <- length(subset_sign)/2
-    subset_sign <- unlist(subset_sign)
-    
-    i <- 1
-    while( (length(unique(subset_sign)) > 200) & (i < num_sin)){
-      subset_sign <- subset_sign[duplicated(subset_sign)]
-      i <- i + 1
-    }
-    
-    return(unique(subset_sign))
-  }
-  
-  all_sign <- rownames(signature_Colors[signature_Colors$ALLPhenotypeFinal=="Oligodendrocytes",])
-  ind <- which(names(signature) %in% all_sign)
-  subset_sign <- signature[ind]
-  
-  geneSet$olig_Myelinating <- union(subset_sign$Anna_PreMyelinatingOligo, subset_sign$Anna_MyelinatingOligo)
-  geneSet$olig_Myelinating <- union(geneSet$olig_Myelinating, subset_sign$CNS_Myelinating.Oligodendrocytes) 
-  
-  geneSet$olig <- union(subset_sign$Anna_OligoLineage, subset_sign$CNS_Oligodendrocytes)
-  geneSet$olig <- union(geneSet$olig, subset_sign$CNS_Newly.Formed.Oligodendrocyte)
-  
-  #geneSet$olig <- findSign("Oligodendrocytes")
-  geneSet$Tcell <- findSign("Tcell")
-  #geneSet$astro <- findSign("Astrocytes")
-  geneSet$macro <-findSign("Macrophages")
-  geneSet$micro <-findSign("Microglia")
-  geneSet$neuro <-findSign("Neurons")
-  
-  GO2 <- gmt2GO("~/singleCell/GSEA/c2.cp.reactome.v7.4.symbols.gmt")
-  reactome_cellcycle <- GO2$REACTOME_CELL_CYCLE
-  
-  usethis::use_data(geneSet, reactome_cellcycle, internal = TRUE, overwrite = TRUE)
-  
-}
-

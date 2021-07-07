@@ -104,10 +104,10 @@ int run_vegaMC(char **data, char **out, double *b, int *mrbs, double *losst,
                double *gaint, int *ba, double *loht, double *lohf, int *bsp,
                int *ns, int *np, int *nc)
 {
-    Rprintf("\n------ START COMPUTATION ------\n");
+    //Rprintf("\n------ START COMPUTATION ------\n");
 
     /* Read Input Parameters */
-    Rprintf("STEP 1: Loading Parameters\n");
+    //Rprintf("STEP 1: Loading Parameters\n");
     beta = (float) *b;
     min_region_bp_size = *mrbs;
     loss_threshold = (float) *losst;
@@ -117,47 +117,47 @@ int run_vegaMC(char **data, char **out, double *b, int *mrbs, double *losst,
     loh_frequency = (float) *lohf;
     bs = *bsp;
 
-    Rprintf("\tParameters Correctly Loaded\n");
+    //Rprintf("\tParameters Correctly Loaded\n");
 
     /* Takes dataset and output files */
     dataset = *data;
     output_file_name = *out;
 
     /* Load Data */
-    Rprintf("\nSTEP 2: Loading Data\n");
+    //Rprintf("\nSTEP 2: Loading Data\n");
     load_data();
-    Rprintf
-        ("\t- Number of Samples = %d\n\t- Number of Probes = %d\n\t- Number of Chromosomes = %d\n",
-         num_samples, num_probes, num_chromosomes);
-    Rprintf("\tData Correctly Loaded\n");
+    //Rprintf
+    //    ("\t- Number of Samples = %d\n\t- Number of Probes = %d\n\t- Number of Chromosomes = %d\n",
+    //     num_samples, num_probes, num_chromosomes);
+    //Rprintf("\tData Correctly Loaded\n");
     beta = beta * (float) num_samples;
   
-    Rprintf("\nSTEP 3: Performing Joint Segmentation\n");
+  //Rprintf("\nSTEP 3: Performing Joint Segmentation\n");
     call_VegaMC();
-    Rprintf
-        ("\tJoint Segmentation Successfully Completed with %d Segmented Regions\n",
-         num_seg_regions);
+    //Rprintf
+    //    ("\tJoint Segmentation Successfully Completed with %d Segmented Regions\n",
+    //     num_seg_regions);
 
     /* Run VegaMC on Each Chromosome */
-    Rprintf("\nSTEP 4: Computing Aberration Matrices\n");
+    //Rprintf("\nSTEP 4: Computing Aberration Matrices\n");
     compute_matrices();
-    Rprintf("\tAberration Matrices Successfully Computed\n", num_seg_regions);
+    //Rprintf("\tAberration Matrices Successfully Computed\n", num_seg_regions);
 
     /* Assess the p-value for each region */
-    Rprintf("\nSTEP 5: Assessing Statistical Significativity\n");
+    //Rprintf("\nSTEP 5: Assessing Statistical Significativity\n");
     compute_pvalue();
-    Rprintf("\tStatistical Analysis Successfully Completed\n",
-            num_seg_regions);
+    //Rprintf("\tStatistical Analysis Successfully Completed\n",
+    //        num_seg_regions);
 
-    Rprintf("\nSTEP 6: Writing Results in '%s' Output File\n",
-            output_file_name);
+    //Rprintf("\nSTEP 6: Writing Results in '%s' Output File\n",
+    //        output_file_name);
     write_segementation();
-    Rprintf("\tFile '%s' Correctly Written\n", output_file_name);
+    //Rprintf("\tFile '%s' Correctly Written\n", output_file_name);
 
     *ns = num_samples;
     *np = num_probes;
     *nc = num_chromosomes;
-    Rprintf("\n------ COMPUTATION SUCCESFULLY COMPLETED------\n");
+    //Rprintf("\n------ COMPUTATION SUCCESFULLY COMPLETED------\n");
     return 0;
 }
 
@@ -391,8 +391,8 @@ void call_VegaMC()
         float **tmp_matrix = malloc(sizeof(float *) * num_samples);
         float *tmp_v = malloc(sizeof(float) * np);
 
-        Rprintf("\t- Analyzing Chromosome %d of %d (composed by %d markers)",
-                c + 1, num_chromosomes, np);
+        //Rprintf("\t- Analyzing Chromosome %d of %d (composed by %d markers)",
+        //       c + 1, num_chromosomes, np);
         for (j = 0; j < num_samples; j++) {
             tmp_matrix[j] = (float *) malloc(sizeof(float) * np);
 
@@ -410,8 +410,8 @@ void call_VegaMC()
         }
         vegaMC(tmp_matrix, start_pos, start, end, size, l2_mean, &np, &beta,
                std, &n_reg, &num_samples, weight, &weight_sum);
-        Rprintf("\n\t- %d Segmented Regions for Chromsome %d\n\n", n_reg,
-                c + 1);
+        //Rprintf("\n\t- %d Segmented Regions for Chromsome %d\n\n", n_reg,
+        //        c + 1);
         ntot += n_reg;
         
         seg_element *tmp;

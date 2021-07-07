@@ -2,11 +2,11 @@
 
 useDynLib(CNAvegaMC)
 
+export(pipelineCNA)
 export(annotateGenes)
 export(baseline.synthetic)
 export(classifyTumorCells)
 export(computeF1score)
-export(createGeneSetNormal)
 export(getConfidentNormalCells)
 export(heatmap.3)
 export(preprocessingMtx)

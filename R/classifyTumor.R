@@ -105,6 +105,8 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     sCalinsky <- calinsky(fit, d, gMax = 15)
     km <- which.max(sCalinsky)
     #km <- 6
+    print(paste("cluster calisky:", km))
+    
     CL <- cutree(fit, km)
     
     while(!all(table(CL)>5)){

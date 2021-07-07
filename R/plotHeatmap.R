@@ -464,7 +464,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
   
   col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
   
-  jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+  jpeg(paste("./output/",sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
   prediction <- rep(rbPal5(1), ncol(mtx_CNA))
@@ -496,4 +496,36 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
   #legend("topright", paste("pred.",names(table(pred)),sep=""), pch=15,col=RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1], cex=1)
   dev.off()
   
+}
+
+
+
+plotSubclones <- function(chr_lab, mtx_CNA, n_subclones, sample, par_cores=20){
+
+chr <- as.numeric(chr_lab) %% 2+1
+rbPal1 <- colorRampPalette(c('black','grey'))
+CHR <- rbPal1(2)[as.numeric(chr)]
+chr1 <- cbind(CHR,CHR)
+
+my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
+col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
+
+hcc <- hclust(parallelDist::parDist(t(mtx_CNA),threads =par_cores, method = "euclidean"), method = "ward.D")
+
+hc.clus <- cutree(hcc,n_subclones)
+rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_subclones])
+subclones <- rbPal5(2)[as.numeric(factor(hc.clus))]
+cells <- rbind(subclones,subclones)
+
+jpeg(paste("./output/",sample,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
+
+heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
+          ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
+          notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
+          keysize=1, density.info="none", trace="none",
+          cexRow=0.1,cexCol=1.0,cex.main=1.0,cex.lab=0.1,
+          symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+
+dev.off()
+
 }

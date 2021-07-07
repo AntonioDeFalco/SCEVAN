@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
-pipelineCNA <- function(count_mtx, par_cores = 20,  gr_truth = NULL, SUBCLONES = TRUE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, SUBCLONES = TRUE){
   
   res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores, SMOOTH = TRUE)
   norm.cell <- getConfidentNormalCells(res_proc$count_mtx_smooth, par_cores = par_cores)
