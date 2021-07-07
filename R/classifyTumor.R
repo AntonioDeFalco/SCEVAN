@@ -224,13 +224,6 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
     
     jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
-    
-    if(distance=="euclidean"){
-      dist_func <- function(x) parallelDist::parDist(x,threads =par_cores, method = distance)
-    } else {
-      dist_func <- function(x) as.dist(1-cor(t(x), method = distance))
-    }
-    
 
     heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
               ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,

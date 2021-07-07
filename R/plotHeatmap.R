@@ -328,7 +328,7 @@ heatmap.3 <- function(x,
   }
   
   extr_chr <- unlist(lapply(1:22, function(x) max(which(chr_lab==x))))
-  abline(v=extr_chr, col="black")
+  abline(v=extr_chr, col="black", lwd = 3)
   
   extr_chr <- append(1, extr_chr)
   axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
