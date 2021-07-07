@@ -444,3 +444,56 @@ heatmap.3 <- function(x,
                                   high = retval$breaks[-1], color = retval$col)
   invisible(retval)
 }
+
+
+plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = NULL){
+  
+  
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
+  
+  chr <- as.numeric(chr_lab) %% 2+1
+  rbPal1 <- colorRampPalette(c('black','grey'))
+  CHR <- rbPal1(2)[as.numeric(chr)]
+  chr1 <- cbind(CHR,CHR)
+  
+  if (ncol(mtx_CNA)< 3000){
+    h <- 10
+  } else {
+    h <- 15
+  }
+  
+  col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
+  
+  jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
+  prediction <- rep(rbPal5(1), ncol(mtx_CNA))
+  cells <- rbind(prediction,prediction)
+  
+  if(length(pred)>0){
+
+  prediction <- rbPal5(2)[as.numeric(factor(pred))]
+  cells <- rbind(prediction,prediction)
+  
+  if(length(ground_truth) > 0){
+    classCorr <- ground_truth[names(pred)]
+    classCorr[classCorr!="malignant"] <- "non malignant"
+    
+    rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
+    Ground_Truth <- rbPal5(2)[as.numeric(factor(classCorr))]
+    cells <- rbind(prediction,Ground_Truth)
+  }
+  
+  }
+  
+  heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
+            ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
+            notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
+            keysize=1, density.info="none", trace="none",
+            cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+  
+  #legend("topright", paste("pred.",names(table(pred)),sep=""), pch=15,col=RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1], cex=1)
+  dev.off()
+  
+}

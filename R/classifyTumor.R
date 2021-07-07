@@ -207,32 +207,8 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     
     #plot heatmap
     print("9) plot heatmap")
-    my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
     
-    chr <- as.numeric(RNA.copycat$seqnames) %% 2+1
-    rbPal1 <- colorRampPalette(c('black','grey'))
-    CHR <- rbPal1(2)[as.numeric(chr)]
-    chr1 <- cbind(CHR,CHR)
-    
-    
-    if (ncol(mat.adj)< 3000){
-      h <- 10
-    } else {
-      h <- 15
-    }
-    
-    col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
-    
-    jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
-
-    heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
-              ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
-              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
-              keysize=1, density.info="none", trace="none",
-              cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
-              symm=F,symkey=F,symbreaks=T,cex=3, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
-    
-    dev.off()
+    plotCNA(RNA.copycat$seqnames, mat.adj, hcc, sample)
     
     end_time<- Sys.time()
     print(end_time -start_time)
@@ -328,48 +304,8 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     
     ####%%%%%%%%%%%%%%%%%next heatmaps, subpopulations and tSNE overlay
     print("step 10: ploting heatmap ...")
-    my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
     
-    chr <- as.numeric(RNA.copycat$seqnames) %% 2+1
-    rbPal1 <- colorRampPalette(c('black','grey'))
-    CHR <- rbPal1(2)[as.numeric(chr)]
-    chr1 <- cbind(CHR,CHR)
-    
-    rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
-    prediction <- rbPal5(2)[as.numeric(factor(com.preN))]
-    
-    
-    if(length(ground_truth) > 0){
-      classCorr <- ground_truth[names(com.preN)]
-      classCorr[classCorr!="malignant"] <- "non malignant"
-      
-      rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
-      Ground_Truth <- rbPal5(2)[as.numeric(factor(classCorr))]
-      cells <- rbind(prediction,Ground_Truth)
-    }else{
-      cells <- rbind(prediction,prediction)
-    }
-    
-    if (ncol(mat.adj)< 3000){
-      h <- 10
-    } else {
-      h <- 15
-    }
-    
-    col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
-    
-    jpeg(paste(sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
-    
-    heatmap.3(t(mat.adj),dendrogram="r", hcr = hcc,
-              ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
-              notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = RNA.copycat$seqnames,
-              keysize=1, density.info="none", trace="none",
-              cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
-              symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
-    
-    
-    legend("topright", paste("pred.",names(table(com.preN)),sep=""), pch=15,col=RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1], cex=1)
-    dev.off()
+    plotCNA(RNA.copycat$seqnames, mat.adj, hcc, sample, com.preN, ground_truth)
     
     end_time<- Sys.time()
     print(end_time -start_time)
