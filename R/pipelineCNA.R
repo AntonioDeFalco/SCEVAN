@@ -11,6 +11,8 @@
 #' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, SUBCLONES = TRUE){
   
+  start_time <- Sys.time()
+  
   res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores, SMOOTH = TRUE)
   norm.cell <- getConfidentNormalCells(res_proc$count_mtx_smooth, par_cores = par_cores)
   norm.cell <- names(norm.cell)
@@ -35,6 +37,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones))
     names(res_final)[4:5] <- c("n_subclones", "breaks_subclones")
   }
+  
+  end_time<- Sys.time()
+  print(end_time -start_time)
   
   return(res_final)
 }

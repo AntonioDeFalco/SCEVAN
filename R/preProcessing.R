@@ -48,7 +48,6 @@ return(mtx_annot)
 #' @export
 preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par_cores=20, SMOOTH = TRUE){
   
-  start_time <- Sys.time()
   set.seed(1)
   
   print(paste(" raw data - genes: ", nrow(count_mtx), " cells: ", ncol(count_mtx), sep=""))
@@ -147,9 +146,6 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
   
   res <- list(count_mtx_smooth, count_mtx_proc, count_mtx_annot)
   names(res) <- c("count_mtx_smooth","count_mtx_proc", "count_mtx_annot")
-  
-  end_time<- Sys.time()
-  print(end_time -start_time)
   
   return(res)
   

@@ -187,9 +187,9 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
   norm.mat.relat <- CNAmat[,-c(1:3)]
   info_mat <- CNAmat[,c(1:3)]
   
-  if(grep(".",(tum_cells)[1]) & grep("-",colnames(norm.mat.relat)[1])){
+  if(isTRUE(grep("\\.",(tum_cells)[1])==1) & isTRUE(grep("-",colnames(norm.mat.relat)[1])==1)){
     tum_cells <- gsub("\\.", "-",tum_cells)
-  }else if((grep("-",(tum_cells)[1]) & grep(".",colnames(norm.mat.relat)[1]))){
+  }else if( isTRUE(grep("-",(tum_cells)[1])==1) & isTRUE(grep("\\.",colnames(norm.mat.relat)[1])==1)){
     tum_cells <- gsub("-", "\\.",tum_cells)
   }
   

@@ -69,6 +69,8 @@ computeCNAmtx <- function(mtx, BR, par_cores){
   return(CNA)
 }
 
+
+
 #' func
 #'
 #' @param 
@@ -82,7 +84,6 @@ computeCNAmtx <- function(mtx, BR, par_cores){
 #' @export
 classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot, sample, distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, UP.DR = 0.1, ngene.chr=5, WRITE = FALSE, SEGMENTATION_CLASS = TRUE){
   
-  start_time <- Sys.time()
   set.seed(1)
   
   if (length(norm.cell.names) < 1){
@@ -212,8 +213,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     
     plotCNA(RNA.copycat$seqnames, mat.adj, hcc, sample)
     
-    end_time<- Sys.time()
-    print(end_time -start_time)
+
     
   } else {
     
@@ -308,9 +308,6 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_proc, count_mtx_annot
     print("step 10: ploting heatmap ...")
     
     plotCNA(RNA.copycat$seqnames, mat.adj, hcc, sample, com.preN, ground_truth)
-    
-    end_time<- Sys.time()
-    print(end_time -start_time)
     
   }
   
