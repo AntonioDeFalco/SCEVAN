@@ -4,7 +4,7 @@
 \alias{getConfidentNormalCells}
 \title{func}
 \usage{
-getConfidentNormalCells(mtx, geneSet, par_cores = 20)
+getConfidentNormalCells(mtx, par_cores = 20)
 }
 \value{
 

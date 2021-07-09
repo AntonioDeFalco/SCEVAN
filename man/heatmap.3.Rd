@@ -2,14 +2,13 @@
 % Please edit documentation in R/plotHeatmap.R
 \name{heatmap.3}
 \alias{heatmap.3}
-\title{heatmap3 function.}
+\title{heatmap3 function modified from from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"}
 \usage{
 heatmap.3(
   x,
   Rowv = TRUE,
   Colv = if (symm) "Rowv" else TRUE,
-  distfun = dist,
-  hclustfun = hclust,
+  hcr,
   dendrogram = c("both", "row", "column", "none"),
   symm = FALSE,
   scale = c("none", "row", "column"),
@@ -17,6 +16,7 @@ heatmap.3(
   revC = identical(Colv, "Rowv"),
   add.expr,
   breaks,
+  chr_lab,
   symbreaks = max(x < 0, na.rm = TRUE) || scale != "none",
   col = "heat.colors",
   colsep,
@@ -59,5 +59,5 @@ heatmap.3(
 )
 }
 \description{
-downloaded from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
+heatmap3 function modified from from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
 }

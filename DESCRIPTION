@@ -11,9 +11,14 @@ Imports:
     dplyr,
     methods,
     yaGST,
+    cluster,
     EnsDb.Hsapiens.v86
 LazyLoad: yes
 NeedsCompilation: yes
 RoxygenNote: 7.1.1
 Depends: 
     R (>= 2.10)
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

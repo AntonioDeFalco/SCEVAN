@@ -1,6 +1,6 @@
-#' annotate genes with reference to hg38.ssssss
+#' annotateGenes  genes with reference to hg38
 #'
-#' @param mat data matrix; genes in rows; cell names in columns.
+#' @param mtx raw count matrix
 #'
 #' @return annotations of each genes in rows with chrom and positions.
 #'
@@ -46,7 +46,7 @@ return(mtx_annot)
 #' 
 #' 
 #' @export
-preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par_cores=20, SMOOTH = TRUE){
+preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=20, SMOOTH = TRUE){
   
   set.seed(1)
   
@@ -62,23 +62,23 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
     print(paste("filtered out ", sum(genes.raw<=200), " cells past filtering ", ncol(count_mtx), " cells", sep=""))
   }
   
-  print(paste0("2) Filter: genes > ", LOW.DR*100, "% of cells"))
-  
   der <- apply(count_mtx,1,function(x)(sum(x>0)))/ncol(count_mtx)
   
-  if(sum(der>LOW.DR)>=1){
-    count_mtx <- count_mtx[which(der > LOW.DR), ]; print(paste(nrow(count_mtx)," genes past filtering", sep=""))
+  if( sum(der > perc_genes) > 7000){
+    print(paste0("2) Filter: genes > ", perc_genes*100, "% of cells"))
+    count_mtx <- count_mtx[which(der > perc_genes), ]; 
+  }else{
+    perc_genes <- perc_genes - 0.05
+    print("low data quality")
+    print(paste0("2) Filter: genes > ", perc_genes*100, "% of cells"))
+    count_mtx <- count_mtx[which(der > perc_genes), ]; 
   }
-  
-  if(nrow(count_mtx) < 7000){
-    UP.DR<- LOW.DR
-    print("WARNING: low data quality; assigned LOW.DR to UP.DR...")
-  }
+  print(paste(nrow(count_mtx)," genes past filtering", sep=""))
   
   print("3) Annotations gene coordinates")
   
-  count_mtx_annot <- annotateGenes(count_mtx) #SYMBOL or ENSEMBLE
-  #count_mtx_annot <- count_mtx_annot[order(count_mtx_annot$abspos, decreasing = FALSE),]
+  count_mtx_annot <- annotateGenes(count_mtx) 
+  rm(count_mtx)
   
   count_mtx_annot <- count_mtx_annot[
     with(count_mtx_annot, order(as.numeric(as.character(seqnames)), as.numeric(as.character(end))), decreasing = FALSE),
@@ -95,45 +95,51 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
   
   print(paste(nrow(count_mtx_annot)," genes past filtering ", sep=""))
   
-  print(paste0("5)  Filter: cells > ", ngene.chr, "genes per chromosome "))
-  ToRemov2 <- NULL
+  print(paste0("5)  Filter: cells > ", ngenes_chr, "genes per chromosome "))
+  cellsFilt <- NULL
   for(i in 6:ncol(count_mtx_annot)){
-    cell <- cbind(count_mtx_annot$seqnames, count_mtx_annot[,i])
-    cell <- cell[cell[,2]!=0,]
-    if(length(as.numeric(cell))< 5){
-      rm <- colnames(count_mtx_annot)[i]
-      ToRemov2 <- c(ToRemov2, rm)
-    } else if(length(rle(cell[,1])$length)<22|min(rle(cell[,1])$length)< ngene.chr){
-      rm <- colnames(count_mtx_annot)[i]
-      ToRemov2 <- c(ToRemov2, rm)
+    cellChr <- cbind(count_mtx_annot$seqnames, count_mtx_annot[,i])
+    cellChr <- cellChr[cellChr[,2]!=0,]
+    if(length(rle(cellChr[,1])$length)<22|min(rle(cellChr[,1])$length)< ngenes_chr){
+      cellsFilt <- c(cellsFilt, colnames(count_mtx_annot)[i])
     }
-    i<- i+1
   }
   
-  if(length(ToRemov2)==(ncol(count_mtx_annot)-5)) stop("all cells are filtered")
+  if(length(cellsFilt)==(ncol(count_mtx_annot)-5)) stop("all cells are filtered")
   
-  if(length(ToRemov2)>0){
-    count_mtx_annot <-count_mtx_annot[, -which(colnames(count_mtx_annot) %in% ToRemov2)]
+  if(length(cellsFilt)>0){
+    count_mtx_annot <-count_mtx_annot[, -which(colnames(count_mtx_annot) %in% cellsFilt)]
   }
+  
+  
+  print("6) Log-Freeman–Turkey transformation ")
   
   count_mtx_proc <- data.matrix(count_mtx_annot[, 6:ncol(count_mtx_annot)])
+  count_mtx_annot <- count_mtx_annot[, 1:5]
   count_mtx_norm <- log(sqrt(count_mtx_proc)+sqrt(count_mtx_proc+1))
   count_mtx_norm <- apply(count_mtx_norm,2,function(x)(x <- x-mean(x)))
   colnames(count_mtx_norm) <-  colnames(count_mtx_proc)
+  rm(count_mtx_proc)
   
   print(paste("A total of ", ncol(count_mtx_norm), " cells, ", nrow(count_mtx_norm), " genes after preprocessing", sep=""))
   
   ##### smooth data ##### 
   if(SMOOTH){
-    print("6) Smoothing data with dlm")
+    print("7) Smoothing data")
     dlm.sm <- function(c){
-      model <- dlm::dlmModPoly(order=1, dV=0.16, dW=0.001)
+     model <- dlm::dlmModPoly(order=1, dV=0.16, dW=0.001)
       x <- dlm::dlmSmooth(count_mtx_norm[, c], model)$s
       x<- x[2:length(x)]
       x <- x-mean(x)
     }
     
+    #dlm.sm <- function(c){
+      #  x_low <- lowess(count_mtx_norm[,c], f = 0.001,  iter = 1, delta = 10)
+     # x <- x_low$y-mean(x_low$y)
+    #}
+    
     test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), dlm.sm, mc.cores = par_cores)
+    
     count_mtx_smooth <- matrix(unlist(test.mc), ncol = ncol(count_mtx_norm), byrow = FALSE)
     rm(test.mc)
     colnames(count_mtx_smooth) <- colnames(count_mtx_norm)
@@ -144,8 +150,8 @@ preprocessingMtx <- function(count_mtx, ngene.chr=5, LOW.DR=0.05, UP.DR=0.1, par
   
   rownames(count_mtx_smooth) <- count_mtx_annot$gene_name
   
-  res <- list(count_mtx_smooth, count_mtx_proc, count_mtx_annot)
-  names(res) <- c("count_mtx_smooth","count_mtx_proc", "count_mtx_annot")
+  res <- list(count_mtx_smooth, count_mtx_annot)
+  names(res) <- c("count_mtx_smooth", "count_mtx_annot")
   
   return(res)
   

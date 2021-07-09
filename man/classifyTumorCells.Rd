@@ -2,13 +2,13 @@
 % Please edit documentation in R/classifyTumor.R
 \name{classifyTumorCells}
 \alias{classifyTumorCells}
-\title{func}
+\title{classifyTumorCells classify tumour and normal cells from the raw count matrix}
 \usage{
 classifyTumorCells(
   count_mtx_smooth,
   count_mtx_proc,
   count_mtx_annot,
-  sam.name,
+  sample,
   distance = "euclidean",
   par_cores = 20,
   ground_truth = NULL,
@@ -23,7 +23,7 @@ classifyTumorCells(
 
 }
 \description{
-func
+classifyTumorCells classify tumour and normal cells from the raw count matrix
 }
 \examples{
 

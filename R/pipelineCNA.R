@@ -18,7 +18,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   norm.cell <- names(norm.cell)
   print(table(gr_truth[norm.cell]))
   
-  res_class <- classifyTumorCells(res_proc$count_mtx_smooth, res_proc$count_mtx_proc,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)
+  res_class <- classifyTumorCells(res_proc$count_mtx_smooth,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)
   
   res_final <- list(res_class$confidentNormal, res_class$tum_cells)
   names(res_final) <- c("confidentNormalCells", "predTumorCells")

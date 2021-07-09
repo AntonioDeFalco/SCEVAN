@@ -17,6 +17,7 @@ top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_
     conf_norm_cells <- sort(conf_norm_cells, decreasing = TRUE)[1:min(30, length(conf_norm_cells))]
     if(length(conf_norm_cells)==1){
       Class <- names(which.max(comb[,names(conf_norm_cells)]))
+      names(Class) <- names(conf_norm_cells)
     }else{
       Class <- apply(comb[,names(conf_norm_cells)], 2, function(x) names(which.max(x)))
     }
