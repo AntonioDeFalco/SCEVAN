@@ -3,7 +3,6 @@
 
 useDynLib(CNAvegaMC)
 export(annotateGenes)
-export(baseline.synthetic)
 export(classifyTumorCells)
 export(computeF1score)
 export(getConfidentNormalCells)

@@ -11,53 +11,39 @@
 #'
 #' count_mtx_relat <- test.relt$expr.relat
 #' @export
-baseline.synthetic <- function(norm.mat=norm.mat, min.cells=10, par_cores = 20){ 
+removeSyntheticBaseline <- function(count_mtx, par_cores = 20){ 
   
-  d <- parallelDist::parDist(t(norm.mat), threads = par_cores) 
+  d <- parallelDist::parDist(t(count_mtx), threads = par_cores) 
   
-  fit <- hclust(d, method="ward.D2")
+  hcc <- hclust(d, method="ward.D2")
   
-  sCalinsky <- calinsky(fit, d, gMax = 10)
-  km <- which.max(sCalinsky)
-  #km <- 6
-  ct <- cutree(fit, k=km)
-  
-  while(!all(table(ct)>min.cells)){
-    km <- km -1
-    ct <- cutree(fit, k=km)
-    if(km==2){
-      break
-    }
-  }
+  sCalinsky <- calinsky(hcc, d, gMax = 10)
+  k <- which.max(sCalinsky)
+  hcc_k <- cutree(hcc, k=k)
   
   expr.relat <- NULL
-  syn <- NULL
-  for(i in min(ct):max(ct)){
-    data.c1 <- norm.mat[, which(ct==i)]
-    sd1 <- apply(data.c1,1,sd)
+  for(i in 1:k){
+    cellsClu <- count_mtx[, which(hcc_k==i)]
+    sdCells <- apply(cellsClu,1,sd)
     set.seed(123)
-    syn.norm <- sapply(sd1,function(x)(x<- rnorm(1,mean = 0,sd=x)))
-    relat1 <- data.c1 - syn.norm
-    expr.relat <- rbind(expr.relat, t(relat1))
-    syn <- cbind(syn,syn.norm)
+    syn.norm <- sapply(sdCells,function(x)(x<- rnorm(1,mean = 0,sd=x)))
+    cellsCluRelat <- cellsClu - syn.norm
+    expr.relat <- rbind(expr.relat, t(cellsCluRelat))
   }
   
-  reslt <- list(data.frame(t(expr.relat)), data.frame(syn), ct)
-  names(reslt) <- c("expr.relat","syn.normal", "cl")
-  
-  return(reslt)
+  return(t(expr.relat))
 }
 
 
 
-computeCNAmtx <- function(mtx, BR, par_cores){
+computeCNAmtx <- function(mtx, breaks, par_cores){
   
   n <- nrow(mtx)
   
   seg.test <- parallel::mclapply(1:ncol(mtx), function(z){
     x<-numeric(n)
-    for (i in 1:(length(BR)-1)){
-      x[BR[i]:BR[i+1]] <- mean(mtx[BR[i]:BR[i+1],z])
+    for (i in 1:(length(breaks)-1)){
+      x[breaks[i]:breaks[i+1]] <- mean(mtx[breaks[i]:breaks[i+1],z])
     }
     return(x)
   }, mc.cores = par_cores)
@@ -99,9 +85,9 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
   
   if (length(norm.cell.names) < 1){
     print("8): measuring baselines (pure tumor - synthetic normal cells)")
-    relt <- baseline.synthetic(norm.mat=count_mtx_smooth, par_cores=par_cores)
-    count_mtx_relat <- relt$expr.relat
-    colnames(count_mtx_relat) <- colnames(relt$expr.relat)
+    count_mtx_relat <- removeSyntheticBaseline(count_mtx_smooth, par_cores=par_cores)
+    #count_mtx_relat <- relt$expr.relat
+    #colnames(count_mtx_relat) <- colnames(relt$expr.relat)
     
   } else {
     print("8): measuring baselines (confident normal cells)")
@@ -126,11 +112,13 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     mtx_vega <- cbind(count_mtx_annot[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    BR <- getBreaksVegaMC(mtx_vega, count_mtx_annot[, 3], sample)
+    breaks <- getBreaksVegaMC(mtx_vega, count_mtx_annot[, 3], sample)
     
-    CNA_mtx <- computeCNAmtx(count_mtx_relat, BR, par_cores)
+    CNA_mtx <- computeCNAmtx(count_mtx_relat, breaks, par_cores)
+    SEGM <- TRUE
     
   }else{
+    SEGM <- FALSE
     CNA_mtx <- count_mtx_relat
   }
   
@@ -170,32 +158,22 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     ################removed baseline adjustment
     CNA_mtx_relat <- CNA_mtx-apply(CNA_mtx[,which(cellType_pred=="non malignant")], 1, mean)
     CNA_mtx_relat <- apply(CNA_mtx_relat,2,function(x)(x <- x-mean(x)))
+    CNA_mtx_relat <- CNA_mtx_relat/(0.5*(max(CNA_mtx_relat)-min(CNA_mtx_relat)))
     
-    cf.h <- apply(CNA_mtx_relat[,which(cellType_pred=="non malignant")], 1, sd)
-    base <- apply(CNA_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)
-    
-    adjN <- function(j){
-      a <- CNA_mtx_relat[, j]
-      a[abs(a-base) <= 0.25*cf.h] <- mean(a)
-      a
+    if(SEGM){
+    count_mtx_relat <- count_mtx_relat-apply(count_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)
+    count_mtx_relat <- apply(count_mtx_relat,2,function(x)(x <- x-mean(x)))
+    count_mtx_relat <- count_mtx_relat/(0.5*(max(count_mtx_relat)-min(count_mtx_relat)))
     }
     
-    mc.adjN <-  parallel::mclapply(1:ncol(CNA_mtx_relat),adjN, mc.cores = par_cores)
-    adj.results <- matrix(unlist(mc.adjN), ncol = ncol(CNA_mtx_relat), byrow = FALSE)
-    rm(mc.adjN)
-    colnames(adj.results) <- colnames(CNA_mtx_relat)
-    
-    rang <- 0.5*(max(adj.results)-min(adj.results))
-    CNA_mtx <- adj.results/rang
-    
     if(distance=="euclidean"){
-      hcc <- hclust(parallelDist::parDist(t(CNA_mtx),threads =par_cores, method = distance), method = "ward.D")
+      hcc <- hclust(parallelDist::parDist(t(CNA_mtx_relat),threads =par_cores, method = distance), method = "ward.D")
     }else {
-      hcc <- hclust(as.dist(1-cor(CNA_mtx, method = distance)), method = "ward.D")
+      hcc <- hclust(as.dist(1-cor(CNA_mtx_relat, method = distance)), method = "ward.D")
     }
     
     hcc2 <- cutree(hcc,2)
-    names(hcc2) <- colnames(CNA_mtx)
+    names(hcc2) <- colnames(CNA_mtx_relat)
     
     cellType_pred <- classifyCluster(hcc2, norm.cell.names)
     
@@ -204,7 +182,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     
     print("11) plot heatmap")
     
-    plotCNA(count_mtx_annot$seqnames, CNA_mtx, hcc, sample, cellType_pred, ground_truth)
+    plotCNA(count_mtx_annot$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth)
     
   }
   if(length(norm.cell.names) < 1){
@@ -214,7 +192,13 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     tum_cells <- names(res[,2][res[,2] == "malignant"])
   }
   
-  ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], CNA_mtx), norm.cell.names)
+  if(SEGM){
+    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], count_mtx_relat), norm.cell.names)
+  }else if(length(norm.cell.names) < 1){
+    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], CNA_mtx), norm.cell.names)
+  }else{
+    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], CNA_mtx_relat), norm.cell.names)
+  }
   
   names(ress) <- c("tum_cells", "CNAmat", "confidentNormal")
   return(ress)
