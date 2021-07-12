@@ -1,9 +1,10 @@
-#' Run pipeline
+#' Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
 #'
 #' @param count_mtx raw count matrix
-#' @param par_cores number of cores
-#' @param gr_truth ground truth of classification
-#' @param SUBCLONES find subclones
+#' @param sample sample name (optional)
+#' @param par_cores number of cores (optional)
+#' @param gr_truth ground truth of classification (optional)
+#' @param SUBCLONES find subclones (optional)
 #'
 #' @return
 #' @export
@@ -36,6 +37,12 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample)
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones))
     names(res_final)[4:5] <- c("n_subclones", "breaks_subclones")
+    
+    if(res_subclones$n_subclones>1){
+    sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+    diffSubclones <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
+    print(diffSubclones)
+    }
   }
   
   end_time<- Sys.time()

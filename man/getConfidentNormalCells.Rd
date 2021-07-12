@@ -2,7 +2,7 @@
 % Please edit documentation in R/confidentNormal.R
 \name{getConfidentNormalCells}
 \alias{getConfidentNormalCells}
-\title{func}
+\title{Get at most top 30 confident normal cells}
 \usage{
 getConfidentNormalCells(mtx, par_cores = 20)
 }
@@ -10,7 +10,7 @@ getConfidentNormalCells(mtx, par_cores = 20)
 
 }
 \description{
-func
+Get at most top 30 confident normal cells
 }
 \examples{
 

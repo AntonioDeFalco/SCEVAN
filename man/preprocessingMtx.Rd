@@ -6,9 +6,8 @@
 \usage{
 preprocessingMtx(
   count_mtx,
-  ngene.chr = 5,
-  LOW.DR = 0.05,
-  UP.DR = 0.1,
+  ngenes_chr = 5,
+  perc_genes = 0.1,
   par_cores = 20,
   SMOOTH = TRUE
 )

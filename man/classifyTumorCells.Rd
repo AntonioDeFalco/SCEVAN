@@ -5,19 +5,32 @@
 \title{classifyTumorCells classify tumour and normal cells from the raw count matrix}
 \usage{
 classifyTumorCells(
-  count_mtx_smooth,
-  count_mtx_proc,
-  count_mtx_annot,
-  sample,
+  count_mtx,
+  annot_mtx,
+  sample = "",
   distance = "euclidean",
   par_cores = 20,
   ground_truth = NULL,
   norm.cell.names = NULL,
-  UP.DR = 0.1,
-  ngene.chr = 5,
-  WRITE = FALSE,
   SEGMENTATION_CLASS = TRUE
 )
+}
+\arguments{
+\item{count_mtx}{raw count matrix}
+
+\item{annot_mtx}{matrix containing the annotations of the genes}
+
+\item{sample}{sample name (optional)}
+
+\item{distance}{distance used in hierarchical clustering (optional)}
+
+\item{par_cores}{number of cores (optional)}
+
+\item{norm.cell.names}{confident normal cells (optional)}
+
+\item{SEGMENTATION_CLASS}{Boolean value to perform segmentation before classification (optional)}
+
+\item{gr_truth}{ground truth of classification (optional)}
 }
 \value{
 

@@ -1,6 +1,22 @@
 library(yaGST)
 
+#' Get at most top 30 confident normal cells 
+#'
+#' @param NES 
+#' @param pValue 
+#' @param FDR 
+#' @param pval_filter 
+#' @param fdr_filter 
+#' @param pval_cutoff 
+#' @param nes_cutoff 
+#' @param nNES 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_cutoff, nes_cutoff, nNES){
+  
   if(fdr_filter == TRUE){
     FDR[FDR >= pval_cutoff] <- 1
   }
@@ -28,7 +44,7 @@ top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_
 
 
 
-#' func
+#' Get at most top 30 confident normal cells 
 #'
 #' @param 
 #' @param 

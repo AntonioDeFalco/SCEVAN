@@ -274,3 +274,114 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
   return(ress)
   
 }
+
+
+
+
+
+
+
+analyzeSegm <- function(sample, nSub = 1){
+  
+  all_segm <- list()
+  
+  for (i in 1:nSub){
+    
+    segm <- read.csv(paste0("./output/ ",sample,"_subclone",i," vega_output"), sep = "\t")
+    segm <- segm[segm$L.pv<0.001 | segm$G.pv<0.05,c(1,2,3,6,7)]
+    
+    segm$Alteration <- "D"
+    segm$Alteration[segm$G.pv<0.005] <- "A"
+    segm <- segm[,c(1,2,3,6)]
+    
+    segm_new <- c()
+    for (ch in unique(segm$Chr)) {
+      segm_ch <- segm[segm$Chr==ch,]
+      
+      br <- 2
+      
+      while(nrow(segm_ch)>1){
+        
+        if(br>nrow(segm_ch)){
+          break
+        }
+        
+        if( (abs((segm_ch$End[(br-1)] - segm_ch$Start[br])) < 90000000) & (segm_ch$Alteration[(br-1)] == segm_ch$Alteration[br])){
+          segm_ch$End[(br-1)] <- segm_ch$End[br]
+          segm_ch <- segm_ch[-(br-1),]
+        }else{
+          br <- br + 1
+        }
+        
+      }
+      segm_new <- rbind(segm_new,segm_ch)
+    }
+    
+    all_segm[[paste0(sample,"_subclone", i)]] <- segm_new
+    
+  }
+  
+  return(all_segm)
+  
+}
+
+diffSubclones <- function(sampleAlter, sample, nSub = 2){
+  
+  all_segm_diff <- list()
+  
+  for(sub in 1:nSub){
+    
+    if(sub==1){
+      cl1 <- sampleAlter[[1]]
+      cl2 <- sampleAlter[[2]]
+    }else{
+      cl2 <- sampleAlter[[1]]
+      cl1 <- sampleAlter[[2]]
+    }
+    
+    segm_new <- c()
+    
+    for (ch in sort(unique(union(cl1$Chr,cl2$Chr)))) {
+      
+      if(sum(cl1$Chr==ch)>0){
+        
+        cl1_ch <- cl1[cl1$Chr==ch,]
+        cl2_ch <- cl2[cl2$Chr==ch,]
+        
+        for (br in 1:nrow(cl1_ch)) {
+          
+          FOUND <- FALSE
+          
+          AltPres <- which(cl2_ch$Alteration == cl1_ch[br,]$Alteration)
+          
+          if(length(AltPres)>0){
+            
+            for(br2 in AltPres){
+              if( ((cl1_ch[br,]$Start >= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End <= cl2_ch[br2,]$End)) | ((cl1_ch[br,]$Start <= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End >= cl2_ch[br2,]$End))){
+                FOUND <- TRUE
+                break
+              }
+              
+            }
+            
+          }
+          
+          if(!FOUND){
+            segm_new <- rbind(segm_new,cl1_ch[br,])  
+          }
+          
+        }
+        
+      }
+      
+    }
+    
+    all_segm_diff[[paste0(sample,"_subclone", sub)]] <- segm_new
+    
+  }
+  
+  return(all_segm_diff)
+}
+
+
+

@@ -1,16 +1,13 @@
 
-#' estimate basline copy numbers by synthetic normal cell
+#' Removes a synthetic baseline from a tumour cell-only matrix
 #'
-#' @param norm.mat smoothed data matrix; genes in rows; cell names in columns.
-#' @param min.cells minimal number of cells per cluster.
+#' @param count_mtx count matrix
 #' @param par_cores number of cores for parallel computing.
 #'
-#' @return 1) relative gene expression; 2) synthetic baseline profiles; 3) clustering results.
+#' @return
 #'
 #' @examples
 #'
-#' count_mtx_relat <- test.relt$expr.relat
-#' @export
 removeSyntheticBaseline <- function(count_mtx, par_cores = 20){ 
   
   d <- parallelDist::parDist(t(count_mtx), threads = par_cores) 
@@ -25,7 +22,6 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
   for(i in 1:k){
     cellsClu <- count_mtx[, which(hcc_k==i)]
     sdCells <- apply(cellsClu,1,sd)
-    set.seed(123)
     syn.norm <- sapply(sdCells,function(x)(x<- rnorm(1,mean = 0,sd=x)))
     cellsCluRelat <- cellsClu - syn.norm
     expr.relat <- rbind(expr.relat, t(cellsCluRelat))
@@ -35,25 +31,44 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 }
 
 
-
-computeCNAmtx <- function(mtx, breaks, par_cores){
+#' Calculates the CNA matrix using the break points obtained from segmentation
+#'
+#' @param count_mtx count matrix
+#' @param breaksbreak points obtained from segmentation
+#' @param par_cores number of cores for parallel computing (optional)
+#'
+#' @return
+#'
+#' @examples
+#'
+computeCNAmtx <- function(count_mtx, breaks, par_cores = 20){
   
-  n <- nrow(mtx)
+  n <- nrow(count_mtx)
   
-  seg.test <- parallel::mclapply(1:ncol(mtx), function(z){
+  seg.test <- parallel::mclapply(1:ncol(count_mtx), function(z){
     x<-numeric(n)
     for (i in 1:(length(breaks)-1)){
-      x[breaks[i]:breaks[i+1]] <- mean(mtx[breaks[i]:breaks[i+1],z])
+      x[breaks[i]:breaks[i+1]] <- mean(count_mtx[breaks[i]:breaks[i+1],z])
     }
     return(x)
   }, mc.cores = par_cores)
   
-  CNA <- matrix(unlist(seg.test), ncol = ncol(mtx), byrow = FALSE)
+  CNA <- matrix(unlist(seg.test), ncol = ncol(count_mtx), byrow = FALSE)
   
   return(CNA)
 }
 
+
+#' Classify the two clusters on the basis of confident normal cells
+#'
+#' @param hcc2 Two clusters from hierarchical clustering
+#' @param norm.cell.names Vector of confident normal cells 
+#'
+#' @return
+#'
+#' @examples
 classifyCluster <- function(hcc2, norm.cell.names){
+  
   perc_norm <- length(intersect(names(hcc2[hcc2==1]), norm.cell.names))/length(hcc2[hcc2==1])
   perc_norm <- c(perc_norm,length(intersect(names(hcc2[hcc2==2]), norm.cell.names))/length(hcc2[hcc2==2]))
   clust_norm <- which(perc_norm==max(perc_norm))
@@ -70,36 +85,39 @@ classifyCluster <- function(hcc2, norm.cell.names){
 
 #' classifyTumorCells classify tumour and normal cells from the raw count matrix
 #'
-#' @param 
-#' @param 
-#' @param 
+#' @param count_mtx raw count matrix
+#' @param annot_mtx matrix containing the annotations of the genes
+#' @param sample sample name (optional)
+#' @param distance distance used in hierarchical clustering (optional)
+#' @param par_cores number of cores (optional)
+#' @param gr_truth ground truth of classification (optional)
+#' @param norm.cell.names confident normal cells (optional)
+#' @param SEGMENTATION_CLASS Boolean value to perform segmentation before classification (optional)
 #'
 #' @return
 #'
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, SEGMENTATION_CLASS = TRUE){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, SEGMENTATION_CLASS = TRUE){
   
   set.seed(1)
   
   if (length(norm.cell.names) < 1){
     print("8): measuring baselines (pure tumor - synthetic normal cells)")
-    count_mtx_relat <- removeSyntheticBaseline(count_mtx_smooth, par_cores=par_cores)
-    #count_mtx_relat <- relt$expr.relat
-    #colnames(count_mtx_relat) <- colnames(relt$expr.relat)
+    count_mtx_relat <- removeSyntheticBaseline(count_mtx, par_cores=par_cores)
     
   } else {
     print("8): measuring baselines (confident normal cells)")
     
     if(length(norm.cell.names) == 1){
-      basel <- count_mtx_smooth[, which(colnames(count_mtx_smooth) %in% norm.cell.names)]
+      basel <- count_mtx[, which(colnames(count_mtx) %in% norm.cell.names)]
     }else{
-      basel <- apply(count_mtx_smooth[, which(colnames(count_mtx_smooth) %in% norm.cell.names)],1,median)
+      basel <- apply(count_mtx[, which(colnames(count_mtx) %in% norm.cell.names)],1,median)
     }
     
     ##relative expression using pred.normal cells
-    count_mtx_relat <- count_mtx_smooth-basel
+    count_mtx_relat <- count_mtx-basel
     
   }
 
@@ -109,10 +127,10 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     
     print("9) Segmentation (VegaMC)")
     
-    mtx_vega <- cbind(count_mtx_annot[,c(4,1,3)], count_mtx_relat)
+    mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    breaks <- getBreaksVegaMC(mtx_vega, count_mtx_annot[, 3], sample)
+    breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample)
     
     CNA_mtx <- computeCNAmtx(count_mtx_relat, breaks, par_cores)
     SEGM <- TRUE
@@ -138,7 +156,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     #plot heatmap
     print("11) plot heatmap")
     
-    plotCNA(count_mtx_annot$seqnames, CNA_mtx, hcc, sample)
+    plotCNA(annot_mtx$seqnames, CNA_mtx, hcc, sample)
     
 
   } else {
@@ -182,7 +200,7 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     
     print("11) plot heatmap")
     
-    plotCNA(count_mtx_annot$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth)
+    plotCNA(annot_mtx$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth)
     
   }
   if(length(norm.cell.names) < 1){
@@ -193,11 +211,11 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
   }
   
   if(SEGM){
-    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], count_mtx_relat), norm.cell.names)
+    ress <- list(tum_cells, cbind(annot_mtx[,c(4,1,3)], count_mtx_relat), norm.cell.names)
   }else if(length(norm.cell.names) < 1){
-    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], CNA_mtx), norm.cell.names)
+    ress <- list(tum_cells, cbind(annot_mtx[,c(4,1,3)], CNA_mtx), norm.cell.names)
   }else{
-    ress <- list(tum_cells, cbind(count_mtx_annot[,c(4,1,3)], CNA_mtx_relat), norm.cell.names)
+    ress <- list(tum_cells, cbind(annot_mtx[,c(4,1,3)], CNA_mtx_relat), norm.cell.names)
   }
   
   names(ress) <- c("tum_cells", "CNAmat", "confidentNormal")

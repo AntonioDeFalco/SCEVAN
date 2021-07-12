@@ -8,42 +8,41 @@
 #' test.count_mtx_annot <- annotateGenes(mat=matx)
 #' @export
 annotateGenes <- function(mtx){
-library(dplyr)
-library(EnsDb.Hsapiens.v86)  
+  library(dplyr)
+  library(EnsDb.Hsapiens.v86)  
+    
+  edb <- EnsDb.Hsapiens.v86 %>% genes() %>% as.data.frame()  
+  chr <- 1:22  
+  edb <- (edb[edb$seqnames %in% chr,c(1,2,3,6,7)])
+  edb$seqnames <- as.numeric(as.character(edb$seqnames))
   
-edb <- EnsDb.Hsapiens.v86 %>% genes() %>% as.data.frame()  
-chr <- 1:22  
-edb <- (edb[edb$seqnames %in% chr,c(1,2,3,6,7)])
-edb$seqnames <- as.numeric(as.character(edb$seqnames))
-
-if (any(rownames(mtx) %in% edb$gene_name)){
-  use_geneID <- "gene_name"
-}else{
-  use_geneID <- "gene_id"
-}
-
-genes_inters <- intersect(rownames(mtx), edb[[use_geneID]])
-mtx <- mtx[which(rownames(mtx) %in% genes_inters),]
-edb <- edb[which(as.vector(edb[[use_geneID]]) %in% genes_inters),]
-edb <- edb[!duplicated(edb$gene_name),]
-edb <- edb[order(match(edb[[use_geneID]], rownames(mtx))),]
-mtx_annot <- cbind(edb, mtx)
-
-return(mtx_annot)
-
+    if (any(rownames(mtx) %in% edb$gene_name)){
+      use_geneID <- "gene_name"
+    }else{
+      use_geneID <- "gene_id"
+    }
+  
+  genes_inters <- intersect(rownames(mtx), edb[[use_geneID]])
+  mtx <- mtx[which(rownames(mtx) %in% genes_inters),]
+  edb <- edb[which(as.vector(edb[[use_geneID]]) %in% genes_inters),]
+  edb <- edb[!duplicated(edb$gene_name),]
+  edb <- edb[order(match(edb[[use_geneID]], rownames(mtx))),]
+  mtx_annot <- cbind(edb, mtx)
+  
+  return(mtx_annot)
 }
 
 
 #' func
 #'
-#' @param 
-#' @param 
-#' @param 
-#'
+#' @param count_mtx raw count matrix
+#' @param ngenes_chr minimum number of genes per chromosome (optional)
+#' @param perc_genes percentage of cells in which each gene is to be expressed (optional)
+#' @param par_cores number of cores (optional)
+#' @param SMOOTH Boolean value to perform smoothing (optional)
 #' @return
 #'
 #' @examples
-#' 
 #' 
 #' @export
 preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=20, SMOOTH = TRUE){
@@ -57,6 +56,7 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   genes.raw <- apply(count_mtx, 2, function(x)(sum(x>0)))
   
   if(sum(genes.raw> 200)==0) stop("none cells have more than 200 genes")
+  
   if(sum(genes.raw<100)>1){
     count_mtx <- count_mtx[, -which(genes.raw< 200)]
     print(paste("filtered out ", sum(genes.raw<=200), " cells past filtering ", ncol(count_mtx), " cells", sep=""))
@@ -110,9 +110,7 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   if(length(cellsFilt)>0){
     count_mtx_annot <-count_mtx_annot[, -which(colnames(count_mtx_annot) %in% cellsFilt)]
   }
-  
-  
-  print("6) Log-Freeman–Turkey transformation ")
+  print("6) Log Freeman Turkey transformation")
   
   count_mtx_proc <- data.matrix(count_mtx_annot[, 6:ncol(count_mtx_annot)])
   count_mtx_annot <- count_mtx_annot[, 1:5]
