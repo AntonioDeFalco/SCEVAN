@@ -67,6 +67,19 @@ computeCNAmtx <- function(mtx, BR, par_cores){
   return(CNA)
 }
 
+classifyCluster <- function(hcc2, norm.cell.names){
+  perc_norm <- length(intersect(names(hcc2[hcc2==1]), norm.cell.names))/length(hcc2[hcc2==1])
+  perc_norm <- c(perc_norm,length(intersect(names(hcc2[hcc2==2]), norm.cell.names))/length(hcc2[hcc2==2]))
+  clust_norm <- which(perc_norm==max(perc_norm))
+  
+  cellType_pred <- names(hcc2)
+  cellType_pred[hcc2 == clust_norm] <- "non malignant"
+  cellType_pred[!hcc2 == clust_norm] <- "malignant"
+  names(cellType_pred) <- names(hcc2)
+  
+  return(cellType_pred)
+}
+
 
 
 #' classifyTumorCells classify tumour and normal cells from the raw count matrix
@@ -89,7 +102,6 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     relt <- baseline.synthetic(norm.mat=count_mtx_smooth, par_cores=par_cores)
     count_mtx_relat <- relt$expr.relat
     colnames(count_mtx_relat) <- colnames(relt$expr.relat)
-    CL <- relt$cl
     
   } else {
     print("8): measuring baselines (confident normal cells)")
@@ -100,37 +112,11 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
       basel <- apply(count_mtx_smooth[, which(colnames(count_mtx_smooth) %in% norm.cell.names)],1,median)
     }
     
-    d <- parallelDist::parDist(t(count_mtx_smooth),threads =par_cores, method="euclidean") ##use smooth and segmented data to detect intra-normal cells
-    
-    fit <- hclust(d, method="ward.D2")
-    #CL <- cutree(fit, km)
-    
-    sCalinsky <- calinsky(fit, d, gMax = 10)
-    km <- which.max(sCalinsky)
-    #km <- 6
-    print(paste("cluster calisky:", km))
-    
-    CL <- cutree(fit, km)
-    
-    while(!all(table(CL)>5)){
-      km <- km -1
-      CL <- cutree(fit, k=km)
-      if(km==2){
-        break
-      }
-    }
-    
     ##relative expression using pred.normal cells
     count_mtx_relat <- count_mtx_smooth-basel
     
   }
-  
-  print(paste("final segmentation: ", nrow(count_mtx_relat), " genes; ", ncol(count_mtx_relat), " cells", sep=""))
-  
-  CL <- CL[which(names(CL) %in% colnames(count_mtx_relat))]
-  CL <- CL[order(match(names(CL), colnames(count_mtx_relat)))]
-  
-  
+
   ##### Segmentation with VegaMC #####
   
   if(SEGMENTATION_CLASS & length(norm.cell.names) > 0){
@@ -175,27 +161,18 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
     }else {
       hcc <- hclust(as.dist(1-cor(CNA_mtx, method = distance)), method = "ward.D")
     }
-    hc.umap <- cutree(hcc,2)
-    names(hc.umap) <- colnames(CNA_mtx)
     
-    cl.ID <- NULL
-    for(i in 1:max(hc.umap)){
-      cli <- names(hc.umap)[which(hc.umap==i)]
-      pid <- length(intersect(cli, norm.cell.names))/length(cli)
-      cl.ID <- c(cl.ID, pid)
-    }
+    hcc2 <- cutree(hcc,2)
+    names(hcc2) <- colnames(CNA_mtx)
     
-    com.pred <- names(hc.umap)
-    com.pred[which(hc.umap == which(cl.ID==max(cl.ID)))] <- "non malignant"
-    com.pred[which(hc.umap == which(cl.ID==min(cl.ID)))] <- "malignant"
-    names(com.pred) <- names(hc.umap)
+    cellType_pred <- classifyCluster(hcc2, norm.cell.names)
     
     ################removed baseline adjustment
-    CNA_mtx_relat <- CNA_mtx-apply(CNA_mtx[,which(com.pred=="non malignant")], 1, mean)
+    CNA_mtx_relat <- CNA_mtx-apply(CNA_mtx[,which(cellType_pred=="non malignant")], 1, mean)
     CNA_mtx_relat <- apply(CNA_mtx_relat,2,function(x)(x <- x-mean(x)))
     
-    cf.h <- apply(CNA_mtx_relat[,which(com.pred=="non malignant")], 1, sd)
-    base <- apply(CNA_mtx_relat[,which(com.pred=="non malignant")], 1, mean)
+    cf.h <- apply(CNA_mtx_relat[,which(cellType_pred=="non malignant")], 1, sd)
+    base <- apply(CNA_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)
     
     adjN <- function(j){
       a <- CNA_mtx_relat[, j]
@@ -217,31 +194,19 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
       hcc <- hclust(as.dist(1-cor(CNA_mtx, method = distance)), method = "ward.D")
     }
     
-    hc.umap <- cutree(hcc,2)
-    names(hc.umap) <- colnames(CNA_mtx)
+    hcc2 <- cutree(hcc,2)
+    names(hcc2) <- colnames(CNA_mtx)
     
-    cl.ID <- NULL
-    for(i in 1:max(hc.umap)){
-      cli <- names(hc.umap)[which(hc.umap==i)]
-      pid <- length(intersect(cli, norm.cell.names))/length(cli)
-      cl.ID <- c(cl.ID, pid)
-    }
+    cellType_pred <- classifyCluster(hcc2, norm.cell.names)
     
-    com.preN <- names(hc.umap)
-    com.preN[which(hc.umap == which(cl.ID==max(cl.ID)))] <- "non malignant"
-    com.preN[which(hc.umap == which(cl.ID==min(cl.ID)))] <- "malignant"
-    names(com.preN) <- names(hc.umap)
-    
-    res <- cbind(names(com.preN), com.preN)
+    res <- cbind(names(cellType_pred), cellType_pred)
     colnames(res) <- c("cell.names", "pred")
     
     print("11) plot heatmap")
     
-    plotCNA(count_mtx_annot$seqnames, CNA_mtx, hcc, sample, com.preN, ground_truth)
+    plotCNA(count_mtx_annot$seqnames, CNA_mtx, hcc, sample, cellType_pred, ground_truth)
     
   }
-  
-  
   if(length(norm.cell.names) < 1){
     tum_cells <- colnames(CNA_mtx)
     tum_cells <- gsub("\\.","-",tum_cells)
@@ -254,3 +219,5 @@ classifyTumorCells <- function(count_mtx_smooth, count_mtx_annot, sample, distan
   names(ress) <- c("tum_cells", "CNAmat", "confidentNormal")
   return(ress)
 }
+
+
