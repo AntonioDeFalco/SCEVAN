@@ -1,0 +1,30 @@
+---
+title: "example"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{example}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(CNAvegaMC)
+
+load("./MGH125_Count_mtx.RData")
+results <- CNAvegaMC::pipelineCNA(count_mtx, sample = "MGH125", par_cores = 20, SUBCLONES = TRUE)
+```
+
+# Heatmap normal and tumor cells
+
+<img src="./output/MGH125heatmap.jpeg" alt="heatmap" width="1280"/>
+
+# Heatmap subclones of tumor cells
+
+<img src="./output/MGH125heatmap_subclones.jpeg" alt="heatmap" width="1280"/>

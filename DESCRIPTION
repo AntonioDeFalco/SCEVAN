@@ -8,6 +8,7 @@ Maintainer: A. De Falco <antoniodf92na@gmail.com>
 Description: CNAvegaMC.
 License: GPL-2
 Imports:
+    parallel,
     dplyr,
     methods,
     yaGST,

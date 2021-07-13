@@ -1,3 +1,20 @@
+#' mypackage: A package for computating the notorious bar statistic.
+#'
+#' The mypackage package provides three categories of important functions:
+#' foo, bar and baz.
+#' 
+#' @section Mypackage functions:
+#' The mypackage functions ...
+#'
+#' @docType package
+#' @name mypackage
+#' @useDynLib CNAvegaMC, .registration=TRUE
+NULL
+#> NULL
+
+
+
+
 #' Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
 #'
 #' @param count_mtx raw count matrix
@@ -11,6 +28,8 @@
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, SUBCLONES = TRUE){
+  
+  dir.create(file.path("./output"), showWarnings = FALSE)
   
   start_time <- Sys.time()
   
@@ -36,7 +55,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   if (SUBCLONES){
     res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample)
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones))
-    names(res_final)[4:5] <- c("n_subclones", "breaks_subclones")
+    names(res_final)[(length(names(res_final))-1):length(names(res_final))] <- c("n_subclones", "breaks_subclones")
     
     if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
