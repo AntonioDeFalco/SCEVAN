@@ -12,6 +12,17 @@ preprocessingMtx(
   SMOOTH = TRUE
 )
 }
+\arguments{
+\item{count_mtx}{raw count matrix}
+
+\item{ngenes_chr}{minimum number of genes per chromosome (optional)}
+
+\item{perc_genes}{percentage of cells in which each gene is to be expressed (optional)}
+
+\item{par_cores}{number of cores (optional)}
+
+\item{SMOOTH}{Boolean value to perform smoothing (optional)}
+}
 \value{
 
 }
@@ -19,6 +30,5 @@ preprocessingMtx(
 func
 }
 \examples{
-
 
 }

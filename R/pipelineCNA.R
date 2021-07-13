@@ -1,13 +1,12 @@
-#' mypackage: A package for computating the notorious bar statistic.
+#' CNAvegaMC: A package for
 #'
-#' The mypackage package provides three categories of important functions:
-#' foo, bar and baz.
+#' The CNAvegaMC package
 #' 
-#' @section Mypackage functions:
-#' The mypackage functions ...
+#' @section CNAvegaMC functions:
+#' The CNAvegaMC functions ...
 #'
 #' @docType package
-#' @name mypackage
+#' @name CNAvegaMC
 #' @useDynLib CNAvegaMC, .registration=TRUE
 NULL
 #> NULL
