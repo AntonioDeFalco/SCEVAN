@@ -25,4 +25,4 @@ Heatmap of tumour cell subclones
 
 ## Use Cases
 
-* [Example (TO DO)](https://github.com/AntonioDeFalco/CNAvegaMC)
+* [Example (MGH125)](https://htmlpreview.github.io/?https://raw.githubusercontent.com/AntonioDeFalco/CNAvegaMC/main/example.html?token=ACYAPIPLCZLZXFPW37TBGXDA5VV2I)
