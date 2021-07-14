@@ -15,6 +15,7 @@ library(CNAvegaMC)
 ## GET TUMOR CELLS AND SUBCLONES
 results <- pipelineCNA(count_mtx, sample = sample, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
 ```
+
 Heatmap classification of tumor cells
 
 ![image](https://github.com/AntonioDeFalco/CNAvegaMC/blob/main/vignettes/images/MGH125heatmap.jpeg)
@@ -26,6 +27,10 @@ Heatmap of tumour cell subclones
 Fishplot subclones of tumor cells
 
 ![image](https://github.com/AntonioDeFalco/CNAvegaMC/blob/main/vignettes/images/MGH125fishplot_subclones.jpeg)
+
+Tsne
+
+![image](https://github.com/AntonioDeFalco/CNAvegaMC/blob/main/vignettes/images/MGH125tsne.jpeg)
 
 ## Use Cases
 

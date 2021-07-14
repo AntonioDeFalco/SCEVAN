@@ -39,6 +39,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   res_class <- classifyTumorCells(res_proc$count_mtx_smooth,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)
   
+  end_time<- Sys.time()
+  print(paste("time classify tumor cells: ", end_time -start_time))
+  
   res_final <- list(res_class$confidentNormal, res_class$tum_cells)
   names(res_final) <- c("confidentNormalCells", "predTumorCells")
   
@@ -50,6 +53,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     res_final <- append(res_final, F1_Score)
     names(res_final)[3] <- "F1_Score"
   }
+  
+  start_time <- Sys.time()
   
   if (SUBCLONES){
     res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample)
@@ -78,7 +83,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   }
   
   end_time<- Sys.time()
-  print(end_time -start_time)
+  print(paste("time subclones: ", end_time -start_time))
   
+  plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones)
+
   return(res_final)
 }

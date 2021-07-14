@@ -124,12 +124,22 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   ##### smooth data ##### 
   if(SMOOTH){
     print("7) Smoothing data")
+    
     dlm.sm <- function(c){
-     model <- dlm::dlmModPoly(order=1, dV=0.16, dW=0.001)
+      model <- dlm::dlmModPoly(order=1, dV=0.16, dW=0.001)
       x <- dlm::dlmSmooth(count_mtx_norm[, c], model)$s
       x<- x[2:length(x)]
       x <- x-mean(x)
     }
+    
+    #library(FBN)
+
+    #medianFiltPar <- function(c){
+    #  x_med <- FBN::medianFilter(count_mtx_norm[,c], windowSize = 5)
+    #  x <- x_med-mean(x_med)
+    #}
+    
+    #test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), medianFiltPar, mc.cores = par_cores)
     
     #dlm.sm <- function(c){
       #  x_low <- lowess(count_mtx_norm[,c], f = 0.001,  iter = 1, delta = 10)

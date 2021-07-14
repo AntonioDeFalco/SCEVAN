@@ -14,7 +14,9 @@ Imports:
     yaGST,
     cluster,
     EnsDb.Hsapiens.v86,
-    fishplot
+    fishplot,
+    ggplot2,
+    gridExtra
 LazyLoad: yes
 NeedsCompilation: yes
 RoxygenNote: 7.1.1

@@ -565,3 +565,49 @@ plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh,
 }
 
 
+
+plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub){
+  
+  library(ggplot2)
+  set.seed(1)
+  newmtx <- count_mtx[filt_genes,]
+  tsne <- Rtsne(t(newmtx))
+  
+  pred <- rep("normal", length(colnames(newmtx)))
+  names(pred) <- colnames(newmtx)
+  pred[tum_cells] <- "tumor"
+  
+  df <- data.frame(x = tsne$Y[,1],
+                   y = tsne$Y[,2],
+                   CellType = pred)
+  
+  jpeg(paste("./output/",sample,"tsne.jpeg",sep=""), height=850, width=1050, res=100)
+  
+  p1 <- ggplot(df, aes(x, y, colour = CellType)) +
+    geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
+                                                   values=c("red", "green"))
+  
+  if(res_final$n_subclones>1){
+    
+    library(gridExtra)
+    
+    tsne <- Rtsne(t(as.matrix(CNAmat[,tum_cells])))
+    pred <- paste0("subclone_",clustersSub)
+    names(pred) <- colnames(tum_cells)
+    
+    df <- data.frame(x = tsne$Y[,1],
+                     y = tsne$Y[,2],
+                     Subclones = pred)
+    
+    p2 <- ggplot(df, aes(x, y, colour = Subclones)) +
+      geom_point() + theme_bw() + scale_color_brewer(palette="Paired")
+    
+    grid.arrange(p1, p2, nrow = 1)
+    
+  }else{
+    p1
+  }
+  dev.off()
+}
+
+plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones)
