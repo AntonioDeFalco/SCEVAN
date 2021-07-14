@@ -85,7 +85,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   end_time<- Sys.time()
   print(paste("time subclones: ", end_time -start_time))
   
-  plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones)
+  plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
 
   return(res_final)
 }

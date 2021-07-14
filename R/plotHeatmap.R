@@ -446,7 +446,7 @@ heatmap.3 <- function(x,
 }
 
 
-plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = NULL){
+plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NULL){
   
   
   my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
@@ -464,7 +464,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
   
   col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
   
-  jpeg(paste("./output/",sample,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+  jpeg(paste("./output/",samp,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
   prediction <- rep(rbPal5(1), ncol(mtx_CNA))
@@ -491,7 +491,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
             notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
             keysize=1, density.info="none", trace="none",
             cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
-            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
   
   #legend("topright", paste("pred.",names(table(pred)),sep=""), pch=15,col=RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1], cex=1)
   dev.off()
@@ -500,7 +500,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
 
 
 
-plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, sample, par_cores=20){
+plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, samp, par_cores=20){
 
 chr <- as.numeric(chr_lab) %% 2+1
 rbPal1 <- colorRampPalette(c('black','grey'))
@@ -515,14 +515,14 @@ rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_
 subclones <- rbPal5(2)[as.numeric(factor(hc.clus))]
 cells <- rbind(subclones,subclones)
 
-jpeg(paste("./output/",sample,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
+jpeg(paste("./output/",samp,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
 
 heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
           ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
           notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
           keysize=1, density.info="none", trace="none",
           cexRow=0.1,cexCol=1.0,cex.main=1.0,cex.lab=0.1,
-          symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", sample), cex.main=4, margins=c(10,10))
+          symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
 
 dev.off()
 
@@ -530,7 +530,7 @@ dev.off()
 
 
 
-plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh, sample){
+plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh, samp){
   
   library(fishplot)
 
@@ -556,21 +556,30 @@ plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh,
   fish = layoutClones(fish)
   
   jpeg(paste("./output/","MGH125","fishplot_subclones.jpeg",sep=""), height=850, width=1050, res=100)
-  plot.new()
-  legend <- fishplot::drawLegend(fish)
-
-  fishPlot(fish,shape="spline",title= paste("Sample",sample), cex.title=1.0, bg.col = "white", bg.type = "solid") + abline(v=18, lty = 2,col="black",xpd=F) + text(18,103,"Sampling",pos=3,cex=0.7,col="grey20",xpd=NA) + unlist(fishplot::drawLegend(fish)) 
-
+  modPlotFish(fish,samp)
   dev.off()
+}
+
+modPlotFish <- function(fish, samp) {
+  
+  fishPlot(fish,shape="spline",title= paste("Sample",samp), cex.title=1.0, bg.col = "white", bg.type = "solid") 
+
+  abline(v=18, lty = 2,col="black",xpd=F)
+  
+  text(18,103,"Sampling",pos=3,cex=0.7,col="grey20",xpd=NA) 
+
+  fishplot::drawLegend(fish)
+
 }
 
 
 
-plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub){
+
+plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
   
   library(ggplot2)
   set.seed(1)
-  newmtx <- count_mtx[filt_genes,]
+  newmtx <- raw_count_mtx[filt_genes,]
   tsne <- Rtsne(t(newmtx))
   
   pred <- rep("normal", length(colnames(newmtx)))
@@ -581,13 +590,13 @@ plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub)
                    y = tsne$Y[,2],
                    CellType = pred)
   
-  jpeg(paste("./output/",sample,"tsne.jpeg",sep=""), height=850, width=1050, res=100)
+  jpeg(paste("./output/",samp,"tsne.jpeg",sep=""), height=850, width=1050, res=100)
   
   p1 <- ggplot(df, aes(x, y, colour = CellType)) +
     geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
                                                    values=c("red", "green"))
   
-  if(res_final$n_subclones>1){
+  if(length(unique(clustersSub))>0){
     
     library(gridExtra)
     
@@ -609,5 +618,3 @@ plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub)
   }
   dev.off()
 }
-
-plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones)
