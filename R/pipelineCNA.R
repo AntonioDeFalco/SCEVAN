@@ -53,13 +53,27 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   if (SUBCLONES){
     res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample)
-    res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones))
-    names(res_final)[(length(names(res_final))-1):length(names(res_final))] <- c("n_subclones", "breaks_subclones")
+    res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones,res_subclones$clustersSub))
+    names(res_final)[(length(names(res_final))-2):length(names(res_final))] <- c("n_subclones", "breaks_subclones", "clusters_subclones")
     
     if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
     diffSubclones <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
     print(diffSubclones)
+    
+    perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+    
+    vectAlt1 <- apply(diffSubclones[[1]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
+    vectAlt1 <- do.call(paste, c(as.list(unique(vectAlt1)), sep = "\n"))
+    
+    vectAlt2 <- apply(diffSubclones[[2]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
+    vectAlt2 <- do.call(paste, c(as.list(unique(vectAlt2)), sep = "\n"))
+    
+    vectAltsh <- apply(diffSubclones[[3]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
+    vectAltsh <- do.call(paste, c(as.list(unique(vectAltsh)), sep = "\n"))
+    
+    plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
+    
     }
   }
   

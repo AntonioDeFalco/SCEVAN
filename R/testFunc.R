@@ -257,18 +257,23 @@ subclonesTumorCells <- function(tum_cells, CNAmat, sample){
       colnames(results$logCNA) <- colnames(norm.mat.relat)
       results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
       
-      plotSubclones(CNAmat[,2], results.com, n_subclones, sample)
+      hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
+
+      plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, sample)
       
+      hc.clus <- cutree(hcc,n_subclones)
+
     }else{
       n_subclones <- 0
+      hc.clus <- 0
       print(paste("found", n_subclones, "subclones", sep = " "))
     }
   }
   
   
-  ress <- list(n_subclones, breaks_subclones, results.com)
+  ress <- list(n_subclones, breaks_subclones, results.com, hc.clus)
   
-  names(ress) <- c("n_subclones", "breaks_subclones", "logCNA")
+  names(ress) <- c("n_subclones", "breaks_subclones", "logCNA", "clustersSub")
   
   
   return(ress)
@@ -288,7 +293,7 @@ analyzeSegm <- function(sample, nSub = 1){
   for (i in 1:nSub){
     
     segm <- read.csv(paste0("./output/ ",sample,"_subclone",i," vega_output"), sep = "\t")
-    segm <- segm[segm$L.pv<0.001 | segm$G.pv<0.05,c(1,2,3,6,7)]
+    segm <- segm[(segm$L.pv<0.001 | segm$G.pv<0.001) & (segm$Loss.Mean<(-0.30) | segm$Gain.Mean>0.30),c(1,2,3,6,7)]
     
     segm$Alteration <- "D"
     segm$Alteration[segm$G.pv<0.005] <- "A"
@@ -329,6 +334,8 @@ diffSubclones <- function(sampleAlter, sample, nSub = 2){
   
   all_segm_diff <- list()
   
+  segm_sh <- c()
+  
   for(sub in 1:nSub){
     
     if(sub==1){
@@ -351,34 +358,33 @@ diffSubclones <- function(sampleAlter, sample, nSub = 2){
         for (br in 1:nrow(cl1_ch)) {
           
           FOUND <- FALSE
-          
           AltPres <- which(cl2_ch$Alteration == cl1_ch[br,]$Alteration)
           
-          if(length(AltPres)>0){
-            
-            for(br2 in AltPres){
-              if( ((cl1_ch[br,]$Start >= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End <= cl2_ch[br2,]$End)) | ((cl1_ch[br,]$Start <= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End >= cl2_ch[br2,]$End))){
-                FOUND <- TRUE
-                break
-              }
+            if(length(AltPres)>0){
               
+              for(br2 in AltPres){
+                if( ((cl1_ch[br,]$Start >= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End <= cl2_ch[br2,]$End)) | ((cl1_ch[br,]$Start <= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End >= cl2_ch[br2,]$End))){
+                  FOUND <- TRUE
+                  
+                  if(sub==1) segm_sh <- rbind(segm_sh,cl1_ch[br,]) 
+                  
+                  break
+                }
+              }
             }
             
-          }
-          
-          if(!FOUND){
-            segm_new <- rbind(segm_new,cl1_ch[br,])  
-          }
-          
+            if(!FOUND){
+              segm_new <- rbind(segm_new,cl1_ch[br,])  
+            }
         }
-        
       }
-      
     }
     
     all_segm_diff[[paste0(sample,"_subclone", sub)]] <- segm_new
     
   }
+  
+  all_segm_diff[[paste0(sample,"clone")]] <- segm_sh
   
   return(all_segm_diff)
 }

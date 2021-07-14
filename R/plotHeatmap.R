@@ -500,7 +500,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, sample, pred = NULL, ground_truth = N
 
 
 
-plotSubclones <- function(chr_lab, mtx_CNA, n_subclones, sample, par_cores=20){
+plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, sample, par_cores=20){
 
 chr <- as.numeric(chr_lab) %% 2+1
 rbPal1 <- colorRampPalette(c('black','grey'))
@@ -509,8 +509,6 @@ chr1 <- cbind(CHR,CHR)
 
 my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
 col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
-
-hcc <- hclust(parallelDist::parDist(t(mtx_CNA),threads =par_cores, method = "euclidean"), method = "ward.D")
 
 hc.clus <- cutree(hcc,n_subclones)
 rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_subclones])
@@ -529,3 +527,41 @@ heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
 dev.off()
 
 }
+
+
+
+plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh, sample){
+  
+  library(fishplot)
+
+  timepoints=c(0, 10, 100)       
+  
+  ### col = clones - row = time
+  frac.table = matrix(
+    c(100, 00, 00,
+      100, percSub1-1, percSub2-1,
+      100, percSub1-1, percSub2-1),
+    ncol=length(timepoints))
+  
+  #provide a vector listing each clone's parent
+  #(0 indicates no parent)
+  parents = c(0,1,1)
+  
+  
+  #create a fish object
+  fish = createFishObject(frac.table,parents,timepoints=timepoints, clone.annots = c(vectAltsh,vectAlt1,vectAlt2), clone.labels = c("Clone",paste0("Sub1 ", percSub1, "%"),paste0("Sub2 ", percSub2, "%")),
+                          clone.annots.pos = 2)
+  
+  #calculate the layout of the drawing
+  fish = layoutClones(fish)
+  
+  jpeg(paste("./output/","MGH125","fishplot_subclones.jpeg",sep=""), height=850, width=1050, res=100)
+  plot.new()
+  legend <- fishplot::drawLegend(fish)
+
+  fishPlot(fish,shape="spline",title= paste("Sample",sample), cex.title=1.0, bg.col = "white", bg.type = "solid") + abline(v=18, lty = 2,col="black",xpd=F) + text(18,103,"Sampling",pos=3,cex=0.7,col="grey20",xpd=NA) + unlist(fishplot::drawLegend(fish)) 
+
+  dev.off()
+}
+
+

@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(CNAvegaMC)
 
 load("./MGH125_Count_mtx.RData")
@@ -28,3 +28,8 @@ results <- CNAvegaMC::pipelineCNA(count_mtx, sample = "MGH125", par_cores = 20, 
 # Heatmap subclones of tumor cells
 
 <img src="./output/MGH125heatmap_subclones.jpeg" alt="heatmap" width="1280"/>
+
+# Fishplot subclones of tumor cells
+
+<img src="./output/MGH125fishplot_subclones.jpeg" alt="heatmap" width="1280"/>
+
