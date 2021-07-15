@@ -1,10 +1,12 @@
 ---
 title: "example"
 output: rmarkdown::html_vignette
+editor_options:
+  chunk_output_type: console
 vignette: >
   %\VignetteIndexEntry{example}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, include = FALSE}
@@ -33,3 +35,5 @@ results <- CNAvegaMC::pipelineCNA(count_mtx, sample = "MGH125", par_cores = 20, 
 
 <img src="./output/MGH125fishplot_subclones.jpeg" alt="heatmap" width="1280"/>
 
+# Tsne
+<img src="./output/MGH125tsne.jpeg" alt="heatmap" width="1280"/>

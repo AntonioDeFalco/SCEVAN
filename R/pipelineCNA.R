@@ -63,21 +63,32 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     
     if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
-    diffSubclones <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
-    print(diffSubclones)
+    diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
+    print(diffSubcl)
+    
+    diffSubcl <- testSpecificAlteration(res_proc$count_mtx_smooth, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
     
     perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
     
-    vectAlt1 <- apply(diffSubclones[[1]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
-    vectAlt1 <- do.call(paste, c(as.list(unique(vectAlt1)), sep = "\n"))
+    if(length(grep("subclone",names(diffSubcl)))>0){
     
-    vectAlt2 <- apply(diffSubclones[[2]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
-    vectAlt2 <- do.call(paste, c(as.list(unique(vectAlt2)), sep = "\n"))
+      vectAlt_all <- lapply(diffSubcl, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
+      vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
+      
+      if(length(grep("subclone",names(diffSubcl)))>1){
+        vectAlt1 <- vectAlt_all[[1]]
+        vectAlt2 <- vectAlt_all[[2]]
+        vectAltsh <- vectAlt_all[[3]]
+      }else{
+        vectAlt1 <- vectAlt_all[[1]]
+        vectAlt2 <- c("")
+        vectAltsh <- vectAlt_all[[2]]
+      }
     
-    vectAltsh <- apply(diffSubclones[[3]], 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])})
-    vectAltsh <- do.call(paste, c(as.list(unique(vectAltsh)), sep = "\n"))
-    
-    plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
+      plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
+    }else{
+      print("no significant subclones")
+    }
     
     }
   }
@@ -89,3 +100,6 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
 
   return(res_final)
 }
+
+
+

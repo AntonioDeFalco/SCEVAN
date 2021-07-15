@@ -555,14 +555,14 @@ plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh,
   #calculate the layout of the drawing
   fish = layoutClones(fish)
   
-  jpeg(paste("./output/","MGH125","fishplot_subclones.jpeg",sep=""), height=850, width=1050, res=100)
+  jpeg(paste("./output/",samp,"fishplot_subclones.jpeg",sep=""), height=850, width=1050, res=100)
   modPlotFish(fish,samp)
   dev.off()
 }
 
 modPlotFish <- function(fish, samp) {
   
-  fishPlot(fish,shape="spline",title= paste("Sample",samp), cex.title=1.0, bg.col = "white", bg.type = "solid") 
+  fishplot::fishPlot(fish,shape="spline",title= paste("Sample",samp), cex.title=1.0, bg.col = "white", bg.type = "solid") 
 
   abline(v=18, lty = 2,col="black",xpd=F)
   
@@ -571,8 +571,6 @@ modPlotFish <- function(fish, samp) {
   fishplot::drawLegend(fish)
 
 }
-
-
 
 
 plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
