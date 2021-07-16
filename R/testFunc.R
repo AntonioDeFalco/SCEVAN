@@ -296,19 +296,13 @@ analyzeSegm <- function(samp, nSub = 1){
     #segm <- segm[(segm$L.pv<0.001 | segm$G.pv<0.001) & (segm$Loss.Mean<(-0.30) | segm$Gain.Mean>0.30),c(1,2,3,6,7)]
     
     segm <- segm[(segm$L.pv<0.001 | segm$G.pv<0.001),]
-    #mean_all <- mean(abs(segm$Mean))
-    #segm <- segm[(segm$Mean<(-mean_all) | segm$Mean>mean_all),c(1,2,3,6,7)]
-    
-    mean_loss <- median(append(abs(segm$Loss.Mean[!segm$Loss.Mean==0]),segm$Gain.Mean[!segm$Gain.Mean==0])) 
-    segm <- segm[(segm$Loss.Mean<(-mean_loss) | segm$Gain.Mean>mean_loss),c(1,2,3,6,7)]
-    
-    #mean_gain <- median(segm$Gain.Mean[!segm$Gain.Mean==0])
-    
-    #segm <- segm[(segm$Loss.Mean<(mean_loss) | segm$Gain.Mean>mean_gain),c(1,2,3,6,7)]
+    median_filt <- median(append(abs(segm$Loss.Mean[!segm$Loss.Mean==0]),segm$Gain.Mean[!segm$Gain.Mean==0])) 
+    segm <- segm[(segm$Loss.Mean<(-median_filt) | segm$Gain.Mean>median_filt),c(1,2,3,6,7)]
   
-    
+    if(dim(segm)[1]>0){
+      
     segm$Alteration <- "D"
-    segm$Alteration[segm$G.pv<0.005] <- "A"
+    segm$Alteration[segm$G.pv<0.001] <- "A"
     segm <- segm[,c(1,2,3,6)]
     
     segm_new <- c()
@@ -336,6 +330,7 @@ analyzeSegm <- function(samp, nSub = 1){
     
     all_segm[[paste0(samp,"_subclone", i)]] <- segm_new
     
+   }
   }
   
   return(all_segm)
@@ -409,7 +404,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   segm_sh <- c()  
 
   for(sub in 1:nSub){
-    print(sub)
+
     segm_new <- c()  
     
     for (i in 1:nrow(listAltSubclones[[sub]])){
@@ -417,24 +412,18 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
       subsetChr <- mtx_annot[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
       subsetCna <- count_mtx[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
       posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
-      posEnd <-which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
+      posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
       
       subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones==1])]
       subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones==2])]
-      
+
       subClone1 <- apply(subClone1,1, mean)
       subClone2 <- apply(subClone2,1, mean)
       test <- t.test(subClone1,subClone2)
       
       if(test$p.value<10^-10){
-        print("specific")
-        print(listAltSubclones[[sub]][i,])
-        
         segm_new <- rbind(segm_new, listAltSubclones[[sub]][i,])
-        
       }else{
-        print("shared")
-        print(listAltSubclones[[sub]][i,])
         segm_sh <- rbind(segm_sh, listAltSubclones[[sub]][i,])
       }
       
@@ -443,28 +432,27 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
     if(length(segm_new)>0)  subclonesAlt[[paste0(samp,"_subclone", sub)]] <- segm_new
   }
 
-subclonesAlt[[paste0(samp,"_clone")]] <- rbind(segm_sh, listAltSubclones[[nSub+1]])
-#subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][!duplicated(subclonesAlt[[paste0(samp,"_clone")]]$Chr),]
+  subclonesAlt[[paste0(samp,"_clone")]] <- rbind(segm_sh, listAltSubclones[[nSub+1]])
 
-remov_alt <- c()
-for (i in 1:nrow(subclonesAlt[[paste0(samp,"_clone")]])){
+  remov_alt <- c()
+  for (i in 1:nrow(subclonesAlt[[paste0(samp,"_clone")]])){
+    
+    subsetChr <- mtx_annot[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
+    subsetCna <- count_mtx[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
+    posSta <- which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$Start)
+    posEnd <-which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$End)
+    
+    subCna <- subsetCna[posSta:posEnd,]
+      if(abs(mean(subCna))<0.05){
+        remov_alt <- append(remov_alt,i)
+      }
+  }
+  if(length(remov_alt>0)) subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][-remov_alt,]
   
-  subsetChr <- mtx_annot[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
-  subsetCna <- count_mtx[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
-  posSta <- which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$Start)
-  posEnd <-which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$End)
+  subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][order(as.numeric(as.character(subclonesAlt[[paste0(samp,"_clone")]]$Chr))),]
   
-  subCna <- subsetCna[posSta:posEnd,]
-    if(abs(mean(subCna))>0.05){
-      print(subclonesAlt[[paste0(samp,"_clone")]][i,])
-      print(mean(subCna))
-    }else{
-      print(subclonesAlt[[paste0(samp,"_clone")]][i,])
-      print(mean(subCna))
-      remov_alt <- append(remov_alt,i)
-    }
+  return(subclonesAlt)
 }
-if(length(remov_alt>0)) subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][-remov_alt,]
 
-return(subclonesAlt)
-}
+
+

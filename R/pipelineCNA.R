@@ -63,31 +63,50 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     
     if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
-    diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
-    print(diffSubcl)
     
-    diffSubcl <- testSpecificAlteration(res_proc$count_mtx_smooth, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
-    
-    perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
-    
-    if(length(grep("subclone",names(diffSubcl)))>0){
-    
-      vectAlt_all <- lapply(diffSubcl, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
-      vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
+      if(length(sampleAlter)>1){
       
-      if(length(grep("subclone",names(diffSubcl)))>1){
-        vectAlt1 <- vectAlt_all[[1]]
-        vectAlt2 <- vectAlt_all[[2]]
-        vectAltsh <- vectAlt_all[[3]]
+        diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
+      
+        diffSubcl <- testSpecificAlteration(res_proc$count_mtx_smooth, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
+      
+        for(elem in 1:length(diffSubcl)){
+          for(r in 1:nrow(diffSubcl[[elem]])){
+            subset <- res_proc$count_mtx_annot[res_proc$count_mtx_annot$seqnames == diffSubcl[[elem]][r,]$Chr,]
+            posSta <- which(subset$end == diffSubcl[[elem]][r,]$Start)
+            posEnd <- which(subset$end == diffSubcl[[elem]][r,]$End)
+            geneToAnn <- subset[posSta:posEnd, ]$gene_name
+            found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
+            min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
+            max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
+            band_str <- paste(min_band,max_band, sep = "-")
+            diffSubcl[[elem]][r,1] <- paste0(diffSubcl[[elem]][r,1], " (", band_str, ") ")
+          }
+        }
+        
+      perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+      
+      if(length(grep("subclone",names(diffSubcl)))>0){
+      
+        vectAlt_all <- lapply(diffSubcl, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
+        vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
+        
+        if(length(grep("subclone",names(diffSubcl)))>1){
+          vectAlt1 <- vectAlt_all[[1]]
+          vectAlt2 <- vectAlt_all[[2]]
+          vectAltsh <- vectAlt_all[[3]]
+        }else{
+          vectAlt1 <- vectAlt_all[[1]]
+          vectAlt2 <- c("")
+          vectAltsh <- vectAlt_all[[2]]
+        }
+      
+        plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
+        plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
       }else{
-        vectAlt1 <- vectAlt_all[[1]]
-        vectAlt2 <- c("")
-        vectAltsh <- vectAlt_all[[2]]
-      }
-    
-      plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
-    }else{
       print("no significant subclones")
+    }
+    
     }
     
     }
@@ -96,10 +115,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   end_time<- Sys.time()
   print(paste("time subclones: ", end_time -start_time))
   
-  plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
-
+ 
   return(res_final)
 }
-
 
 

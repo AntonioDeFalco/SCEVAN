@@ -515,7 +515,13 @@ rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_
 subclones <- rbPal5(2)[as.numeric(factor(hc.clus))]
 cells <- rbind(subclones,subclones)
 
-jpeg(paste("./output/",samp,"heatmap_subclones.jpeg",sep=""), height=10*250, width=4000, res=100)
+if (ncol(mtx_CNA)< 3000){
+  h <- 10
+} else {
+  h <- 15
+}
+
+jpeg(paste("./output/",samp,"heatmap_subclones.jpeg",sep=""), height=h*250, width=4000, res=100)
 
 heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
           ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
