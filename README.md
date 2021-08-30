@@ -1,4 +1,4 @@
-# Single   CEll   Variational   AneuploidyaNalysis  (SCEVAN)
+# Single   CEll   Variational   Aneuploidy aNalysis  (SCEVAN)
 
 ## Introduction
 
