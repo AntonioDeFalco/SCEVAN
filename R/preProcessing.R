@@ -1,11 +1,11 @@
-#' annotateGenes  genes with reference to hg38
+#' annotateGenes  Annotation of genes with chromosome information and start / end position using Ensembl based annotation package
 #'
 #' @param mtx raw count matrix
 #'
-#' @return annotations of each genes in rows with chrom and positions.
+#' @return annotated matrix
 #'
 #' @examples
-#' test.count_mtx_annot <- annotateGenes(mat=matx)
+#' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
 annotateGenes <- function(mtx){
   library(dplyr)
@@ -33,21 +33,26 @@ annotateGenes <- function(mtx){
 }
 
 
-#' func
+#' preprocessingMtx  Cells with less than 200 genes and the genes expressed in less than 1% of cells are removed. Genes are annotated and sorted 
+#' according to genomic coordinates. Genes involved in the cell cycle pathway are removed.  Log-Freeman–Tukey transformation to stabilize variance 
+#' and a polynomial dynamic linear modeling (DLM) to smooth out the outliers.
 #'
 #' @param count_mtx raw count matrix
 #' @param ngenes_chr minimum number of genes per chromosome (optional)
 #' @param perc_genes percentage of cells in which each gene is to be expressed (optional)
 #' @param par_cores number of cores (optional)
 #' @param SMOOTH Boolean value to perform smoothing (optional)
-#' @return
+#'
+#' @return 
+#' count_mtx_smooth processed and smoothed matrix
+#' count_mtx_annot annotated matrix
 #'
 #' @examples
-#' 
+#' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
 preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=20, SMOOTH = TRUE){
   
-  set.seed(1)
+  set.seed(123)
   
   print(paste(" raw data - genes: ", nrow(count_mtx), " cells: ", ncol(count_mtx), sep=""))
   
@@ -131,20 +136,6 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
       x<- x[2:length(x)]
       x <- x-mean(x)
     }
-    
-    #library(FBN)
-
-    #medianFiltPar <- function(c){
-    #  x_med <- FBN::medianFilter(count_mtx_norm[,c], windowSize = 5)
-    #  x <- x_med-mean(x_med)
-    #}
-    
-    #test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), medianFiltPar, mc.cores = par_cores)
-    
-    #dlm.sm <- function(c){
-      #  x_low <- lowess(count_mtx_norm[,c], f = 0.001,  iter = 1, delta = 10)
-     # x <- x_low$y-mean(x_low$y)
-    #}
     
     test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), dlm.sm, mc.cores = par_cores)
     

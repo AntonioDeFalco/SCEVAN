@@ -1,13 +1,9 @@
-
-
-
-
-#' Title
+#' computeF1score compute F1 score
 #'
-#' @param pred 
-#' @param ground_truth 
+#' @param pred inferred classification 
+#' @param ground_truth  ground truth of classification
 #'
-#' @return
+#' @return F1 Score
 #' @export
 #'
 #' @examples
@@ -63,122 +59,20 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-library(cluster)
-
-clusGap_parallel <- function (x, FUNcluster, K.max, B = 100, d.power = 1,
-                              n.cores = 20, spaceH0 = c("scaledPCA", 
-                                                        "original"), verbose = interactive(), ...) 
-{
-  stopifnot(is.function(FUNcluster), length(dim(x)) == 2, K.max >= 
-              2, (n <- nrow(x)) >= 1, ncol(x) >= 1)
-  if (B != (B. <- as.integer(B)) || (B <- B.) <= 0) 
-    stop("'B' has to be a positive integer")
-  cl. <- match.call()
-  if (is.data.frame(x)) 
-    x <- as.matrix(x)
-  ii <- seq_len(n)
-  W.k <- function(X, kk) {
-    clus <- if (kk > 1) 
-      FUNcluster(X, kk, ...)$cluster
-    else rep.int(1L, nrow(X))
-    0.5 * sum(vapply(split(ii, clus), function(I) {
-      xs <- X[I, , drop = FALSE]
-      sum(dist(xs)^d.power/nrow(xs))
-    }, 0))
-  }
-  logW <- E.logW <- SE.sim <- numeric(K.max)
-  if (verbose) 
-    cat("Clustering k = 1,2,..., K.max (= ", K.max, "): .. ", 
-        sep = "")
-  logW <- unlist(parallel::mclapply(1:K.max, function(k) log(W.k(x, k)), mc.cores = 4))
-  if (verbose) 
-    cat("done\n")
-  spaceH0 <- match.arg(spaceH0)
-  xs <- scale(x, center = TRUE, scale = FALSE)
-  m.x <- rep(attr(xs, "scaled:center"), each = n)
-  switch(spaceH0, scaledPCA = {
-    V.sx <- svd(xs, nu = 0)$v
-    xs <- xs %*% V.sx
-  }, original = {
-  }, stop("invalid 'spaceH0':", spaceH0))
-  rng.x1 <- apply(xs, 2L, range)
-  logWks <- matrix(0, B, K.max)
-  if (verbose) 
-    cat("Bootstrapping, b = 1,2,..., B (= ", B, ")  [one \".\" per sample]:\n", 
-        sep = "")
-  for (b in 1:B) {
-    z1 <- apply(rng.x1, 2, function(M, nn) runif(nn, min = M[1], 
-                                                 max = M[2]), nn = n)
-    z <- switch(spaceH0, scaledPCA = tcrossprod(z1, V.sx), 
-                original = z1) + m.x
-    tmplogWks <- unlist(parallel::mclapply(1:K.max, function(k) log(W.k(z, k)), mc.cores = 4))
-    
-    logWks[b,1:K.max] <- tmplogWks
-    if (verbose) 
-      cat(".", if (b%%50 == 0) 
-        paste(b, "\n"))
-  }
-  if (verbose && (B%%50 != 0)) 
-    cat("", B, "\n")
-  E.logW <- colMeans(logWks)
-  SE.sim <- sqrt((1 + 1/B) * apply(logWks, 2, var))
-  structure(class = "clusGap", list(Tab = cbind(logW, E.logW, 
-                                                gap = E.logW - logW, SE.sim), call = cl., spaceH0 = spaceH0, 
-                                    n = n, B = B, FUNcluster = FUNcluster))
-}
-
-
-k_clusGap <- function(mtx){
-  
-  mydist <- function(x){
-    
-    return (parallelDist::parDist(t(x),threads = 20, method = "euclidean"))
-  }
-  
-  hcc <- hclust(mydist(mtx), method = "ward.D")
-  
-  mycluster <- function(x, k) list(cluster=cutree(hcc, k=k))
-  myclusGap <- clusGap_parallel(mtx,
-                                FUN = mycluster, 
-                                K.max = 5, 
-                                B = 50)
-  plot(myclusGap)
-  k <- maxSE(f         = myclusGap$Tab[,"gap"],
-             SE.f      = myclusGap$Tab[,"SE.sim"],
-             method    = "firstSEmax",
-             SE.factor = 1)
-  return (k)
-  
-}
-
-
-
-
-
-
-
-
-
-
-#' Title
+#' subclonesTumorCells  Check the presence of subclonal structures in tumor cells, by determining the optimal number of clusters present in the CNA matrix of 
+#' tumor cells using the Calinski-Harabasz Index as a criterion \cite{Calinski}. For each possible subclone the joint segmentation algorithm is 
+#' applied and the separate segmentation results are analyzed to see if there are any significant alterations specific to one subclone compared to
+#' the others.
 #'
-#' @param tum_cells 
-#' @param CNAmat 
-#' @param samp 
+#' @param tum_cells malignant cells
+#' @param CNAmat CNA matrix
+#' @param samp sample name
 #'
 #' @return
+#' n_subclones number of subclones
+#' breaks_subclones breakpoints of subclones
+#' logCNA CNA matrix
+#' clustersSub clustering of subclones
 #' @export
 #'
 #' @examples
@@ -195,14 +89,11 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp){
   
   norm.mat.relat <- norm.mat.relat[,tum_cells]
   
-  #k <- k_clusGap(norm.mat.relat)
-  
   n.cores = 20 
   distance="euclidean"
   dist_mtx <- parallelDist::parDist(t(norm.mat.relat),threads = n.cores, method = distance)
   
   hcc <- hclust(dist_mtx, method = "ward.D")
-  #plot(hcc, cex = 0.6, hang = -1)
   hc.clus <- cutree(hcc, h = 15)
   
   n_subclones <- 0
@@ -212,13 +103,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp){
   if(length(hc.clus) > 1){
     
     sCalinsky <- calinsky(hcc, dist_mtx, gMax = 10)
-    #plot(sCalinsky, type= "l", col = "grey", main = "Calinsky & Harabasz curve", xlab = "# of groups")
-    #text(1:length(sCalinsky), sCalinsky, paste(1:length(sCalinsky)))
-    
     n_subclones <- which.max(sCalinsky)
-    
-    #print(paste("sCalinsky Max", sCalinsky[which.max(sCalinsky)]))
-    
     hc.clus <- cutree(hcc,n_subclones)
     
     perc_cells_subclones <- table(hc.clus)/length(hc.clus)
@@ -274,7 +159,6 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp){
   ress <- list(n_subclones, breaks_subclones, results.com, hc.clus)
   
   names(ress) <- c("n_subclones", "breaks_subclones", "logCNA", "clustersSub")
-  
   
   return(ress)
   
@@ -454,5 +338,95 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   return(subclonesAlt)
 }
 
+annoteBand <- function(mtx_annot,diffSub){
+  
+  for(elem in 1:length(diffSub)){
+    for(r in 1:nrow(diffSub[[elem]])){
+      subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
+      posSta <- which(subset$end == diffSub[[elem]][r,]$Start)
+      posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
+      geneToAnn <- subset[posSta:posEnd, ]$gene_name
+      found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
+      min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
+      max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
+      band_str <- paste(min_band,max_band, sep = "-")
+      diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
+    }
+  }
+  
+  if(length(grep("subclone",names(diffSub)))>0){
+    
+    vectAlt_all <- lapply(diffSub, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
+    vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
+    
+    if(length(grep("subclone",names(diffSub)))>1){
+      vectAlt1 <- vectAlt_all[[1]]
+      vectAlt2 <- vectAlt_all[[2]]
+      vectAltsh <- vectAlt_all[[3]]
+    }else{
+      vectAlt1 <- vectAlt_all[[1]]
+      vectAlt2 <- c("")
+      vectAltsh <- vectAlt_all[[2]]
+    }
+    
+    vectAlt <- list(vectAlt1,vectAlt2,vectAltsh)
+    
+  }else{
+    vectAlt <- list()
+  }
+  
+  return(vectAlt)
+  
+}
 
+
+genesDE <- function(count_mtx, clustersSub,samp, par_cores = 20){
+
+  library(ggrepel)
+  library(ggplot2)
+  
+  top_genes <- rownames(count_mtx)
+  
+  cells_sub1 <- names(clustersSub[clustersSub==2])
+  cells_sub2 <- names(clustersSub[clustersSub==1])
+
+  parDE <- function(g){
+    geneID <- top_genes[g]
+    H1 = count_mtx[geneID, cells_sub1]
+    H2 = count_mtx[geneID, cells_sub2]
+    res1 = t.test(H1,H2)
+    p_value = res1$p.value
+    fc = mean(H1)-mean(H2)
+    
+    return(data.frame(p_value,fc,geneID))
+  }
+  test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
+  fact_spec2 <- do.call(rbind, test.mc)
+  
+  fact_spec2["p_value"][fact_spec2["p_value"]==0] <- (10^-1)*min(fact_spec2["p_value"][fact_spec2["p_value"]!=0])
+  fact_spec2["p_value"] <- -log10(fact_spec2["p_value"])
+  
+  topGenes <- fact_spec2[
+    with(fact_spec2, order(abs(fc), p_value, decreasing = c(TRUE,TRUE))),
+  ][1:30,]
+  
+  #topGenes <- subset(fact_spec2, (fc > 0.7 | fc < -0.7 ) & p_value>8)
+  print(topGenes)
+  
+  png(paste("./output/",samp,"DE_subclones.png",sep=""), height=850, width=1050, res=150)
+
+  p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + 
+    geom_text_repel(data= subset(topGenes, fc > 0),
+                    aes(fc, p_value, label = geneID, colour = "blue", size = 30)) + 
+    geom_text_repel(data= subset(topGenes, fc < 0),
+                    aes(fc, p_value, label = geneID, colour = "red", size = 30)) + 
+    xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE")) + theme_bw(base_size = 16) + 
+    theme(legend.position="none")
+  
+  
+  plot(p1)
+  
+  dev.off()
+  
+}
 

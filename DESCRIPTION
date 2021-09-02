@@ -16,7 +16,9 @@ Imports:
     EnsDb.Hsapiens.v86,
     fishplot,
     ggplot2,
-    gridExtra
+    gridExtra,
+    Rtsne,
+    ggrepel
 LazyLoad: yes
 NeedsCompilation: yes
 RoxygenNote: 7.1.1

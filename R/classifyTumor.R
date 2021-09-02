@@ -1,10 +1,10 @@
 
-#' Removes a synthetic baseline from a tumour cell-only matrix
+#' removeSyntheticBaseline Removes a synthetic baseline from a tumour pure matrix
 #'
 #' @param count_mtx count matrix
 #' @param par_cores number of cores for parallel computing.
 #'
-#' @return
+#' @return relative matrix
 #'
 #' @examples
 #'
@@ -31,13 +31,13 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 }
 
 
-#' Calculates the CNA matrix using the break points obtained from segmentation
+#' computeCNAmtx compute the CNA matrix using the break points obtained from segmentation
 #'
 #' @param count_mtx count matrix
 #' @param breaksbreak points obtained from segmentation
 #' @param par_cores number of cores for parallel computing (optional)
 #'
-#' @return
+#' @return CNA matrix
 #'
 #' @examples
 #'
@@ -59,12 +59,12 @@ computeCNAmtx <- function(count_mtx, breaks, par_cores = 20){
 }
 
 
-#' Classify the two clusters on the basis of confident normal cells
+#' classifyCluster Classify the two major clusters of CNA matrix on the basis of confident normal cells
 #'
 #' @param hcc2 Two clusters from hierarchical clustering
 #' @param norm.cell.names Vector of confident normal cells 
 #'
-#' @return
+#' @return classification of tumor and normal cells
 #'
 #' @examples
 classifyCluster <- function(hcc2, norm.cell.names){

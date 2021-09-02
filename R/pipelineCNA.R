@@ -39,6 +39,18 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   res_class <- classifyTumorCells(res_proc$count_mtx_smooth,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)
   
+  #mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
+  #colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
+  #breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], paste0(sample,"onlytumor"))
+  
+  mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
+  colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"))
+  
+  classDf <- data.frame(class = rep("filtered", length(colnames(count_mtx))), row.names = colnames(count_mtx))
+  classDf[colnames(res_class$CNAmat)[-(1:3)], "class"] <- "normal"
+  classDf[res_class$tum_cells, "class"] <- "tumor"
+  
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
   
@@ -61,6 +73,10 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones,res_subclones$clustersSub))
     names(res_final)[(length(names(res_final))-2):length(names(res_final))] <- c("n_subclones", "breaks_subclones", "clusters_subclones")
     
+    tum_cells <- res_class$tum_cells
+    clustersSub <- res_subclones$clustersSub
+    save(tum_cells,clustersSub, file = paste0(sample,"subcl.RData"))
+    
     if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
     
@@ -70,53 +86,30 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
       
         diffSubcl <- testSpecificAlteration(res_proc$count_mtx_smooth, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
       
-        for(elem in 1:length(diffSubcl)){
-          for(r in 1:nrow(diffSubcl[[elem]])){
-            subset <- res_proc$count_mtx_annot[res_proc$count_mtx_annot$seqnames == diffSubcl[[elem]][r,]$Chr,]
-            posSta <- which(subset$end == diffSubcl[[elem]][r,]$Start)
-            posEnd <- which(subset$end == diffSubcl[[elem]][r,]$End)
-            geneToAnn <- subset[posSta:posEnd, ]$gene_name
-            found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
-            min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
-            max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
-            band_str <- paste(min_band,max_band, sep = "-")
-            diffSubcl[[elem]][r,1] <- paste0(diffSubcl[[elem]][r,1], " (", band_str, ") ")
-          }
-        }
+        vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
         
-      perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
-      
-      if(length(grep("subclone",names(diffSubcl)))>0){
-      
-        vectAlt_all <- lapply(diffSubcl, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
-        vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
+        if(length(vectAlt)>0){
+        perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+        plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt$vectAlt1, vectAlt$vectAlt2, vectAlt$vectAltsh, sample)
+        #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
+        classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
+  
+        #mtx_tum <- count_mtx[rownames(res_proc$count_mtx_smooth),res_class$tum_cells]
+        #mtx_tum_log <- log2(mtx_tum + 1)
         
-        if(length(grep("subclone",names(diffSubcl)))>1){
-          vectAlt1 <- vectAlt_all[[1]]
-          vectAlt2 <- vectAlt_all[[2]]
-          vectAltsh <- vectAlt_all[[3]]
-        }else{
-          vectAlt1 <- vectAlt_all[[1]]
-          vectAlt2 <- c("")
-          vectAltsh <- vectAlt_all[[2]]
+        #genesDE(mtx_tum_log, res_subclones$clustersSub, sample)
         }
-      
-        plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100),vectAlt1, vectAlt2, vectAltsh, sample)
-        plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
       }else{
       print("no significant subclones")
     }
     
     }
     
-    }
-  }
+   }
   
   end_time<- Sys.time()
   print(paste("time subclones: ", end_time -start_time))
-  
- 
-  return(res_final)
-}
 
+  return(classDf)
+}
 
