@@ -33,8 +33,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   start_time <- Sys.time()
   
   res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores, SMOOTH = TRUE)
-  norm.cell <- getConfidentNormalCells(res_proc$count_mtx_smooth, par_cores = par_cores)
-  norm.cell <- names(norm.cell)
+  #norm.cell <- getConfidentNormalCells(res_proc$count_mtx_norm, par_cores = par_cores)
+  norm.cell <- names(res_proc$norm.cell)
   print(table(gr_truth[norm.cell]))
   
   res_class <- classifyTumorCells(res_proc$count_mtx_smooth,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)

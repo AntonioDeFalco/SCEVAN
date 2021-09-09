@@ -79,6 +79,8 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
     count_mtx <- count_mtx[which(der > perc_genes), ]; 
   }
   print(paste(nrow(count_mtx)," genes past filtering", sep=""))
+
+  norm.cell <- getConfidentNormalCells(count_mtx, par_cores = par_cores)
   
   print("3) Annotations gene coordinates")
   
@@ -129,15 +131,28 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   ##### smooth data ##### 
   if(SMOOTH){
     print("7) Smoothing data")
+ 
+      niters=100
+      alpha=0.5
+      DeltaT = 0.2
+      
+      nonLinSmooth <- function(c){
+          y <- count_mtx_norm[, c]
+          y <- append(0,y)
+          for(i in 1:niters){
+            DeltaP = (y[2:length(y)]-y[1:(length(y)-1)])/alpha
+            DeltaP <- c(DeltaP,0)
+            tD <- tanh(DeltaP)
+            DeltaM <- tD[2:length(y)]-tD[1:(length(y)-1)]
+            DeltaM <- c(0,DeltaM)
+            y <- y + DeltaT*DeltaM
+          }
+          y <- y[2:length(y)]
+          return(y)
+        } 
     
-    dlm.sm <- function(c){
-      model <- dlm::dlmModPoly(order=1, dV=0.16, dW=0.001)
-      x <- dlm::dlmSmooth(count_mtx_norm[, c], model)$s
-      x<- x[2:length(x)]
-      x <- x-mean(x)
-    }
     
-    test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), dlm.sm, mc.cores = par_cores)
+    test.mc <-parallel::mclapply(1:ncol(count_mtx_norm), nonLinSmooth, mc.cores = par_cores)
     
     count_mtx_smooth <- matrix(unlist(test.mc), ncol = ncol(count_mtx_norm), byrow = FALSE)
     rm(test.mc)
@@ -148,9 +163,12 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   }
   
   rownames(count_mtx_smooth) <- count_mtx_annot$gene_name
+  #rownames(count_mtx_norm) <- count_mtx_annot$gene_name
   
-  res <- list(count_mtx_smooth, count_mtx_annot)
-  names(res) <- c("count_mtx_smooth", "count_mtx_annot")
+  norm.cell <- norm.cell[names(norm.cell) %in% colnames(count_mtx_smooth)]
+  
+  res <- list(count_mtx_smooth, count_mtx_annot, norm.cell)
+  names(res) <- c("count_mtx_smooth", "count_mtx_annot", "norm.cell")
   
   return(res)
   

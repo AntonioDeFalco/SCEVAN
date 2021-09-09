@@ -161,7 +161,6 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
 
   } else {
     
-    ################removed baseline adjustment
     if(distance=="euclidean"){
       hcc <- hclust(parallelDist::parDist(t(CNA_mtx),threads =par_cores, method = distance), method = "ward.D")
     }else {
@@ -179,9 +178,9 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     CNA_mtx_relat <- CNA_mtx_relat/(0.5*(max(CNA_mtx_relat)-min(CNA_mtx_relat)))
     
     if(SEGM){
-    count_mtx_relat <- count_mtx_relat-apply(count_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)
-    count_mtx_relat <- apply(count_mtx_relat,2,function(x)(x <- x-mean(x)))
-    count_mtx_relat <- count_mtx_relat/(0.5*(max(count_mtx_relat)-min(count_mtx_relat)))
+      count_mtx_relat <- count_mtx_relat-apply(count_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)
+      count_mtx_relat <- apply(count_mtx_relat,2,function(x)(x <- x-mean(x)))
+      count_mtx_relat <- count_mtx_relat/(0.5*(max(count_mtx_relat)-min(count_mtx_relat)))
     }
     
     if(distance=="euclidean"){
