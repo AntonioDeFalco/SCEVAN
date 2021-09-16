@@ -32,12 +32,12 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   start_time <- Sys.time()
   
-  res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores, SMOOTH = TRUE)
+  res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores)
   #norm.cell <- getConfidentNormalCells(res_proc$count_mtx_norm, par_cores = par_cores)
   norm.cell <- names(res_proc$norm.cell)
   print(table(gr_truth[norm.cell]))
   
-  res_class <- classifyTumorCells(res_proc$count_mtx_smooth,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE)
+  res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
   #mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
   #colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
@@ -83,21 +83,34 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
       if(length(sampleAlter)>1){
       
         diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
-      
-        diffSubcl <- testSpecificAlteration(res_proc$count_mtx_smooth, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
-      
+         
+        diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
+        
+        #filtMean <- mean(abs(diffSubcl[[grep("_clone",names(diffSubcl))]]$Mean))
+        #diffSubcl <- lapply(diffSubcl, function(x) x[abs(x$Mean)>filtMean,])
+        
+        print(diffSubcl)
+        
+        segmList <- list()
+        segmList$subclone1 <- read.table(paste0("./output/ ",sample,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+        segmList$subclone2 <- read.table(paste0("./output/ ",sample,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+        #plotCNAline(segmList,sample)
+        save(segmList,diffSubcl,sample, file = "mgh125_plotcnaline2.RData")
+        plotCNAline(segmList, diffSubcl, sample)
+        
+        diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
+        
         vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
         
         if(length(vectAlt)>0){
-        perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
-        plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt$vectAlt1, vectAlt$vectAlt2, vectAlt$vectAltsh, sample)
-        #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_smooth), res_final$predTumorCells, res_final$clusters_subclones, sample)
-        classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
-  
-        #mtx_tum <- count_mtx[rownames(res_proc$count_mtx_smooth),res_class$tum_cells]
-        #mtx_tum_log <- log2(mtx_tum + 1)
-        
-        #genesDE(mtx_tum_log, res_subclones$clustersSub, sample)
+            perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+            plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sample)
+            #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
+            classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
+      
+            mtx_tum <- count_mtx[rownames(res_proc$count_mtx_norm),res_class$tum_cells]
+            mtx_tum_log <- log2(mtx_tum + 1)
+            #genesDE(mtx_tum_log, res_subclones$clustersSub, sample)
         }
       }else{
       print("no significant subclones")

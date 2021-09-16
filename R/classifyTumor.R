@@ -99,7 +99,7 @@ classifyCluster <- function(hcc2, norm.cell.names){
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, SEGMENTATION_CLASS = TRUE){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm.cell.names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = FALSE){
   
   set.seed(1)
   
@@ -120,7 +120,40 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     count_mtx_relat <- count_mtx-basel
     
   }
-
+  
+  
+  ##### smooth data ##### 
+  if(SMOOTH){
+    print("7) Smoothing data")
+    
+    niters=100
+    alpha=0.5
+    DeltaT = 0.2
+    
+    nonLinSmooth <- function(c){
+      y <- count_mtx_relat[, c]
+      y <- append(0,y)
+      for(i in 1:niters){
+        DeltaP = (y[2:length(y)]-y[1:(length(y)-1)])/alpha
+        DeltaP <- c(DeltaP,0)
+        tD <- tanh(DeltaP)
+        DeltaM <- tD[2:length(y)]-tD[1:(length(y)-1)]
+        DeltaM <- c(0,DeltaM)
+        y <- y + DeltaT*DeltaM
+      }
+      y <- y[2:length(y)]
+      return(y)
+    } 
+    
+    
+    test.mc <-parallel::mclapply(1:ncol(count_mtx_relat), nonLinSmooth, mc.cores = par_cores)
+    
+    count_mtx_smooth <- matrix(unlist(test.mc), ncol = ncol(count_mtx_relat), byrow = FALSE)
+    rm(test.mc)
+    colnames(count_mtx_smooth) <- colnames(count_mtx_relat)
+    count_mtx_relat <- count_mtx_smooth
+   }
+    
   ##### Segmentation with VegaMC #####
   
   if(SEGMENTATION_CLASS & length(norm.cell.names) > 0){

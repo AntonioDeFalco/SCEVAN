@@ -104,6 +104,17 @@ vegaMC <- function(dataset, output_file_name="output",
 # The probe name
 # The chromosome in which the probe is located
 # The genomic position of the probe
+
+#' Title
+#'
+#' @param mtx 
+#' @param chr_vect 
+#' @param sample 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 getBreaksVegaMC <- function(mtx, chr_vect, sample = ""){
   
   write.table(mtx, paste("./output/", sample, "_mtx_vega.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
