@@ -30,7 +30,7 @@ Fishplot subclones of tumor cells
 
 Consensus plot
 
-![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125consensus.jpeg)
+![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125consensus.png)
 
 CN plot
 
