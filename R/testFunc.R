@@ -174,22 +174,26 @@ analyzeSegm <- function(samp, nSub = 1){
   for (i in 1:nSub){
     
     segm <- read.csv(paste0("./output/ ",samp,"_subclone",i," vega_output"), sep = "\t")
-    #segm <- segm[(segm$L.pv<0.001 | segm$G.pv<0.001) & (segm$Loss.Mean<(-0.30) | segm$Gain.Mean>0.30),c(1,2,3,6,7)]
+    all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
     
-    #segm <- segm[(segm$L.pv<5*10^{-5} | segm$G.pv<5*10^{-5}),]
-    #median_filt <- median(append(abs(segm$Loss.Mean[!segm$Loss.Mean==0]),segm$Gain.Mean[!segm$Gain.Mean==0])) 
-    #segm <- segm[(segm$Loss.Mean<(-median_filt) | segm$Gain.Mean>median_filt),c(1,2,3,6,7)]
-    segm <- segm[abs(segm$Mean)>0.10,]
+  }
+  
+  return(all_segm)
+  
+}
+
+getPossibleSpecAltFromSeg <- function(segm, name){
+  
+  segm <- segm[abs(segm$Mean)>0.10,]
+  segm_new <- c()
+  
+  if(dim(segm)[1]>0){
     
-   
-    if(dim(segm)[1]>0){
-      
     segm$Alteration <- "D"
     #segm$Alteration[segm$G.pv<5*10^{-5}] <- "A"
     segm$Alteration[segm$Mean>0.10] <- "A"
     segm <- segm[,c(1,2,3, ncol(segm))]
     
-    segm_new <- c()
     for (ch in unique(segm$Chr)) {
       segm_ch <- segm[segm$Chr==ch,]
       
@@ -200,8 +204,6 @@ analyzeSegm <- function(samp, nSub = 1){
         if(br>nrow(segm_ch)){
           break
         }
-        
-        #90Mb
         
         if( (abs((segm_ch$End[(br-1)] - segm_ch$Start[br])) < 20000000) & (segm_ch$Alteration[(br-1)] == segm_ch$Alteration[br])){
           segm_ch$End[(br-1)] <- segm_ch$End[br]
@@ -214,14 +216,11 @@ analyzeSegm <- function(samp, nSub = 1){
       segm_new <- rbind(segm_new,segm_ch)
     }
     
-    all_segm[[paste0(samp,"_subclone", i)]] <- segm_new
-    
-   }
   }
+
+  return(segm_new)
   
-  return(all_segm)
-  
-}
+} 
 
 
 diffSubclones <- function(sampleAlter, samp, nSub = 2){
@@ -283,8 +282,6 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
   
   return(all_segm_diff)
 }
-
-
 
 
 testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
@@ -419,6 +416,7 @@ annoteBand <- function(mtx_annot,diffSub){
 }
 
 
+
 genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20){
 
   library(ggrepel)
@@ -441,8 +439,8 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
     
       parDE <- function(g){
         geneID <- top_genes[g]
-        H1 = count_mtx[geneID, cells_sub1]
-        H2 = count_mtx[geneID, cells_sub2]
+        H1 = as.numeric(count_mtx[geneID, cells_sub1])
+        H2 = as.numeric(count_mtx[geneID, cells_sub2])
         res1 = t.test(H1,H2)
         p_value = res1$p.value
         fc = mean(H1)-mean(H2)
@@ -457,7 +455,7 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       
       topGenes <- fact_spec2[
         with(fact_spec2, order(abs(fc), p_value, decreasing = c(TRUE,TRUE))),
-      ][1:50,]
+      ][1:min(50,nrow(fact_spec2)),]
       
       print(topGenes)
       
