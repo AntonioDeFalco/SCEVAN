@@ -43,7 +43,9 @@ Tsne
 DE analysis in specific alterations
 
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125- DE1.png)
+
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125- DE2.png)
+
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125- DE3.png)
 
 ## Use Cases
