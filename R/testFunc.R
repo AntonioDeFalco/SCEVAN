@@ -419,51 +419,69 @@ annoteBand <- function(mtx_annot,diffSub){
 }
 
 
-genesDE <- function(count_mtx, clustersSub,samp, par_cores = 20){
+genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20){
 
   library(ggrepel)
   library(ggplot2)
   
-  top_genes <- rownames(count_mtx)
-  
-  cells_sub1 <- names(clustersSub[clustersSub==2])
-  cells_sub2 <- names(clustersSub[clustersSub==1])
+  for(nsub in 1:length(specAlt)){
+    for (i in 1:nrow(specAlt[[nsub]])){
 
-  parDE <- function(g){
-    geneID <- top_genes[g]
-    H1 = count_mtx[geneID, cells_sub1]
-    H2 = count_mtx[geneID, cells_sub2]
-    res1 = t.test(H1,H2)
-    p_value = res1$p.value
-    fc = mean(H1)-mean(H2)
+      chrr <- specAlt[[nsub]][i,]$Chr
+      startpos <- specAlt[[nsub]][i,]$Start
+      endpos <- specAlt[[nsub]][i,]$End
+      strr <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$end==startpos)
+      endd <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$end==endpos)
+      
+      #top_genes <- rownames(count_mtx)
+      top_genes <- count_mtx_annot$gene_name[strr:endd]
+      
+      cells_sub1 <- names(clustersSub[clustersSub==2])
+      cells_sub2 <- names(clustersSub[clustersSub==1])
     
-    return(data.frame(p_value,fc,geneID))
-  }
-  test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
-  fact_spec2 <- do.call(rbind, test.mc)
-  
-  fact_spec2["p_value"][fact_spec2["p_value"]==0] <- (10^-1)*min(fact_spec2["p_value"][fact_spec2["p_value"]!=0])
-  fact_spec2["p_value"] <- -log10(fact_spec2["p_value"])
-  
-  topGenes <- fact_spec2[
-    with(fact_spec2, order(abs(fc), p_value, decreasing = c(TRUE,TRUE))),
-  ][1:50,]
-  
-  #topGenes <- subset(fact_spec2, (fc > 0.7 | fc < -0.7 ) & p_value>8)
-  print(topGenes)
-  
-  png(paste("./output/",samp,"DE_subclones.png",sep=""), height=850, width=1250, res=150)
+      parDE <- function(g){
+        geneID <- top_genes[g]
+        H1 = count_mtx[geneID, cells_sub1]
+        H2 = count_mtx[geneID, cells_sub2]
+        res1 = t.test(H1,H2)
+        p_value = res1$p.value
+        fc = mean(H1)-mean(H2)
+        
+        return(data.frame(p_value,fc,geneID))
+      }
+      test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
+      fact_spec2 <- do.call(rbind, test.mc)
+      
+      fact_spec2["p_value"][fact_spec2["p_value"]==0] <- (10^-1)*min(fact_spec2["p_value"][fact_spec2["p_value"]!=0])
+      fact_spec2["p_value"] <- -log10(fact_spec2["p_value"])
+      
+      topGenes <- fact_spec2[
+        with(fact_spec2, order(abs(fc), p_value, decreasing = c(TRUE,TRUE))),
+      ][1:50,]
+      
+      print(topGenes)
+      
+      png(paste("./output/",samp,"- DE", "chr",chrr,":",startpos,":",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
 
-  p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + 
-    if(nrow(subset(topGenes, fc > 0))>0) geom_text_repel(data= subset(topGenes, fc > 0),aes(fc, p_value, label = geneID, colour = "blue", size = 30)) + 
-    if(nrow(subset(topGenes, fc < 0))>0) geom_text_repel(data= subset(topGenes, fc < 0),aes(fc, p_value, label = geneID, colour = "red", size = 30)) + 
-    xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE (Sub1 vs Sub2)")) + theme_bw(base_size = 16) + 
-    theme(legend.position="none")
+      txtRepel <- c()
+      
+      if(nrow(subset(topGenes, fc > 0))>0) {
+        txtRepel <- append(txtRepel,geom_text_repel(data= subset(topGenes, fc > 0),aes(fc, p_value, label = geneID, colour = "blue", size = 30)))
+      } 
+      if(nrow(subset(topGenes, fc < 0))>0) {
+          txtRepel <- append(txtRepel,geom_text_repel(data= subset(topGenes, fc < 0),aes(fc, p_value, label = geneID, colour = "red", size = 30)))
+      } 
+      
+      p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + txtRepel +
+        xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE", "chr",chrr,":",startpos,":",endpos)) + theme_bw(base_size = 16) + 
+        theme(legend.position="none") 
+      
+      plot(p1)
+      
+      dev.off()
   
-  
-  plot(p1)
-  
-  dev.off()
+    }
+  }
   
 }
 
