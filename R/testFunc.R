@@ -485,3 +485,53 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
   
 }
 
+pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_cores = 20){
+
+  library(forcats)
+  library(ggplot2)
+  library(dplyr)
+  library(fgsea)
+  
+  cells_sub1 <- names(clustersSub[clustersSub==2])
+  cells_sub2 <- names(clustersSub[clustersSub==1])
+  
+  H1 = apply(count_mtx[,cells_sub1],1, mean)
+  H2 = apply(count_mtx[,cells_sub2],1, mean)
+  rankData = H1-H2
+  
+  names(rankData) <- rownames(count_mtx)
+
+  #pathwaysH <- gmt2GO("/storage/qnap_home/adefalco/singleCell/GSEA/c2.cp.reactome.v7.4.symbols.gmt")
+
+  fgseaRes <- fgseaMultilevel(pathwaysH,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
+  
+  fgseaRes$pathway <- gsub("REACTOME_","",fgseaRes$pathway)
+  
+  fgseaRes <-  fgseaRes %>% dplyr::filter(padj < 0.1)
+  
+  topUp <- fgseaRes %>% 
+    dplyr::filter(ES > 0) %>% 
+    top_n(30, wt=-padj)
+  topDown <- fgseaRes %>% 
+    dplyr::filter(ES < 0) %>% 
+    top_n(30, wt=-padj)
+  topPathways <- bind_rows(topUp, topDown) %>% 
+    arrange(-NES)
+  
+
+  png(paste("./output/",samp,"pathwayAnalysis_subclones.png",sep=""), width = 1600, height = 1080, units = "px", res=100)
+
+  colnames(fgseaRes)[3] <- "pvalue"
+  
+  p1 <- ggplot(fgseaRes[fgseaRes$pathway %in% topPathways$pathway,], aes(x = NES, y = fct_reorder(pathway, NES))) + 
+    geom_bar(stat='identity', aes(fill = pvalue)) +
+    theme_bw(base_size = 14) +
+    #scale_colour_gradient(limits=c(0, 0.10), low="gray") +
+    scale_fill_gradient(low="darkgreen", high = "gray")  +
+    ylab(NULL) +
+    ggtitle(paste(samp,"- Subclones Pathway Analysis"))
+  plot(p1)
+  
+  dev.off()
+  
+}

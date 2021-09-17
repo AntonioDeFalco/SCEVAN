@@ -105,9 +105,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
             plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
             classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
       
-            #mtx_tum <- count_mtx[rownames(res_proc$count_mtx_norm),res_class$tum_cells]
-            #mtx_tum_log <- log2(mtx_tum + 1)
             genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
+            pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
         }
       }else{
       print("no significant subclones")

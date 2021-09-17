@@ -48,6 +48,10 @@ DE analysis in specific alterations
 
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125-DE3.png)
 
+Pathway Analysis of subclones
+
+![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/images/MGH125pathwayAnalysis_subclones.png)
+
 ## Use Cases
 
 * [Example (MGH125)](https://htmlpreview.github.io/?https://raw.githubusercontent.com/AntonioDeFalco/SCEVAN/main/example.html?token=ACYAPINNYS2IVGAIMIUPRZDA5VWVU)
