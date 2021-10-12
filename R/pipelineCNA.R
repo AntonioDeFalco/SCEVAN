@@ -39,6 +39,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
+  res_class$tum_cells <- names(gr_truth[gr_truth=="malignant"])
+  
+  print(paste("found", length(res_class$tum_cells), "tumor cells"))
   #mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
   #colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   #breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], paste0(sample,"onlytumor"))
@@ -46,6 +49,18 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"))
+  
+  subSegm <- read.csv(paste0("./output/ ",paste0(sample,"onlytumor")," vega_output"), sep = "\t")
+  #segmAlt <- abs(subSegm$Mean)>=0.10 | (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
+  segmAlt <- (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
+  mtx_vega <- computeCNAmtx(res_class$CNAmat[,res_class$tum_cells], breaks_tumor, par_cores,segmAlt ) #rep(TRUE, length(breaks_tumor))
+  
+  #mtx_vega <- computeCNAmtx(res_class$CNAmat[,res_class$tum_cells], breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
+  colnames(mtx_vega) <- colnames(res_class$CNAmat[,res_class$tum_cells])
+  rownames(mtx_vega) <- rownames(res_class$CNAmat[,res_class$tum_cells])
+  hcc <- hclust(parallelDist::parDist(t(mtx_vega),threads =par_cores, method = "euclidean"), method = "ward.D")
+  plotCNA(res_proc$count_mtx_annot$seqnames, mtx_vega, hcc, paste0(sample,"onlytumor"))
+  #mtx_vega <- mtx_vega-apply(mtx_vega,1,mean)
   
   classDf <- data.frame(class = rep("filtered", length(colnames(count_mtx))), row.names = colnames(count_mtx))
   classDf[colnames(res_class$CNAmat)[-(1:3)], "class"] <- "normal"
@@ -69,7 +84,11 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   start_time <- Sys.time()
   
   if (SUBCLONES){
-    res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample)
+    
+    FOUND_SUBCLONES <- FALSE
+    
+    res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample)
+    
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones,res_subclones$clustersSub))
     names(res_final)[(length(names(res_final))-2):length(names(res_final))] <- c("n_subclones", "breaks_subclones", "clusters_subclones")
     
@@ -88,12 +107,52 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
         
         print(diffSubcl)
         
-        segmList <- list()
-        segmList$subclone1 <- read.table(paste0("./output/ ",sample,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-        segmList$subclone2 <- read.table(paste0("./output/ ",sample,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+        nSubl <- grep("subclone",names(diffSubcl))
+        
+        nSublSh <- grep("shareSubclone",names(diffSubcl))
+        
+        if(length (nSubl) < res_subclones$n_subclones-1 & length (nSublSh)>0){
+          
+          indNsub <- substr(names(diffSubcl)[nSubl],nchar(names(diffSubcl)[nSubl]),nchar(names(diffSubcl)[nSubl]))
+          
+          indNsub <- as.integer(indNsub)[!is.na(as.integer(indNsub))]
+          
+          nSubl <- setdiff(1:res_subclones$n_subclones,indNsub)
+          
+          shareSubclone <- diffSubcl[[grep("shareSubclone",names(diffSubcl))]]
+          
+          aggreg <-sum(as.integer(unlist(strsplit(shareSubclone$sh_sub,"-"))) %in% nSubl) == length(nSubl)
+          #aggreg <- as.integer(substr(shareSubclone$sh_sub, 1,1)) %in% nSubl & as.integer(substr(shareSubclone$sh_sub, 3,3)) %in% nSubl
+          aggregShareSubclone <- shareSubclone[aggreg,]
+          
+          if(nrow(aggregShareSubclone)>0){
+            
+            aggregShareSubclone <- aggregShareSubclone[order(aggregShareSubclone$sh_sub, decreasing = TRUE),]
+            aggregInd <- c()
+            for(i in 1:nrow(aggregShareSubclone)){
+              #aggregInd <- append(aggregInd, c(as.integer(substr(shareSubclone$sh_sub[i], 1,1)), as.integer(substr(shareSubclone$sh_sub[i], 3,3))))
+              aggregInd <- append(aggregInd,as.integer(unlist(strsplit(shareSubclone$sh_sub,"-"))))
+              diffSubcl[[paste0(sample,"_subclone",min(aggregInd))]] <- aggregShareSubclone[i,c(1,2,3,4,6)]
+            }
+            aggregInd <- unique(aggregInd)
+            res_subclones$clustersSub[res_subclones$clustersSub %in% setdiff(aggregInd,min(aggregInd))] <- min(aggregInd)
+            
+            res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
+            
+            res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub)
+          }
+        }
+        
+        
+        #segmList <- list()
+        #segmList$subclone1 <- read.table(paste0("./output/ ",sample,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+        #segmList$subclone2 <- read.table(paste0("./output/ ",sample,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
 
+        segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
+        names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
+        
         save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "mgh125_plotcnaline2.RData")
-        plotCNAline(segmList, diffSubcl, sample)
+        plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
         
         diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
@@ -102,19 +161,24 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
         if(length(vectAlt)>0){
             perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
             plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sample)
-            plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
+            #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
             classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
       
             genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
             pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
         }
+        
+        FOUND_SUBCLONES <- TRUE
+        
       }else{
       print("no significant subclones")
     }
     
     }
     
-   }
+  }
+  
+  if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
   
   end_time<- Sys.time()
   print(paste("time subclones: ", end_time -start_time))

@@ -31,7 +31,7 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 }
 
 
-#' computeCNAmtx compute the CNA matrix using the break points obtained from segmentation
+#' computeCNAmtx computed the CNA matrix using the break points obtained from segmentation
 #'
 #' @param count_mtx count matrix
 #' @param breaksbreak points obtained from segmentation
@@ -41,14 +41,22 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 #'
 #' @examples
 #'
-computeCNAmtx <- function(count_mtx, breaks, par_cores = 20){
+computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
   
   n <- nrow(count_mtx)
   
   seg.test <- parallel::mclapply(1:ncol(count_mtx), function(z){
     x<-numeric(n)
     for (i in 1:(length(breaks)-1)){
-      x[breaks[i]:breaks[i+1]] <- mean(count_mtx[breaks[i]:breaks[i+1],z])
+      
+      if(segmAlt[i]){
+        #meanValue <- (mean(count_mtx[breaks[i]:breaks[i+1],z]) - mean(count_mtx[,z])) / sd(count_mtx[,z])
+        meanValue <- mean(count_mtx[breaks[i]:breaks[i+1],z])
+      }else{
+        meanValue <- 0
+      }
+      
+      x[breaks[i]:breaks[i+1]] <- meanValue
     }
     return(x)
   }, mc.cores = par_cores)
@@ -156,7 +164,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     
   ##### Segmentation with VegaMC #####
   
-  if(SEGMENTATION_CLASS & length(norm.cell.names) > 0){
+  if(SEGMENTATION_CLASS & length(norm.cell.names) > 0){ #){
     
     print("9) Segmentation (VegaMC)")
     
@@ -165,7 +173,13 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     
     breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample)
     
-    CNA_mtx <- computeCNAmtx(count_mtx_relat, breaks, par_cores)
+    subSegm <- read.csv(paste0("./output/ ",sample," vega_output"), sep = "\t")
+    
+    segmAlt <- abs(subSegm$Mean)>0.05 | (subSegm$G.pv<0.01 | subSegm$L.pv<0.01)
+    #segmAlt <- append(segmAlt[1],append(segmAlt, segmAlt[length(segmAlt)]))
+    
+    CNA_mtx <- computeCNAmtx(count_mtx_relat, breaks, par_cores, segmAlt)
+    
     SEGM <- TRUE
     
   }else{
@@ -209,6 +223,9 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     CNA_mtx_relat <- CNA_mtx-apply(CNA_mtx[,which(cellType_pred=="non malignant")], 1, mean)
     CNA_mtx_relat <- apply(CNA_mtx_relat,2,function(x)(x <- x-mean(x)))
     CNA_mtx_relat <- CNA_mtx_relat/(0.5*(max(CNA_mtx_relat)-min(CNA_mtx_relat)))
+    
+    #CNA_mtx_relat[abs(CNA_mtx_relat)<0.05] <- 0
+    #CNA_mtx_relat <- (CNA_mtx_relat*4)^3
     
     if(SEGM){
       count_mtx_relat <- count_mtx_relat-apply(count_mtx_relat[,which(cellType_pred=="non malignant")], 1, mean)

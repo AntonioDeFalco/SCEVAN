@@ -522,7 +522,7 @@ col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,len
 
 hc.clus <- cutree(hcc,n_subclones)
 rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_subclones])
-subclones <- rbPal5(2)[as.numeric(factor(hc.clus))]
+subclones <- rbPal5(n_subclones)[as.numeric(factor(hc.clus))]
 cells <- rbind(subclones,subclones)
 
 if (ncol(mtx_CNA)< 3000){
@@ -537,8 +537,8 @@ heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
           ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
           notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
           keysize=1, density.info="none", trace="none",
-          cexRow=0.1,cexCol=1.0,cex.main=1.0,cex.lab=0.1,
-          symm=F,symkey=F,symbreaks=T,cex=1, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
+          cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+          symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
 
 dev.off()
 
@@ -841,12 +841,19 @@ segmPosSpec <- function(segmentation){
 }
 
 
-plotCNAline <- function(segmList, segmListSpec, samp){
+plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   
   segmListSpec <- lapply(segmListSpec, function(x) segmPosSpec(x))
-  segmSUB1_pos <- segmListSpec[[grep("subclone1",names(segmListSpec))]]
-  segmSUB2_pos <- segmListSpec[[grep("subclone2",names(segmListSpec))]]
   
+  segmSUB_pos <- lapply(1:nSub, function(x) {
+    subb <- paste0("subclone",x)
+    if(sum(grepl(subb,names(segmListSpec)))>0) segmSUB1_pos <- segmListSpec[[grep(subb,names(segmListSpec))]]
+  })
+  
+  for(i in 1:nSub){
+    segmList[[i]][!(abs(segmList[[i]]$Mean)>0.10 | (segmList[[i]]$L.pv<=0.5 | segmList[[i]]$G.pv<=0.5)),]$Mean <- 0
+  }
+
   segmList <- lapply(segmList, function(x) segmPos(x))
   
   minPos <- 1
@@ -863,63 +870,71 @@ plotCNAline <- function(segmList, segmListSpec, samp){
   })
   
   segm2_pos <- segmList[[grep("subclone1",names(dfL))]]
-  df_1 <- dfL[[grep("subclone1",names(dfL))]]
-  df_2 <- dfL[[grep("subclone2",names(dfL))]]
+  df <- lapply(1:nSub, function(x) {
+    subb <- paste0("subclone",x)
+    dfL[[grep(subb,names(dfL))]]
+  })
+  
   
   df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
-  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
   
   chr <- as.numeric(df_VEGAchr$y) %% 2+1
   rbPal1 <- colorRampPalette(c('black','grey'))
   CHR <- rbPal1(2)[as.numeric(chr)]
   chr1 <- cbind(CHR,CHR)
   
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Set2")[6:7])
-  cells <- rbind(rbPal5(2),rbPal5(2))
-  res <- cor.test(df_1$Mean,df_2$Mean)
+  #res <- cor.test(df_1$Mean,df_2$Mean)
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  cells <- rbind(rbPal5(nSub),rbPal5(nSub))
   
   png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
-  heatmap.3(t(cbind(df_1$Mean,df_2$Mean)),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
+  heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
             cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
             ColSideColors=chr1,
-            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Primary and  Metastatic Lymph of sample:", samp, "(Cor:", format(round(res$estimate, 3), nsmall = 2),")"), cex.main=4, margins=c(10,10), key=FALSE,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Sample:", samp), cex.main=4, margins=c(10,10), key=FALSE,
             notecol="black",col=my_palette, RowSideColors=cells)
   dev.off()
   
-  df_share <- df_1
-  df_share$Mean <- apply(rbind(df_1$Mean,df_2$Mean),2,mean)
+  df_share <- df[[1]]
+  df_share$Mean <- apply(do.call(rbind,lapply(df, function(x) x$Mean)),2,mean)
   
-  posOK <- segmSUB1_pos$Pos[abs(as.numeric(segmSUB1_pos$Mean))>0]
-  toREMdf1 <- rep(FALSE,length(df_1$Mean))
+  names(df) <- paste0("subclone",1:nSub)
   
-  for(i in 1:(length(posOK)/2)){
-    print(posOK[(i*2)-1])
-    print(posOK[(i*2)])
-    toREMdf1 <- toREMdf1 | ((df_1$Pos <= posOK[(i*2)] & df_1$Pos >= posOK[(i*2)-1]))
+  toREMdf_all <- lapply(1:nSub, function(x){
+    
+    toREMdf <- rep(FALSE,length(df[[x]]$Mean))
+    
+    if(sum(grepl(paste0("subclone",x),names(segmListSpec)))>0) {
+      posOK <- segmSUB_pos[[x]]$Pos[abs(as.numeric(segmSUB_pos[[x]]$Mean))>0]
+      
+      for(i in 1:(length(posOK)/2)){
+        print(posOK[(i*2)-1])
+        print(posOK[(i*2)])
+        toREMdf <- toREMdf | ((df[[x]]$Pos <= posOK[(i*2)] & df[[x]]$Pos >= posOK[(i*2)-1]))
+      }
+      sum(toREMdf)
+    }
+    
+    toREMdf
+    
+  })
+  
+  for(i in 1:nSub){
+    df[[i]]$Mean[!toREMdf_all[[i]]] <- 0
   }
-  sum(toREMdf1)
   
-  df_1$Mean[!toREMdf1] <- 0
+  toREMdf_all <- Reduce("|", toREMdf_all)
   
-  posOK <- segmSUB2_pos$Pos[abs(as.numeric(segmSUB2_pos$Mean))>0]
-  toREMdf2 <- rep(FALSE,length(df_2$Mean))
-  for(i in 1:(length(posOK)/2)){
-    print(posOK[(i*2)-1])
-    print(posOK[(i*2)])
-    toREMdf2 <- toREMdf2 | ((df_1$Pos <= posOK[(i*2)] & df_1$Pos >= posOK[(i*2)-1]))
-  }
-  
-  df_2$Mean[!toREMdf2] <- 0
-  
-  df_share$Mean[(toREMdf1 | toREMdf2)] <- 0
+  df_share$Mean[toREMdf_all] <- 0
   
   png(paste("./output/",samp,"plotCNline.png",sep=""), height=1050, width=2250, res=250)
   
   #df_share <- dfL[[grep("_clone",names(dfL))]]
-
   
   
-  plot(df_share, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm2_pos[,2])+105000,max(segm2_pos[,2])-105000), main = samp, ylim = c(min(df_share$Mean,df_1$Mean, df_2$Mean)-0.05,max(df_share$Mean,df_1$Mean, df_2$Mean)+0.05))
+  plot(df_share, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm2_pos[,2])+105000,max(segm2_pos[,2])-105000), main = samp, ylim = c(min(df_share$Mean,df[[1]]$Mean, df[[2]]$Mean)-0.05,max(df_share$Mean,df[[1]]$Mean, df[[2]]$Mean)+0.05))
   
   plotSeg <- function(segm, col_lin){
     segmentationGain <- segm
@@ -943,13 +958,7 @@ plotCNAline <- function(segmList, segmListSpec, samp){
   
   plotSeg(df_share, c("red","blue"))
   
-  #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Set2")[6:7])
-  #cells <- rbind(rbPal5(2),rbPal5(2))
-  #plotSeg(df_1, c(rbPal5(2)[1],rbPal5(2)[1]))
-  #plotSeg(df_2, c(rbPal5(2)[2],rbPal5(2)[2]))
-  
-  plotSeg(df_1, c("purple","purple"))
-  plotSeg(df_2, c("darkgreen","darkgreen"))
+  lapply(df, function(x) plotSeg(x, c("purple","purple")))
   
   abline(h = 0, col = "gray60", lwd = 5)
   
@@ -963,6 +972,86 @@ plotCNAline <- function(segmList, segmListSpec, samp){
   #legend("topright", inset=c(0,0), legend=c("Shared Gain", "Shared Loss", "Subclone1", "Subclone2"),
   #       col=c("red", "blue", "darkgreen", "purple"), lty=1, cex=0.7)
   dev.off()
+  
 }
 
 
+plotCNAlineOnlyTumor <- function(samp){
+  
+  segmList <- read.table(paste0("./output/ ",samp,"onlytumor vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+  
+  segmList[!(abs(segmList$Mean)>0.10 | (segmList$L.pv<=0.5 | segmList$G.pv<=0.5)),]$Mean <- 0
+  
+  segmList <- segmPos(segmList)
+  
+  minPos <- 1
+  add_chr <- read.table("sizeGRCh38.csv", header = TRUE)
+  add_chr <- (add_chr$Size/1000)
+  maxPos <- sum(add_chr)
+  
+  x <- segmList
+  dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+  colnames(dfL) <- c("Pos","Mean")
+  dfL$Mean[is.na(dfL$Mean)] <- 0
+  
+  segm2_pos <- segmList
+  
+  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
+  
+  chr <- as.numeric(df_VEGAchr$y) %% 2+1
+  rbPal1 <- colorRampPalette(c('black','grey'))
+  CHR <- rbPal1(2)[as.numeric(chr)]
+  chr1 <- cbind(CHR,CHR)
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
+  cells <- rbind(rbPal5(1),rbPal5(1))
+  
+  png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
+  heatmap.3(t(cbind(dfL$Mean,dfL$Mean)),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
+            cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
+            ColSideColors=chr1,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Sample:", samp), cex.main=4, margins=c(10,10), key=FALSE,
+            notecol="black",col=my_palette, RowSideColors=t(cells))
+  dev.off()
+  
+  df_share <- dfL
+
+  png(paste("./output/",samp,"plotCNline.png",sep=""), height=1050, width=2250, res=250)
+  
+  plot(df_share, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm2_pos[,2])+105000,max(segm2_pos[,2])-105000), main = samp)
+  
+  plotSeg <- function(segm, col_lin){
+    segmentationGain <- segm
+    if(sum(segmentationGain$Mean>0)>0){
+      if(sum(segmentationGain$Mean<0)>0){
+        segmentationGain[segmentationGain$Mean<0,]$Mean <- 0
+      }
+      lines(segmentationGain$Pos,segmentationGain$Mean, type="l", col=col_lin[1], lwd=3, pch=19)
+      
+    }
+    
+    segmentationLoss <- segm
+    if(sum(segmentationLoss$Mean<0)>0){
+      if(sum(segmentationLoss$Mean>0)>0){
+        segmentationLoss[segmentationLoss$Mean>0,]$Mean <- 0
+      }
+      lines(segmentationLoss$Pos,segmentationLoss$Mean, type="l", col=col_lin[2], lwd=3, pch=19)
+    }
+    
+  }
+  
+  plotSeg(df_share, c("red","blue"))
+  
+  abline(h = 0, col = "gray60", lwd = 5)
+  
+  extr_chr <- segm2_pos[unlist(lapply(1:22, function(x) max(which(segm2_pos$CHR==x)))),]$Pos
+  
+  abline(v=extr_chr, col="black", lwd = 1)
+  extr_chr <- append(1, extr_chr)
+  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
+       cex.axis = 1.0, gap.axis = 0)
+  
+  dev.off()
+  
+}

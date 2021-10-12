@@ -121,7 +121,7 @@ getBreaksVegaMC <- function(mtx, chr_vect, sample = ""){
   
   res_vega <- vegaMC(paste("./output/", sample, "_mtx_vega.txt", sep=""),output_file_name=paste("./output/", sample,"vega_output"));
   
-  BR <- unlist(lapply(res_vega$Start, function(x) which(chr_vect == x)))
+  BR <- unlist(lapply(res_vega$Start, function(x) which(chr_vect == x)[1]))
   n <- nrow(mtx)
   BR <- sort(unique(c(1, BR, n)))
   
