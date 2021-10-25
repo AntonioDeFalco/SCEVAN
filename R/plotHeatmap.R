@@ -862,7 +862,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   maxPos <- sum(add_chr)
   
   dfL <- lapply(segmList, function(x) {
-    df <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+    df <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
     colnames(df) <- c("Pos","Mean")
     df$Mean[is.na(df$Mean)] <- 0
     #df$Mean[abs(df$Mean)<0.10] <- 0
@@ -876,7 +876,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   })
   
   
-  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
   my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
   
   chr <- as.numeric(df_VEGAchr$y) %% 2+1
@@ -958,7 +958,12 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   
   plotSeg(df_share, c("red","blue"))
   
-  lapply(df, function(x) plotSeg(x, c("purple","purple")))
+
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  subclones <- rbPal5(nSub)
+  
+  lapply(1:nSub, function(x) plotSeg(df[[x]], c(subclones[x],subclones[x])))
+  #lapply(df, function(x) plotSeg(x, c("purple","purple")))
   
   abline(h = 0, col = "gray60", lwd = 5)
   
@@ -990,13 +995,13 @@ plotCNAlineOnlyTumor <- function(samp){
   maxPos <- sum(add_chr)
   
   x <- segmList
-  dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+  dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
   colnames(dfL) <- c("Pos","Mean")
   dfL$Mean[is.na(dfL$Mean)] <- 0
   
   segm2_pos <- segmList
   
-  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 100000), ties = "ordered"))
+  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$CHR, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
   my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
   
   chr <- as.numeric(df_VEGAchr$y) %% 2+1

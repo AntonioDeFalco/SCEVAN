@@ -39,7 +39,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   
   res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
-  res_class$tum_cells <- names(gr_truth[gr_truth=="malignant"])
+  #res_class$tum_cells <- names(gr_truth[gr_truth=="malignant"])
   
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
   #mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)

@@ -76,7 +76,7 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
 #' @export
 #'
 #' @examples
-subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp){
+subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores){
   
   #save(tum_cells,CNAmat,relativeSmoothMtx, samp, file = paste0("subclonesTumorCells-",samp))
   
@@ -119,13 +119,15 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp){
     breaks_subclones <- list()
     
     logCNAl <- list()
+    
+    colName <- c()
       
     for (i in 1:n_subclones){
         
         print(paste("Segmentation of subclone : ", i))
         
         tum_cells_sub1 <- names(hc.clus[hc.clus==i])
-        
+        colName <- append(colName,tum_cells_sub1)
         
         mtx_vega <- cbind(info_mat, norm.mat.relat[,tum_cells_sub1])
         
@@ -151,7 +153,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp){
     results <- list(logCNA, BR)
     names(results) <- c("logCNA","breaks")
     
-    colnames(results$logCNA) <- colnames(norm.mat.relat)
+    colnames(results$logCNA) <- colName #colnames(norm.mat.relat)
     results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
  
     hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
@@ -175,7 +177,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp){
 }
 
 
-ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus){
+ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores){
   
     norm.mat.relat <- CNAmat[,-c(1:3)]
     info_mat <- CNAmat[,c(1:3)]
@@ -188,8 +190,8 @@ ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus){
     
     norm.mat.relat <- norm.mat.relat[,tum_cells]
     
-    n.cores = 20 
-    distance="euclidean"
+    #n.cores = 20 
+    #distance="euclidean"
     
   perc_cells_subclones <- table(hc.clus)/length(hc.clus)
   
@@ -830,8 +832,11 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       #top_genes <- rownames(count_mtx)
       top_genes <- count_mtx_annot$gene_name[strr:endd]
       
-      cells_sub1 <- names(clustersSub[clustersSub==2])
-      cells_sub2 <- names(clustersSub[clustersSub==1])
+      
+      subInd <- substr(names(specAlt)[nsub],nchar(names(specAlt)[nsub]),nchar(names(specAlt)[nsub]))
+      
+      cells_sub1 <- names(clustersSub[clustersSub==subInd])
+      cells_sub2 <- names(clustersSub[clustersSub!=subInd])
     
       parDE <- function(g){
         geneID <- top_genes[g]
@@ -886,8 +891,14 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
   library(dplyr)
   library(fgsea)
   
-  cells_sub1 <- names(clustersSub[clustersSub==2])
-  cells_sub2 <- names(clustersSub[clustersSub==1])
+  nSub <- length(unique(clustersSub))
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  subclones <- rbPal5(nSub)
+
+  
+  for(sub in unique(clustersSub)){
+  cells_sub1 <- names(clustersSub[clustersSub==sub])
+  cells_sub2 <- names(clustersSub[clustersSub!=sub])
   
   H1 = apply(count_mtx[,cells_sub1],1, mean)
   H2 = apply(count_mtx[,cells_sub2],1, mean)
@@ -901,19 +912,20 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
   
   fgseaRes$pathway <- gsub("REACTOME_","",fgseaRes$pathway)
   
-  fgseaRes <-  fgseaRes %>% dplyr::filter(padj < 0.1)
+  fgseaRes <-  fgseaRes %>% dplyr::filter(padj < 0.05)
   
   topUp <- fgseaRes %>% 
     dplyr::filter(ES > 0) %>% 
     top_n(30, wt=-padj)
-  topDown <- fgseaRes %>% 
-    dplyr::filter(ES < 0) %>% 
-    top_n(30, wt=-padj)
-  topPathways <- bind_rows(topUp, topDown) %>% 
+  #topDown <- fgseaRes %>% 
+  #  dplyr::filter(ES < 0) %>% 
+  #  top_n(30, wt=-padj)
+  #topPathways <- bind_rows(topUp, topDown) %>% 
+  topPathways <- topUp %>% 
     arrange(-NES)
   
-
-  png(paste("./output/",samp,"pathwayAnalysis_subclones.png",sep=""), width = 1600, height = 1080, units = "px", res=100)
+  save(fgseaRes,topPathways, file = paste(samp,"pathwayAnalysis_subclones",sub,".RDATA"))
+  png(paste("./output/",samp,"pathwayAnalysis_subclones",sub,".png",sep=""), width = 1600, height = 1080, units = "px", res=100)
 
   colnames(fgseaRes)[3] <- "pvalue"
   
@@ -921,12 +933,131 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
     geom_bar(stat='identity', aes(fill = pvalue)) +
     theme_bw(base_size = 14) +
     #scale_colour_gradient(limits=c(0, 0.10), low="gray") +
-    scale_fill_gradient(low="darkgreen", high = "gray")  +
+    scale_fill_gradient(low=subclones[sub], high = "gray")  +
     ylab(NULL) +
-    ggtitle(paste(samp,"- Subclones Pathway Analysis"))
+    ggtitle(paste(samp,"- Subclones", sub," Pathway Analysis"))
   plot(p1)
   
   dev.off()
+  }
   
+}
+
+
+
+    
+annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
+  
+  diffSub <- diffSub[unlist(lapply(diffSub, function(x) nrow(x)>0))]
+  
+  for(elem in 1:length(diffSub)){
+    if(nrow(diffSub[[elem]])!=0){
+      for(r in 1:nrow(diffSub[[elem]])){
+        subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
+        posSta <- which(subset$end == diffSub[[elem]][r,]$Start)
+        posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
+        geneToAnn <- subset[posSta:posEnd, ]$gene_name
+        found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
+        min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
+        max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
+        band_str <- paste(min_band,max_band, sep = "-")
+        diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
+      }
+    }
+  }
+  
+  oncoHeat <- data.frame(row.names = paste0("Subclone",1:nSub))
+  IndSub <- grep("subclone",names(diffSub))
+  
+  if(length(IndSub)>0){
+    
+    for(i in IndSub){
+      
+      for(j in 1:nrow(diffSub[[i]])){
+        
+        indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
+        vect <- rep(0, nSub)
+        if(diffSub[[i]][j,]$Alteration=="A"){
+          vect[indNsub] <- 1
+        }else{
+          vect[indNsub] <- -1
+        }
+        
+        oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
+      }
+      
+    }
+  }
+  
+  
+  IndSub <- grep("_clone",names(diffSub))
+  
+  if(length(IndSub)>0){
+    
+    for(i in IndSub){
+      
+      for(j in 1:nrow(diffSub[[i]])){
+        
+        if(diffSub[[i]][j,]$Mean>0.10){
+          
+          indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
+          
+          if(diffSub[[i]][j,]$Alteration=="A"){
+            vect <- rep(1, nSub)
+          }else{
+            vect <- rep(-1, nSub)
+          }
+          
+          oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
+        }
+      }
+      
+    }
+  }
+  
+  IndSub <- grep("shareSubclone",names(diffSub))
+  
+  if(length(IndSub)>0){
+    
+    
+    for(i in IndSub){
+      
+      for(j in 1:nrow(diffSub[[i]])){
+        
+        indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
+        
+        indNsub <- as.integer(unlist(strsplit(diffSub[[i]][j,]$sh_sub,"-")))
+        
+        vect <- rep(0, nSub)
+        if(diffSub[[i]][j,]$Alteration=="A"){
+          vect[indNsub] <- 1
+        }else{
+          vect[indNsub] <- -1
+        }
+        
+        oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
+      }
+      
+    }
+  }
+  
+  return(oncoHeat)
+  
+}
+
+plotOncoHeat <- function(oncoHeat, nSub, samp){
+  
+  oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
+  annotdf <- data.frame(row.names = rownames(oncoHeat), 
+                        Subclone = rep(paste0("Subclone", seq(nSub))) )  
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  subclones <- rbPal5(nSub)
+  names(subclones) <- unique(annotdf$Subclone)
+  mycolors <- list(Subclone = subclones)
+  
+  png(paste("./output/",samp,"OncoHeat.png",sep=""), height=1850, width=1450, res=200)
+  pheatmap::pheatmap(t(oncoHeat), color = c("blue","white","red"), cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = c(1,0,-1), legend_labels = c("Amplification","","Deletion"),cellwidth = 30, annotation_legend = FALSE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
+  dev.off()
 }
 
