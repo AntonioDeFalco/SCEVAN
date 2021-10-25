@@ -33,19 +33,13 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
   start_time <- Sys.time()
   
   res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores)
-  #norm.cell <- getConfidentNormalCells(res_proc$count_mtx_norm, par_cores = par_cores)
   norm.cell <- names(res_proc$norm.cell)
   print(table(gr_truth[norm.cell]))
   
   res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
-  #res_class$tum_cells <- names(gr_truth[gr_truth=="malignant"])
-  
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
-  #mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
-  #colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  #breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], paste0(sample,"onlytumor"))
-  
+
   mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"))
@@ -87,7 +81,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
     
     FOUND_SUBCLONES <- FALSE
     
-    res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample)
+    res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample, par_cores)
     
     res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones,res_subclones$clustersSub))
     names(res_final)[(length(names(res_final))-2):length(names(res_final))] <- c("n_subclones", "breaks_subclones", "clusters_subclones")
@@ -139,15 +133,10 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
             
             res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
             
-            res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub)
+            res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores)
           }
         }
         
-        
-        #segmList <- list()
-        #segmList$subclone1 <- read.table(paste0("./output/ ",sample,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-        #segmList$subclone2 <- read.table(paste0("./output/ ",sample,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-
         segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
         names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
         
@@ -156,17 +145,22 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
         
         diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
-        vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
+        #vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
         
-        if(length(vectAlt)>0){
-            perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
-            plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sample)
-            #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
-            classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
-      
-            genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-            pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
-        }
+        #if(length(vectAlt)>0){
+          
+          oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot,diffSubcl, res_subclones$n_subclones)
+          plotOncoHeat(oncoHeat, res_subclones$n_subclones, sample)
+        
+          perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+          print(perc_cells_subclones)
+          #plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sample)
+          #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
+          classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
+    
+          genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
+          pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
+        #}
         
         FOUND_SUBCLONES <- TRUE
         
