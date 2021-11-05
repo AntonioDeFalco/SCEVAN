@@ -474,7 +474,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NUL
   
   col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
   
-  jpeg(paste("./output/",samp,"heatmap.jpeg",sep=""), height=h*250, width=4000, res=100)
+  png(paste("./output/",samp,"heatmap.png",sep=""), height=h*250, width=4000, res=100)
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
   prediction <- rep(rbPal5(1), ncol(mtx_CNA))
@@ -531,7 +531,7 @@ if (ncol(mtx_CNA)< 3000){
   h <- 15
 }
 
-jpeg(paste("./output/",samp,"heatmap_subclones.jpeg",sep=""), height=h*250, width=4000, res=100)
+png(paste("./output/",samp,"heatmap_subclones.png",sep=""), height=h*250, width=4000, res=100)
 
 heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
           ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
@@ -573,7 +573,7 @@ plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh,
   
   fish = fishplot::setCol(fish, col = c("gray","purple","darkgreen"))
   
-  jpeg(paste("./output/",samp,"fishplot_subclones.jpeg",sep=""), height=1800, width=2500, res=230)
+  png(paste("./output/",samp,"fishplot_subclones.png",sep=""), height=1800, width=2500, res=230)
   modPlotFish(fish,samp)
   dev.off()
 }
@@ -591,7 +591,7 @@ modPlotFish <- function(fish, samp) {
 }
 
 
-plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
+plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
   library(Rtsne)
   library(ggplot2)
   set.seed(1)
@@ -606,16 +606,14 @@ plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
                    y = tsne$Y[,2],
                    CellType = pred)
   
-  jpeg(paste("./output/",samp,"tsne.jpeg",sep=""), height=850, width=1050, res=100)
+  png(paste("./output/",samp,"tsne_scRNA.png",sep=""), height=1650, width=1650, res=200)
   
-  p1 <- ggplot(df, aes(x, y, colour = CellType)) +
+  ggplot(df, aes(x, y, colour = CellType)) +
     geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
                                                    values=c("red", "green"))
-  
+  dev.off()
   if(length(unique(clustersSub))>0){
-    
-    library(gridExtra)
-    
+
     tsne <- Rtsne(t(as.matrix(CNAmat[,tum_cells])))
     pred <- paste0("subclone_",clustersSub)
     names(pred) <- colnames(tum_cells)
@@ -623,22 +621,18 @@ plotUMAP <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
     df <- data.frame(x = tsne$Y[,1],
                      y = tsne$Y[,2],
                      Subclones = pred)
+    png(paste("./output/",samp,"tsne_CNA.png",sep=""), height=1650, width=1650, res=200)
     
-    p2 <- ggplot(df, aes(x, y, colour = Subclones)) +
+    ggplot(df, aes(x, y, colour = Subclones)) +
       geom_point() + theme_bw() + scale_color_brewer(palette="Paired")
-    
-    grid.arrange(p1, p2, nrow = 1)
-    
-  }else{
-    p1
+    dev.off()
   }
-  dev.off()
 }
 
 plotCNsubclones <- function(samp) {
 
-  segmentation <- read.table(paste0("~/singleCell/AllData/ClassTumorCells/VegaMC 2/output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-  segmentation2 <- read.table(paste0("~/singleCell/AllData/ClassTumorCells/VegaMC 2/output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+  segmentation <- read.table(paste0("./output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+  segmentation2 <- read.table(paste0("./output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   
   segmPos <- function(segmentation){
     segmentation$Start <- segmentation$Start/1000
@@ -780,7 +774,7 @@ segmPos <- function(segmentation){
   segmentation$End <- segmentation$End/1000
   extr_chr <- unlist(lapply(1:22, function(x) max(which(segmentation$Chr==x))))
   
-  add_chr <- read.table("sizeGRCh38.csv", header = TRUE)
+  add_chr <- sizeGRCh38
   add_chr <- (add_chr$Size/1000)[1:21]
   for (i in 1:21){
     segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start <- (segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start + sum(add_chr[1:i]))
@@ -803,7 +797,7 @@ segmPosSpec <- function(segmentation){
   
   segmentation <- segmentation[order(segmentation$Chr,segmentation$Start),]
   
-  add_chr <- read.table("sizeGRCh38.csv", header = TRUE)
+  add_chr <- sizeGRCh38
   add_chr <- (add_chr$Size/1000)[1:21]
   
   extr_chr <- unlist(lapply(1:22, function(x) max(which(segmentation$Chr==x))))
@@ -857,7 +851,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   segmList <- lapply(segmList, function(x) segmPos(x))
   
   minPos <- 1
-  add_chr <- read.table("sizeGRCh38.csv", header = TRUE)
+  add_chr <- sizeGRCh38
   add_chr <- (add_chr$Size/1000)
   maxPos <- sum(add_chr)
   
@@ -990,7 +984,7 @@ plotCNAlineOnlyTumor <- function(samp){
   segmList <- segmPos(segmList)
   
   minPos <- 1
-  add_chr <- read.table("sizeGRCh38.csv", header = TRUE)
+  add_chr <- sizeGRCh38
   add_chr <- (add_chr$Size/1000)
   maxPos <- sum(add_chr)
   

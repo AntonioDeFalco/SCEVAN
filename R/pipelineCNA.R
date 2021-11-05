@@ -146,21 +146,19 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
         diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
         #vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
-        
-        #if(length(vectAlt)>0){
           
-          oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot,diffSubcl, res_subclones$n_subclones)
-          plotOncoHeat(oncoHeat, res_subclones$n_subclones, sample)
-        
           perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
           print(perc_cells_subclones)
+        
+          oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot,diffSubcl, res_subclones$n_subclones)
+          plotOncoHeat(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
+        
           #plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sample)
-          #plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
+          plotTSNE(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
           classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
     
           genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
           pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
-        #}
         
         FOUND_SUBCLONES <- TRUE
         

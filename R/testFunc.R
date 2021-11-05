@@ -99,6 +99,9 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   
   graph <- scran::buildSNNGraph(relativeSmoothMtx, dd, k = 10, type = "number")
   lc <- cluster_louvain(graph)
+  #nSub <- 3
+  #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  #plot(graph, vertex.color=rbPal5(nSub)[lc$membership])
   
   hc.clus <- membership(lc)
   names(hc.clus) <- colnames(relativeSmoothMtx)
@@ -998,7 +1001,7 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
       
       for(j in 1:nrow(diffSub[[i]])){
         
-        if(diffSub[[i]][j,]$Mean>0.10){
+        if(abs(diffSub[[i]][j,]$Mean)>0.10){
           
           indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
           
@@ -1045,11 +1048,11 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
   
 }
 
-plotOncoHeat <- function(oncoHeat, nSub, samp){
-  
+plotOncoHeat <- function(oncoHeat, nSub, samp, perc_subclones){
+  print(perc_subclones)
   oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
   annotdf <- data.frame(row.names = rownames(oncoHeat), 
-                        Subclone = rep(paste0("Subclone", seq(nSub))) )  
+                        Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
   subclones <- rbPal5(nSub)
@@ -1057,7 +1060,7 @@ plotOncoHeat <- function(oncoHeat, nSub, samp){
   mycolors <- list(Subclone = subclones)
   
   png(paste("./output/",samp,"OncoHeat.png",sep=""), height=1850, width=1450, res=200)
-  pheatmap::pheatmap(t(oncoHeat), color = c("blue","white","red"), cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = c(1,0,-1), legend_labels = c("Amplification","","Deletion"),cellwidth = 30, annotation_legend = FALSE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
+  pheatmap::pheatmap(t(oncoHeat), color = c("blue","white","red"), cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = c(1,0,-1), legend_labels = c("AMP","","DEL"),cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
   dev.off()
 }
 
