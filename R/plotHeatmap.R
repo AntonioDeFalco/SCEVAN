@@ -544,53 +544,6 @@ dev.off()
 
 }
 
-
-
-plotSubclonesFish <- function(percSub1, percSub2, vectAlt1, vectAlt2, vectAltsh, samp){
-  
-  library(fishplot)
-
-  timepoints=c(0, 10, 100)       
-  
-  ### col = clones - row = time
-  frac.table = matrix(
-    c(100, 00, 00,
-      100, percSub1-1, percSub2-1,
-      100, percSub1-1, percSub2-1),
-    ncol=length(timepoints))
-  
-  #provide a vector listing each clone's parent
-  #(0 indicates no parent)
-  parents = c(0,1,1)
-  
-  
-  #create a fish object
-  fish = createFishObject(frac.table,parents,timepoints=timepoints, clone.annots = c(vectAltsh,vectAlt1,vectAlt2), clone.labels = c("Clone",paste0("Sub1 ", percSub1, "%"),paste0("Sub2 ", percSub2, "%")),
-                          clone.annots.pos = 2)
-  
-  #calculate the layout of the drawing
-  fish = layoutClones(fish)
-  
-  fish = fishplot::setCol(fish, col = c("gray","purple","darkgreen"))
-  
-  png(paste("./output/",samp,"fishplot_subclones.png",sep=""), height=1800, width=2500, res=230)
-  modPlotFish(fish,samp)
-  dev.off()
-}
-
-modPlotFish <- function(fish, samp) {
-  
-  fishplot::fishPlot(fish,shape="spline",title= paste("Sample",samp), cex.title=1.0, bg.col = "white", bg.type = "solid") 
-
-  abline(v=18, lty = 2,col="black",xpd=F)
-  
-  text(18,103,"Sampling",pos=3,cex=0.7,col="grey20",xpd=NA) 
-
-  fishplot::drawLegend(fish)
-
-}
-
-
 plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
   library(Rtsne)
   library(ggplot2)

@@ -14,9 +14,7 @@ Imports:
     yaGST,
     cluster,
     EnsDb.Hsapiens.v86,
-    fishplot,
     ggplot2,
-    gridExtra,
     Rtsne,
     ggrepel
 LazyLoad: yes
