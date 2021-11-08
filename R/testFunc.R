@@ -18,6 +18,46 @@ computeF1score <- function(pred, ground_truth){
   return(F1_Score)
 }
 
+calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$order),
+                                                                   10))){
+  msg <- ""
+  if (is.null(dist)) {
+    require(clue)
+    dist <- sqrt(as.cl_ultrametric(hhc))
+    message(msg <- "The distance matrix not is provided, using the cophenetic matrix")
+  }
+  else if (attr(dist, "method") != "euclidean") {
+    require(clue)
+    dist <- sqrt(as.cl_ultrametric(hhc))
+    message(msg <- "The distance matrix is not euclidean, using the cophenetic matrix")
+  }
+  dist <- as.matrix(dist)^2
+  A <- -dist/2
+  A_bar <- apply(A, 1, mean)
+  totalSum <- sum(diag(A) - 2 * A_bar + mean(A))
+  n <- length(hhc$order)
+  ans <- rep(0, gMax)
+  for (g in 2:gMax) {
+    cclust <- cutree(hhc, k = g)
+    withinSum <- 0
+    for (k in 1:g) {
+      if (sum(cclust == k) == 1)
+        next
+      A <- as.matrix(-dist/2)[cclust == k, cclust == k]
+      A_bar <- apply(A, 1, mean)
+      withinSum <- withinSum + sum(diag(A) - 2 * A_bar +
+                                     mean(A))
+    }
+    betweenSum <- totalSum - withinSum
+    betweenSum <- betweenSum/(g - 1)
+    withinSum <- withinSum/(n - g)
+    ans[g] <- betweenSum/withinSum
+  }
+  class(ans) <- "calinsky"
+  attr(ans, "message") <- msg
+  return(ans)
+}
+
 #' subclonesTumorCells  Check the presence of subclonal structures in tumor cells, by determining the optimal number of clusters present in the CNA matrix of 
 #' tumor cells using the Calinski-Harabasz Index as a criterion \cite{Calinski}. For each possible subclone the joint segmentation algorithm is 
 #' applied and the separate segmentation results are analyzed to see if there are any significant alterations specific to one subclone compared to
@@ -402,7 +442,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
         test <- t.test(subClone1,subClone2, alternative = "less")
       }
       
-      if(test$p.value<10^{-15} & abs(mean(subClone1)-mean(subClone2))>=0.10  & mean(subClone1)>=0.10){
+      if(test$p.value<10^{-15} & abs(mean(subClone1)-mean(subClone2))>=0.10  & abs(mean(subClone1))>=0.10){
 
         listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
         
@@ -490,51 +530,6 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   return(subclonesAlt)
 }
 
-annoteBand <- function(mtx_annot,diffSub){
-  
-  diffSub <- diffSub[unlist(lapply(diffSub, function(x) nrow(x)>0))]
-  
-  for(elem in 1:length(diffSub)){
-    if(nrow(diffSub[[elem]])!=0){
-      for(r in 1:nrow(diffSub[[elem]])){
-        subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
-        posSta <- which(subset$end == diffSub[[elem]][r,]$Start)
-        posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
-        geneToAnn <- subset[posSta:posEnd, ]$gene_name
-        found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
-        min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
-        max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
-        band_str <- paste(min_band,max_band, sep = "-")
-        diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
-      }
-    }
-  }
-  
-  if(length(grep("subclone",names(diffSub)))>0){
-    
-    vectAlt_all <- lapply(diffSub, function(x) apply(x, 1, function(x){ gsub(" ","",x); paste0(x[1],x[4])}))
-    vectAlt_all <- lapply(vectAlt_all, function(x) { do.call(paste, c(as.list(unique(x)), sep = "\n"))})
-    
-    if(length(grep("subclone",names(diffSub)))>1){
-      vectAlt1 <- vectAlt_all[[1]]
-      vectAlt2 <- vectAlt_all[[2]]
-      vectAltsh <- vectAlt_all[[3]]
-    }else{
-      vectAlt1 <- vectAlt_all[[1]]
-      vectAlt2 <- c("")
-      vectAltsh <- vectAlt_all[[2]]
-    }
-    
-    vectAlt <- list(vectAlt1,vectAlt2,vectAltsh)
-    
-  }else{
-    vectAlt <- list()
-  }
-  
-  return(vectAlt)
-  
-}
-
 
 testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
   
@@ -610,6 +605,8 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
 
   }
   
+  if(length(subclonesAlt)>0){
+    
   subclonesAlt2 <- do.call(rbind,subclonesAlt)
   subclonesAlt2 <- subclonesAlt2[order(subclonesAlt2$Chr,subclonesAlt2$Start),]
   subclonesAlt2 <-subclonesAlt2[!duplicated(subclonesAlt2[,c(1,2,3,4)]),]
@@ -625,6 +622,9 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
       print("dupl")
       subclonesAlt2 <- subclonesAlt2[-which(duplShared)[-1],]
     }
+  }
+  }else{
+    subclonesAlt2 <- NULL
   }
   
   return(subclonesAlt2)

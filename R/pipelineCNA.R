@@ -126,6 +126,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
             for(i in 1:nrow(aggregShareSubclone)){
               #aggregInd <- append(aggregInd, c(as.integer(substr(shareSubclone$sh_sub[i], 1,1)), as.integer(substr(shareSubclone$sh_sub[i], 3,3))))
               aggregInd <- append(aggregInd,as.integer(unlist(strsplit(shareSubclone$sh_sub,"-"))))
+              #diffSubcl[[grep("shareSubclone",names(diffSubcl))]] <- diffSubcl[[grep("shareSubclone",names(diffSubcl))]][-i,]
+              diffSubcl <- diffSubcl[-grep("shareSubclone",names(diffSubcl))]
               diffSubcl[[paste0(sample,"_subclone",min(aggregInd))]] <- aggregShareSubclone[i,c(1,2,3,4,6)]
             }
             aggregInd <- unique(aggregInd)
@@ -134,6 +136,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
             res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
             
             res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores)
+            
           }
         }
         
