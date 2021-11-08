@@ -19,6 +19,7 @@ NULL
 #' @param count_mtx raw count matrix
 #' @param sample sample name (optional)
 #' @param par_cores number of cores (optional)
+#' @param norm_cell vector normal cells if known (optional)
 #' @param gr_truth ground truth of classification (optional)
 #' @param SUBCLONES find subclones (optional)
 #'
@@ -26,17 +27,20 @@ NULL
 #' @export
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, SUBCLONES = TRUE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL,  gr_truth = NULL, SUBCLONES = TRUE){
   
   dir.create(file.path("./output"), showWarnings = FALSE)
   
   start_time <- Sys.time()
   
   res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores)
-  norm.cell <- names(res_proc$norm.cell)
-  print(table(gr_truth[norm.cell]))
   
-  res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
+  if(length(norm_cell)==0){
+    norm_cell <- names(res_proc$norm_cell)
+    print(table(gr_truth[norm_cell]))
+  }
+  
+  res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
 
@@ -144,7 +148,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20,  gr_truth = NULL, 
         names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
         
         save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "mgh125_plotcnaline2.RData")
-        plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
+        #plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
         
         diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
@@ -201,12 +205,12 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   count_mtx<- count_mtx[,-1]
   
   res_proc_1 <- preprocessingMtx(count_mtx1, par_cores=par_cores)
-  norm.cell <- names(res_proc_1$norm.cell)
-  res_class_1 <- classifyTumorCells(res_proc_1$count_mtx_norm,res_proc_1$count_mtx_annot, samp_1, par_cores=par_cores,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
+  norm_cell <- names(res_proc_1$norm_cell)
+  res_class_1 <- classifyTumorCells(res_proc_1$count_mtx_norm,res_proc_1$count_mtx_annot, samp_1, par_cores=par_cores,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
   res_proc_2 <- preprocessingMtx(count_mtx2, par_cores=par_cores)
-  norm.cell <- names(res_proc_2$norm.cell)
-  res_class_2 <- classifyTumorCells(res_proc_2$count_mtx_norm,res_proc_2$count_mtx_annot, samp_2, par_cores=par_cores,  norm.cell.names = norm.cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
+  norm_cell <- names(res_proc_2$norm_cell)
+  res_class_2 <- classifyTumorCells(res_proc_2$count_mtx_norm,res_proc_2$count_mtx_annot, samp_2, par_cores=par_cores,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   
   sampl <- paste0(samp_1,"-vs-", samp_2)
   
