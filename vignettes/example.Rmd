@@ -17,23 +17,22 @@ knitr::opts_chunk$set(
 ```
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-library(CNAvegaMC)
+library(SCEVAN)
 
-load("./MGH125_Count_mtx.RData")
-results <- CNAvegaMC::pipelineCNA(count_mtx, sample = "MGH125", par_cores = 20, SUBCLONES = TRUE)
+load("./MGH106_count_mtx.RData")
+results <- SCEVAN::pipelineCNA(count_mtx, sample = "MGH106", par_cores = 20, SUBCLONES = TRUE)
 ```
 
 # Heatmap normal and tumor cells
 
-<img src="./output/MGH125heatmap.jpeg" alt="heatmap" width="1280"/>
+<img src="./output/BT1160heatmap.jpeg" alt="heatmap" width="1280"/>
 
 # Heatmap subclones of tumor cells
 
-<img src="./output/MGH125heatmap_subclones.jpeg" alt="heatmap" width="1280"/>
+<img src="./output/BT1160heatmap_subclones.jpeg" alt="heatmap" width="1280"/>
 
-# Fishplot subclones of tumor cells
+# Pathways activity
 
-<img src="./output/MGH125fishplot_subclones.jpeg" alt="heatmap" width="1280"/>
-
-# Tsne
-<img src="./output/MGH125tsne.jpeg" alt="heatmap" width="1280"/>
+<img src="./output/BT1160pathwayAnalysis_subclones1.png" alt="heatmap" width="1280"/>
+<img src="./output/BT1160pathwayAnalysis_subclones2.png" alt="heatmap" width="1280"/>
+<img src="./output/BT1160pathwayAnalysis_subclones3.png" alt="heatmap" width="1280"/>

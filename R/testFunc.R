@@ -675,16 +675,22 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       
       print(topGenes)
       
-      png(paste("./output/",samp,"- DE", "chr",chrr,":",startpos,":",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
+      FOUND_SIGN_DE <- FALSE
 
       txtRepel <- c()
       
       if(nrow(subset(topGenes, fc > 0.5 & p_value>1.30103))>0) {
-        txtRepel <- append(txtRepel,geom_text_repel(data= subset(topGenes, fc > 0.5 & p_value>1.30103), aes(fc, p_value, label = geneID, colour = "blue", size = 30)))
+         txtRepel <- append(txtRepel,geom_text_repel(data= subset(topGenes, fc > 0.5 & p_value>1.30103), aes(fc, p_value, label = geneID, colour = "blue", size = 30)))
+         FOUND_SIGN_DE <- TRUE
       } 
       if(nrow(subset(topGenes, fc < -0.5 & p_value>1.30103))>0) {
           txtRepel <- append(txtRepel,geom_text_repel(data= subset(topGenes, fc < -0.5 & p_value>1.30103), aes(fc, p_value, label = geneID, colour = "red", size = 30)))
+          FOUND_SIGN_DE <- TRUE
       } 
+      
+      if(FOUND_SIGN_DE){
+      
+      png(paste("./output/",samp,"- DE", "chr",chrr,":",startpos,":",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
       
       p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + txtRepel +
         xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE", "chr",chrr,":",startpos,":",endpos)) + theme_bw(base_size = 16) + 
@@ -694,6 +700,7 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       
       dev.off()
   
+      }
     }
   }
   
