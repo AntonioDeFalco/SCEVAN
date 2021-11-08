@@ -561,9 +561,10 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   
   png(paste("./output/",samp,"tsne_scRNA.png",sep=""), height=1650, width=1650, res=200)
   
-  ggplot(df, aes(x, y, colour = CellType)) +
+  pp <- ggplot(df, aes(x, y, colour = CellType)) +
     geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
                                                    values=c("red", "green"))
+  plot(pp)
   dev.off()
   if(length(unique(clustersSub))>0){
 
@@ -576,8 +577,10 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
                      Subclones = pred)
     png(paste("./output/",samp,"tsne_CNA.png",sep=""), height=1650, width=1650, res=200)
     
-    ggplot(df, aes(x, y, colour = Subclones)) +
+    pp <- ggplot(df, aes(x, y, colour = Subclones)) +
       geom_point() + theme_bw() + scale_color_brewer(palette="Paired")
+    
+    plot(pp)
     dev.off()
   }
 }
