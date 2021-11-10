@@ -48,29 +48,25 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   classDf <- data.frame(class = rep("filtered", length(colnames(count_mtx))), row.names = colnames(count_mtx))
   classDf[colnames(res_class$CNAmat)[-(1:3)], "class"] <- "normal"
   classDf[res_class$tum_cells, "class"] <- "tumor"
+  classDf[res_class$confidentNormal, "confidentNormal"] <- "yes"
   
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
 
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores)
 
-  res_final <- list(res_class$confidentNormal, res_class$tum_cells)
-  names(res_final) <- c("confidentNormalCells", "predTumorCells")
-  
   # DEBUG
   #if(length(gr_truth)>0){
   #  ground_truth_mal <- names(gr_truth[gr_truth == "malignant"])
   #  pred_mal <- res_class$tum_cells
   #  F1_Score <- computeF1score(pred_mal, ground_truth_mal)
   #  print(paste("F1_Score: ", F1_Score))
-  #  res_final <- append(res_final, F1_Score)
-  # names(res_final)[3] <- "F1_Score"
   #}
   
   FOUND_SUBCLONES <- SUBCLONES
   
   if (SUBCLONES) {
-    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc, res_final,mtx_vega, sample, par_cores, classDf)
+    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
   }
@@ -102,16 +98,13 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores){
 }
 
 
-subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, res_final, mtx_vega,  sample, par_cores, classDf){
+subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf){
   
   start_time <- Sys.time()
   
   FOUND_SUBCLONES <- FALSE
     
   res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample, par_cores)
-  
-  res_final <- append(res_final, list(res_subclones$n_subclones,res_subclones$breaks_subclones,res_subclones$clustersSub))
-  names(res_final)[(length(names(res_final))-2):length(names(res_final))] <- c("n_subclones", "breaks_subclones", "clusters_subclones")
   
   tum_cells <- res_class$tum_cells
   clustersSub <- res_subclones$clustersSub
@@ -181,7 +174,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, res_final, 
       oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot,diffSubcl, res_subclones$n_subclones)
       plotOncoHeat(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
       
-      plotTSNE(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, res_final$clusters_subclones, sample)
+      plotTSNE(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
       classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
       
       if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
