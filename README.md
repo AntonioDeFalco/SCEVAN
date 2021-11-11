@@ -13,7 +13,7 @@ library(SCEVAN)
 
 ## Usage
 
-A single call (pipelineCNA) allows the execution of the entire analysis.
+A single call (pipelineCNA) allows the execution of the entire analysis of classification and characterization of clonal structure.
 
 - ***count_mtx*** : Count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 - ***sample*** : Sample name to save results (optional)
@@ -24,6 +24,19 @@ A single call (pipelineCNA) allows the execution of the entire analysis.
 ```
 ## GET TUMOR CELLS AND SUBCLONES
 results <- pipelineCNA(count_mtx)
+```
+
+Another main function (compareClonalStructure) allows the comparison of clonal profiles of the different samples.
+
+- ***count_mtx1*** : Count matrix of sample 1.
+- ***count_mtx2*** : Count matrix of sample 2.
+- ***samp_1*** : Name of sample 1.
+- ***samp_2*** : Name of sample 2.
+- ***par_cores*** : Number of cores to run the pipeline  (optional)
+
+```
+## GET TUMOR CELLS AND SUBCLONES
+compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
 ```
 
 ## Usage examples (vignettes)
