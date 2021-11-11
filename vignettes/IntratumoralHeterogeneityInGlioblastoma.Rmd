@@ -1,0 +1,68 @@
+---
+title: "Intratumoral heterogeneity in Glioblastoma"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+library(SCEVAN)
+
+load("./MGH106_count_mtx.RData")
+
+results <- SCEVAN::pipelineCNA(count_mtx, sample = "MGH106", par_cores = 20, SUBCLONES = TRUE)
+
+```
+
+### Heatmap classification of tumor cells
+
+Heatmap of the Copy Number Alteration matrix with classification of non-malignant and malignant cells.
+
+<img src="./output/MGH106heatmap.png" alt="heatmap" width="1280"/>
+
+### Heatmap of tumour cell subclones
+
+Heatmap of the Copy Number Alteration matrix with the clonal subpopulations found.
+
+<img src="./output/MGH106heatmap_subclones.png" alt="heatmap" width="1280"/>
+
+### Consensus plot
+
+Compact plot of the alterations present in each subpopulation.
+
+<img src="./output/MGH106consensus.png" alt="heatmap" width="1280"/>
+
+### OncoPrint-like plot
+
+OncoPrint-like plot that highlighting specific alteration, shared alteration between subclones, or clonal alteration.
+
+<img src="./output/MGH106OncoHeat.png" alt="heatmap" width="720"/>
+
+### DE analysis in specific alterations
+
+Vulcano plot obtained from differential expression analysis of the genes belonging to the specific alterations found.
+
+<img src="./output/MGH106-DEchr3_subclones.png" alt="heatmap" width="720"/>
+
+<img src="./output/MGH106-DEchr12_subclones.png" alt="heatmap" width="720"/>
+
+# Pathway Analysis of subclones
+
+REACTOME pathways activity obtained with GSEA for each subclone in contrast to the others for each subclone.
+
+<img src="./output/MGH106pathwayAnalysis_subclones1.png" alt="heatmap" width="1280"/>
+<img src="./output/MGH106pathwayAnalysis_subclones2.png" alt="heatmap" width="1280"/>
+<img src="./output/MGH106pathwayAnalysis_subclones3.png" alt="heatmap" width="1280"/>
+
+# Results
+
+The pipeline returns in results a data frame containing for each cell its classification and which clonal subpopulation it belongs
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+results
+```
