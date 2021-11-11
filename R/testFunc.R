@@ -461,14 +461,12 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   for(i in grep("_clone",names(listAltSubclones))){
     clone <- rbind(clone, listAltSubclones[[i]])
   }
-  print(dim(clone))
   
   for (i in 1:nrow(clone)){
     
     duplShared <- (clone[,]$Chr == clone[i,]$Chr) & (clone[,]$Start == clone[i,]$Start) & (clone[,]$End == clone[i,]$End)
     duplShared[is.na(duplShared)] <- FALSE
     if(sum(duplShared)>1){
-      print("dupl")
       clone <- clone[-which(duplShared)[-1],]
     }
   }
@@ -481,7 +479,6 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
     if(sum(duplShared)>1){
       clone[which(duplShared)[1],]$Start <- min(clone[duplShared,]$Start)
       clone[which(duplShared)[1],]$End <-  max(clone[duplShared,]$End)
-      print("dupl")
       clone <- clone[-which(duplShared)[-1],]
     }
   }
@@ -619,7 +616,6 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
     if(sum(duplShared)>1){
       subclonesAlt2[which(duplShared)[1],]$Start <- min(subclonesAlt2[duplShared,]$Start)
       subclonesAlt2[which(duplShared)[1],]$End <-  max(subclonesAlt2[duplShared,]$End)
-      print("dupl")
       subclonesAlt2 <- subclonesAlt2[-which(duplShared)[-1],]
     }
   }
@@ -672,8 +668,6 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       topGenes <- fact_spec2[
         with(fact_spec2, order(abs(fc), p_value, decreasing = c(TRUE,TRUE))),
       ][1:min(50,nrow(fact_spec2)),]
-      
-      print(topGenes)
       
       FOUND_SIGN_DE <- FALSE
 
@@ -868,7 +862,6 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
 }
 
 plotOncoHeat <- function(oncoHeat, nSub, samp, perc_subclones){
-  print(perc_subclones)
   oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
   annotdf <- data.frame(row.names = rownames(oncoHeat), 
                         Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  

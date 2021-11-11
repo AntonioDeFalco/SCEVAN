@@ -860,8 +860,8 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
       posOK <- segmSUB_pos[[x]]$Pos[abs(as.numeric(segmSUB_pos[[x]]$Mean))>0]
       
       for(i in 1:(length(posOK)/2)){
-        print(posOK[(i*2)-1])
-        print(posOK[(i*2)])
+        #print(posOK[(i*2)-1])
+        #print(posOK[(i*2)])
         toREMdf <- toREMdf | ((df[[x]]$Pos <= posOK[(i*2)] & df[[x]]$Pos >= posOK[(i*2)-1]))
       }
       sum(toREMdf)
