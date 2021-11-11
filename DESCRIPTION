@@ -15,6 +15,7 @@ Imports:
     cluster,
     ggplot2,
     Rtsne,
+    scran,
     ggrepel
 LazyLoad: yes
 NeedsCompilation: yes
