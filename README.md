@@ -23,8 +23,13 @@ A single call (pipelineCNA) allows the execution of the entire analysis.
 
 ```
 ## GET TUMOR CELLS AND SUBCLONES
-results <- pipelineCNA(count_mtx, sample = sample)
+results <- pipelineCNA(count_mtx)
 ```
+
+## Usage examples (vignettes)
+
+- [Intratumoral heterogeneity in Glioblastoma](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/IntratumoralHeterogeneityInGlioblastoma.html)
+- [](http://htmlpreview.github.io/)
 
 ## Output
 
