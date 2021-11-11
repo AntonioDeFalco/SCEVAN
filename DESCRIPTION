@@ -13,7 +13,6 @@ Imports:
     methods,
     yaGST,
     cluster,
-    EnsDb.Hsapiens.v86,
     ggplot2,
     Rtsne,
     ggrepel
