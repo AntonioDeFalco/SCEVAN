@@ -198,6 +198,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
 #' 
 compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2="", par_cores = 20){
 
+  nSub <- 2
   
   count_mtx <- merge(count_mtx1, count_mtx2, by="row.names" ,all = TRUE)
   count_mtx[is.na(count_mtx)] <- 0
@@ -214,6 +215,9 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   
   sampl <- paste0(samp_1,"-vs-", samp_2)
   
+  mtx_vega <- segmTumorMatrix(res_proc_1, res_class_1, samp_1, par_cores)
+  mtx_vega <- segmTumorMatrix(res_proc_2, res_class_2, samp_2, par_cores)
+  
   all_segm <- c()
   segmList <- list()
   segmList$subclone1 <- read.csv(paste0("./output/ ",samp_1,"onlytumor vega_output"), sep = "\t")
@@ -221,7 +225,7 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   segmList$subclone2 <- read.csv(paste0("./output/ ",samp_2,"onlytumor vega_output"), sep = "\t")
   all_segm[[paste0(sampl,"_subclone", 2)]] <- getPossibleSpecAltFromSeg(segmList$subclone2)
   
-  all_segm <- diffSubclones(all_segm, sampl)
+  all_segm <- diffSubclones(all_segm, sampl) 
   
   res_class <- list()
   res_class$CNAmat <- merge(res_class_1$CNAmat, res_class_2$CNAmat, by = "gene_id", all = TRUE)
@@ -237,7 +241,7 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   
   rownames(res_class$CNAmat) <- res_class$CNAmat$gene_id
   res_class$CNAmat <- res_class$CNAmat[res_proc$count_mtx_annot$gene_id,]
-
+  
   rownames(res_proc$count_mtx_norm) <- res_proc$count_mtx_norm$Row.names
   res_proc$count_mtx_norm <- res_proc$count_mtx_norm[,-1]
   res_proc$count_mtx_norm <- res_proc$count_mtx_norm[res_proc$count_mtx_annot$gene_name,]
@@ -245,25 +249,18 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   clust_subclones <- append(rep(1,length(res_class_1$tum_cells)),rep(2,length(res_class_2$tum_cells)))
   names(clust_subclones) <- append(res_class_1$tum_cells,res_class_2$tum_cells)
   
-  diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, all_segm, clust_subclones, nSub = 2, sampl)
+  diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, all_segm, clust_subclones, nSub, sampl)
   
-  plotCNAline(segmList, diffSubcl, sampl)
+  plotCNAline(segmList, diffSubcl, sampl, nSub)
   
   diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
   
-  vectAlt <- annoteBand(res_proc$count_mtx_annot,diffSubcl)
+  perc_cells_subclones <- table(clust_subclones)/length(clust_subclones)
+  print(perc_cells_subclones)
   
-  if(length(vectAlt)>0){
-    perc_cells_subclones <- table(clust_subclones)/length(clust_subclones)
-    plotSubclonesFish(as.integer(perc_cells_subclones[1]*100),as.integer(perc_cells_subclones[2]*100), vectAlt[[1]], vectAlt[[2]], vectAlt[[3]], sampl)
+  oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, nSub)
+  plotOncoHeat(oncoHeat, nSub, sampl, perc_cells_subclones)
   
-    res_final <- list()
-    res_final$predTumorCells <- append(res_class_1$tum_cells,res_class_2$tum_cells)
-    plotUMAP(count_mtx,res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_final$predTumorCells, clust_subclones, sampl)
-
-    genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, clust_subclones, sampl, diffSubcl[grep("subclone",names(diffSubcl))])
-    pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, clust_subclones, sampl)
-  }
   
 }
 

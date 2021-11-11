@@ -29,4 +29,4 @@ results <- pipelineCNA(count_mtx)
 ## Usage examples (vignettes)
 
 - [Intratumoral heterogeneity](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/IntratumoralHeterogeneityInGlioblastoma.html)
-- [Comparison of clonal profiles](http://htmlpreview.github.io/)
+- [Comparison of clonal profiles](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/ComparisonOfClonalProfiles.html)
