@@ -22,7 +22,6 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 - ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional)
 
 ```
-## GET TUMOR CELLS AND SUBCLONES
 results <- pipelineCNA(count_mtx)
 ```
 
@@ -35,7 +34,6 @@ Another main function (compareClonalStructure) allows the comparison of clonal p
 - ***par_cores*** : Number of cores to run the pipeline  (optional)
 
 ```
-## GET TUMOR CELLS AND SUBCLONES
 compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
 ```
 
