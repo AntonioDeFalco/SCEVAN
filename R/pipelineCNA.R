@@ -159,7 +159,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
       
       oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
-      plotOncoHeat(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
+      plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
       
       plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
       classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
@@ -205,13 +205,17 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   rownames(count_mtx) <- count_mtx$Row.names
   count_mtx<- count_mtx[,-1]
   
+  print(samp_1)
   res_proc_1 <- preprocessingMtx(count_mtx1, par_cores=par_cores)
   norm_cell <- names(res_proc_1$norm_cell)
   res_class_1 <- classifyTumorCells(res_proc_1$count_mtx_norm,res_proc_1$count_mtx_annot, samp_1, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
+  print(paste("found", length(res_class_1$tum_cells), "tumor cells"))
   
+  print(samp_2)
   res_proc_2 <- preprocessingMtx(count_mtx2, par_cores=par_cores)
   norm_cell <- names(res_proc_2$norm_cell)
   res_class_2 <- classifyTumorCells(res_proc_2$count_mtx_norm,res_proc_2$count_mtx_annot, samp_2, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
+  print(paste("found", length(res_class_2$tum_cells), "tumor cells"))
   
   sampl <- paste0(samp_1,"-vs-", samp_2)
   
@@ -251,16 +255,23 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   
   diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, all_segm, clust_subclones, nSub, sampl)
   
-  plotCNAline(segmList, diffSubcl, sampl, nSub)
+  colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Set2")[6:7])
+  plotCNAline(segmList, diffSubcl, sampl, nSub, colors_samp)
   
   diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
   
-  perc_cells_subclones <- table(clust_subclones)/length(clust_subclones)
-  print(perc_cells_subclones)
-  
   oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, nSub)
-  plotOncoHeat(oncoHeat, nSub, sampl, perc_cells_subclones)
   
+  annotdf <- data.frame(row.names = rownames(oncoHeat), 
+                        Sample = c(samp_1,samp_2) )  
+  
+  
+  subclones <- colors_samp(nSub)
+  names(subclones) <- unique(annotdf$Sample)
+  mycolors <- list(Sample = subclones)
+  
+  ppOncoHeat <- plotOncoHeat(oncoHeat, nSub, sampl, annotdf, mycolors)
+  print(sampl)
   
 }
 

@@ -861,8 +861,8 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
   
 }
 
-plotOncoHeat <- function(oncoHeat, nSub, samp, perc_subclones){
-  oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
+plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
+
   annotdf <- data.frame(row.names = rownames(oncoHeat), 
                         Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
   
@@ -870,6 +870,12 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, perc_subclones){
   subclones <- rbPal5(nSub)
   names(subclones) <- unique(annotdf$Subclone)
   mycolors <- list(Subclone = subclones)
+  
+  plotOncoHeat(oncoHeat, nSub, samp, annotdf, mycolors)
+}
+
+plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
+  oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
   
   png(paste("./output/",samp,"OncoHeat.png",sep=""), height=1850, width=1450, res=200)
   pheatmap::pheatmap(t(oncoHeat), color = c("blue","white","red"), cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = c(1,0,-1), legend_labels = c("AMP","","DEL"),cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  

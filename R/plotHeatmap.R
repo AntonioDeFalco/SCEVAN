@@ -791,7 +791,7 @@ segmPosSpec <- function(segmentation){
 }
 
 
-plotCNAline <- function(segmList, segmListSpec, samp, nSub){
+plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp){
   
   segmListSpec <- lapply(segmListSpec, function(x) segmPosSpec(x))
   
@@ -836,8 +836,8 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   
   #res <- cor.test(df_1$Mean,df_2$Mean)
   
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
-  cells <- rbind(rbPal5(nSub),rbPal5(nSub))
+  if(length(colors_samp)==0) colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  cells <- rbind(colors_samp(nSub),colors_samp(nSub))
   
   png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
   heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
@@ -908,9 +908,8 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub){
   
   plotSeg(df_share, c("red","blue"))
   
-
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
-  subclones <- rbPal5(nSub)
+  if(length(colors_samp)==0) colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  subclones <- colors_samp(nSub)
   
   lapply(1:nSub, function(x) plotSeg(df[[x]], c(subclones[x],subclones[x])))
   #lapply(df, function(x) plotSeg(x, c("purple","purple")))
