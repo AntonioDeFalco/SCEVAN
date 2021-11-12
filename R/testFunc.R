@@ -94,7 +94,11 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
       dd <- 5
   }
   
-  graph <- scran::buildSNNGraph(relativeSmoothMtx, dd, k = 10, type = "number")
+  #if(packageVersion("scran")>"1.16.0"){
+  #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
+  #}else{
+    graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
+  #}
   lc <- cluster_louvain(graph)
   #nSub <- 3
   #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
