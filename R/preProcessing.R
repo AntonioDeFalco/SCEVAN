@@ -9,9 +9,8 @@
 #' @export
 annotateGenes <- function(mtx){
   library(dplyr)
-  library(EnsDb.Hsapiens.v86)
-  
-  edb <- EnsDb.Hsapiens.v86 %>% genes() %>% as.data.frame()  
+
+  edb <- EnsDB_Hsapiens_v86 #From EnsDb.Hsapiens.v86
   chr <- 1:22  
   edb <- (edb[edb$seqnames %in% chr,c(1,2,3,6,7)])
   edb$seqnames <- as.numeric(as.character(edb$seqnames))
