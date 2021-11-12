@@ -4,7 +4,7 @@
 
 ## Introduction
 
-SCEVAN is an R package that starting from the raw count matrix of scRNA data automatically classifies the cells present in the biopsy by segregating non-malignant cells of tumor microenviroment from the malignant cells and also characterize the clonal structure of this malignant cells, specifically analysing the presence of subpopulations and identifying the specific and shared alterations of each subpopulation.The aim of the tool is to automate the entire analysis by allowing it to be performed in a very simple and completely unsupervised way. Analyses carried out on 106 samples and 93332 cells show better classification with an F1 score for all samples of 0.90 compared to 0.63 obtained with the state-of-the-art CopyKAT, with a better classification in 63% of the samples and worse in only 23% of the samples.
+SCEVAN is an R package that starting from the raw count matrix of scRNA data automatically classifies the cells present in the biopsy by segregating non-malignant cells of tumor microenviroment from the malignant cells and also characterizes the clonal structure of this malignant cells, specifically analysing the presence of subpopulations and identifying the specific and shared alterations of each subpopulation. The aim of the tool is to automate the entire analysis by allowing it to be performed in a very simple and completely unsupervised way. Analyses carried out on 106 samples and 93332 cells show better classification with an F1 score for all samples of 0.90 compared to 0.63 obtained with the state-of-the-art CopyKAT, with a better classification in 63% of the samples and worse in only 23% of the samples.
 
 ## Installation
 
@@ -49,7 +49,7 @@ compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
 
 ## Sample Datasets
 
-In the folder ***data*** are provided some pre-processed samples used in the examples (vignettes):
+In the folder ***data***  some pre-processed samples used in the examples (vignettes) are available:
 
 - ***MGH106.RData*** : scRNA data of MGH106 sample from the public dataset of Gliobastoma (GSE131928) 
 - ***HNSCC26.RData*** : scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332)
