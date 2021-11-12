@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(SCEVAN)
 
-load("./HNSCC26_data.RData")
+load(url("https://github.com/AntonioDeFalco/SCEVAN/raw/main/data/HNSCC26_data.RData"))
 
 compareClonalStructure(count_mtx1 = count_mtx_prim, count_mtx2 = count_mtx_lymph, samp_1 = "HNSCC26_prim", samp_2 = "HNSCC26_lymph", par_cores = 20)
 

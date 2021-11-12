@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(SCEVAN)
 
-load("./MGH106_count_mtx.RData")
+load(url("https://github.com/AntonioDeFalco/SCEVAN/raw/main/data/MGH106_data.RData"))
 
 results <- SCEVAN::pipelineCNA(count_mtx, sample = "MGH106", par_cores = 20, SUBCLONES = TRUE)
 
