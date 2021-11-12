@@ -273,6 +273,18 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   ppOncoHeat <- plotOncoHeat(oncoHeat, nSub, sampl, annotdf, mycolors)
   print(sampl)
   
+  classDf1 <- data.frame(class = rep("filtered", length(colnames(count_mtx1))), row.names = colnames(count_mtx1))
+  classDf1[colnames(res_class_1$CNAmat)[-(1:3)], "class"] <- "normal"
+  classDf1[res_class_1$tum_cells, "class"] <- "tumor"
+  classDf1[res_class_1$confidentNormal, "confidentNormal"] <- "yes"
+  
+  classDf2 <- data.frame(class = rep("filtered", length(colnames(count_mtx2))), row.names = colnames(count_mtx2))
+  classDf2[colnames(res_class_2$CNAmat)[-(1:3)], "class"] <- "normal"
+  classDf2[res_class_2$tum_cells, "class"] <- "tumor"
+  classDf2[res_class_2$confidentNormal, "confidentNormal"] <- "yes"
+  
+  return(rbind(classDf1,classDf2))
+  
 }
 
 
