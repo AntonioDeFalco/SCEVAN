@@ -15,6 +15,7 @@ Imports:
     cluster,
     ggplot2,
     Rtsne,
+    EnsDb.Hsapiens.v86,
     scran,
     ggrepel
 LazyLoad: yes
