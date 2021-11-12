@@ -7,6 +7,7 @@ Author: A. De Falco and M. Ceccarelli
 Maintainer: A. De Falco <antoniodf92na@gmail.com>
 Description: SCEVAN
 License: GPL-2
+biocViews:
 Imports:
     parallel,
     dplyr,
