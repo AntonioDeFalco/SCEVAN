@@ -77,6 +77,8 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
 #' @examples
 subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores){
   
+  library(scran)
+  
   norm.mat.relat <- CNAmat[,-c(1:3)]
   info_mat <- CNAmat[,c(1:3)]
   
@@ -97,7 +99,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   #if(packageVersion("scran")>"1.16.0"){
   #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
   #}else{
-    graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
+  graph <- buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
   #}
   lc <- cluster_louvain(graph)
   #nSub <- 3
