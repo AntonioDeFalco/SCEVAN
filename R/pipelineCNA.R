@@ -163,6 +163,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       
       plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
       classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
+      if(res_subclones$n_subclones>2) plotCloneTree(sample, res_subclones)
       
       if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
       pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
@@ -292,6 +293,20 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
 
 
 
+#' Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
+#'
+#' @param count_mtx raw count matrix
+#' @param sample sample name (optional)
+#' @param par_cores number of cores (optional)
+#' @param norm_cell vector normal cells if known (optional)
+#' @param gr_truth ground truth of classification (optional)
+#' @param SUBCLONES find subclones (optional)
+#'
+#' @return
+#' @export
+#'
+#' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
+
 DEBUGpipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL,  gr_truth = NULL, SUBCLONES = TRUE){   
 
   dir.create(file.path("./output"), showWarnings = FALSE)
@@ -322,4 +337,32 @@ DEBUGpipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = N
     F1_Score <- computeF1score(pred_mal, ground_truth_mal)
     print(paste("F1_Score: ", F1_Score))
   }
+  
+  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores)
+  
+  save(res_class, res_proc, mtx_vega, sample, par_cores, classDf, file = paste0("beforeSubclone", sample,".RData"))
+  
+  if (SUBCLONES) {
+    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)
+    FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
+    classDf <- res_subclones$classDf
+  }else{
+    FOUND_SUBCLONES <- FALSE
+  }
+  
+  if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
+  
+  return(classDf)
+  
+}
+
+
+DEBUGsubclonesAnalysis <- function(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf){   
+  
+  res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)
+  FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
+  classDf <- res_subclones$classDf
+  
+  return(classDf)
+  
 }

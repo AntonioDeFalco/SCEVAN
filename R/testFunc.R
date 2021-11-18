@@ -634,6 +634,8 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
 
 genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20){
 
+  save(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores, file = paste0(samp,"genesDE.RData"))
+  
   library(ggrepel)
   library(ggplot2)
   

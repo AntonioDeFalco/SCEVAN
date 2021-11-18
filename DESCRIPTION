@@ -17,6 +17,9 @@ Imports:
     ggplot2,
     Rtsne,
     scran,
+    ape,
+    ggtree,
+    tidytree,
     ggrepel
 LazyLoad: yes
 NeedsCompilation: yes
