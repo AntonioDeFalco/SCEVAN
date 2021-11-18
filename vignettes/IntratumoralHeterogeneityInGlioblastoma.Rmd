@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 We load the scRNA data of MGH106 sample from the public dataset of Gliobastoma (GSE131928)
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-load(url("https://github.com/AntonioDeFalco/SCEVAN/raw/main/data/MGH106_data.RData"))
+load(url("https://www.dropbox.com/s/b9udpvhnc2ez9pc/MGH106_data.RData?raw=1"))
 ```
 
 ## Run pipeline   
@@ -53,6 +53,12 @@ Heatmap of the Copy Number Alteration matrix with classification of non-malignan
 Heatmap of the Copy Number Alteration matrix with the clonal subpopulations found.
 
 <img src="./output/MGH106heatmap_subclones.png" alt="heatmap" width="1280"/>
+
+### Clonal tree (CloneTree.png)
+
+Clonal tree inferred from subsclone profiles.
+
+<img src="./output/MGH106CloneTree.png" alt="heatmap" width="1280"/>
 
 ### Consensus plot (consensus.png)
 

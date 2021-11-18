@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 We load the scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332)
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-load(url("https://github.com/AntonioDeFalco/SCEVAN/raw/main/data/HNSCC26_data.RData"))
+load(url("https://www.dropbox.com/s/6zns12amobs39g8/HNSCC26_data.RData?raw=1"))
 ```
 
 ## Run comparison   
