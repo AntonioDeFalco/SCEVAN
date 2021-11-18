@@ -79,11 +79,16 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   }
   print(paste(nrow(count_mtx)," genes past filtering", sep=""))
 
-  norm_cell <- getConfidentNormalCells(count_mtx, par_cores = par_cores)
+  #norm_cell <- getConfidentNormalCells(count_mtx, par_cores = par_cores)
   
   print("3) Annotations gene coordinates")
   
   count_mtx_annot <- annotateGenes(count_mtx) 
+  
+  count_mtx <- count_mtx_annot[,-c(1:5)]
+  rownames(count_mtx) <- count_mtx_annot$gene_name
+  norm_cell <- getConfidentNormalCells(count_mtx, par_cores = par_cores)
+  
   rm(count_mtx)
   
   count_mtx_annot <- count_mtx_annot[
