@@ -294,7 +294,7 @@ getPossibleSpecAltFromSeg <- function(segm, name){
           break
         }
         
-        if( (abs((segm_ch$End[(br-1)] - segm_ch$Start[br])) < 20000000) & (segm_ch$Alteration[(br-1)] == segm_ch$Alteration[br])){
+        if( (abs((segm_ch$End[(br-1)] - segm_ch$Start[br])) < 10000000) & (segm_ch$Alteration[(br-1)] == segm_ch$Alteration[br])){
           segm_ch$End[(br-1)] <- segm_ch$End[br]
           segm_ch <- segm_ch[-(br),]
         }else{
@@ -355,13 +355,13 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
                     for(br2 in AltPres){
                       FOUND_br2 <- FALSE
                       
-                                if( abs(cl1_ch[br,]$Start - cl2_ch[br2,]$Start)<20000000 | abs(cl1_ch[br,]$End - cl2_ch[br2,]$End)<20000000){
+                                if( abs(cl1_ch[br,]$Start - cl2_ch[br2,]$Start)<10000000 | abs(cl1_ch[br,]$End - cl2_ch[br2,]$End)<10000000){
                                     
                                   if( ((cl1_ch[br,]$Start >= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End <= cl2_ch[br2,]$End)) | ((cl1_ch[br,]$Start <= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End >= cl2_ch[br2,]$End))){
                                     
                                     cl_ch_new <- cl1_ch[br,]
-                                    cl_ch_new$Start <- min(cl1_ch[br,]$Start, cl2_ch[br2,]$Start)
-                                    cl_ch_new$End <- max(cl1_ch[br,]$End, cl2_ch[br2,]$End)
+                                    cl_ch_new$Start <- max(cl1_ch[br,]$Start, cl2_ch[br2,]$Start)
+                                    cl_ch_new$End <- min(cl1_ch[br,]$End, cl2_ch[br2,]$End)
                                      
                                     if( ((cl1_ch[br,]$End - cl1_ch[br,]$Start) / (cl2_ch[br2,]$End - cl2_ch[br2,]$Start) < 0.40 ) | ((cl2_ch[br2,]$End - cl2_ch[br2,]$Start) / (cl1_ch[br,]$End - cl1_ch[br,]$Start)  < 0.40 )){
                                       
@@ -448,7 +448,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
         test <- t.test(subClone1,subClone2, alternative = "less")
       }
       
-      if(test$p.value<10^{-15} & abs(mean(subClone1)-mean(subClone2))>=0.10  & abs(mean(subClone1))>=0.10){
+      if(test$p.value<10^{-10} & abs(mean(subClone1)-mean(subClone2))>=0.05  & abs(mean(subClone1))>=0.10){
 
         listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
         
@@ -479,7 +479,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   
   for (i in 1:nrow(clone)){
     
-    duplShared <- (clone[,]$Chr == clone[i,]$Chr) & (abs(clone[,]$Start - clone[i,]$Start)<20000000) & (abs(clone[,]$End - clone[i,]$End)<20000000)
+    duplShared <- (clone[,]$Chr == clone[i,]$Chr) & (abs(clone[,]$Start - clone[i,]$Start)<10000000) & (abs(clone[,]$End - clone[i,]$End)<10000000)
     duplShared[is.na(duplShared)] <- FALSE
     
     if(sum(duplShared)>1){
@@ -536,6 +536,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
 
 testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
   
+  subclonesAltClone <- list()
   subclonesAlt <- list()
   
   segm_sh <- c()  
@@ -576,14 +577,15 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
       posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
       
       subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
-      #subIndSh <- listAltSubclones[[sub]][i,]$sh_sub
-      subIndSh <- as.numeric(otherSim$sh_sub)
+      subIndSh <- as.numeric(listAltSubclones[[sub]][i,]$sh_sub)
+      subInd <- as.numeric(subInd)
+      #subIndSh <- as.numeric(otherSim$sh_sub)
       
       subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones %in% c(subInd,subIndSh)])]
       subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[!(clust_subclones %in% c(subInd,subIndSh))])]
       
-      subClone1 <- apply(subClone1,1, mean)
-      subClone2 <- apply(subClone2,1, mean)
+      subClone1 <- apply(subClone1, 1, mean)
+      subClone2 <- apply(subClone2, 1, mean)
       
       if( listAltSubclones[[sub]][i,]$Alteration == "A" ){
         test <- t.test(subClone1,subClone2, alternative = "greater")
@@ -591,7 +593,7 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
         test <- t.test(subClone1,subClone2, alternative = "less")
       }
     
-      if(test$p.value<10^{-15} & abs(mean(subClone1)-mean(subClone2))>=0.10  & abs(mean(subClone1))>=0.10){
+      if(test$p.value<10^{-10} & abs(mean(subClone1)-mean(subClone2))>=0.05  & abs(mean(subClone1))>=0.10){
         
         listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
         
@@ -599,11 +601,13 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
         
         segm_new <- rbind(segm_new, listAltSubclones[[sub]][i,])
       }else{
+        listAltSubclones[[sub]][i,]$Mean <- mean(append(subClone1,subClone2))
         segm_sh <- rbind(segm_sh, listAltSubclones[[sub]][i,])
       }
       
     }
     
+    if(length(segm_sh)>0)  subclonesAltClone[[paste0(samp,"_clone", subInd)]] <- segm_sh
     if(length(segm_new)>0)  subclonesAlt[[paste0(samp,"_share", subInd)]] <- segm_new
 
   }
@@ -616,7 +620,7 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
   
   for (i in 1:nrow(subclonesAlt2)){
     
-    duplShared <- (subclonesAlt2[,]$Chr == subclonesAlt2[i,]$Chr) & (abs(subclonesAlt2[,]$Start - subclonesAlt2[i,]$Start)<20000000) & (abs(subclonesAlt2[,]$End - subclonesAlt2[i,]$End)<20000000) & (subclonesAlt2[,]$sh_sub == subclonesAlt2[i,]$sh_sub) & (subclonesAlt2[,]$Alteration == subclonesAlt2[i,]$Alteration)
+    duplShared <- (subclonesAlt2[,]$Chr == subclonesAlt2[i,]$Chr) & (abs(subclonesAlt2[,]$Start - subclonesAlt2[i,]$Start)<10000000) & (abs(subclonesAlt2[,]$End - subclonesAlt2[i,]$End)<10000000) & (subclonesAlt2[,]$sh_sub == subclonesAlt2[i,]$sh_sub) & (subclonesAlt2[,]$Alteration == subclonesAlt2[i,]$Alteration)
     duplShared[is.na(duplShared)] <- FALSE
     
     if(sum(duplShared)>1){
