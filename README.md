@@ -49,8 +49,9 @@ compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
 
 ## Sample Datasets
 
-In the folder ***data***  some pre-processed samples used in the examples (vignettes) are available:
+We provide some pre-processed samples used in the examples (vignettes):
 
-- ***MGH106.RData*** : scRNA data of MGH106 sample from the public dataset of Gliobastoma (GSE131928) 
-- ***HNSCC26.RData*** : scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332)
+- ***MGH106.RData*** : scRNA data of MGH106 sample from the public dataset of Gliobastoma (GSE131928), you can download the pre-processed data from [here](https://www.dropbox.com/s/b9udpvhnc2ez9pc/MGH106_data.RData?dl=0)
+
+- ***HNSCC26.RData*** : scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332), you can download the pre-processed data from [here](https://www.dropbox.com/s/6zns12amobs39g8/HNSCC26_data.RData?dl=0)
 
