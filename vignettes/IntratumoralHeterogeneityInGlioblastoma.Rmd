@@ -70,7 +70,7 @@ Compact plot of the alterations present in each subpopulation.
 
 OncoPrint-like plot that highlighting specific alteration, shared alteration between subclones, or clonal alteration.
 
-<img src="./output/MGH106OncoHeat.png" alt="heatmap" width="720"/>
+<img src="./output/MGH106OncoHeat.png" alt="heatmap" width="1280"/>
 
 ### DE analysis in specific alterations (DEchr*_subclones.png)
 
