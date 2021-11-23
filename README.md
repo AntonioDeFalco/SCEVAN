@@ -2,6 +2,8 @@
 
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png)
 
+Preprint Link: [A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data](https://www.biorxiv.org/content/10.1101/2021.11.20.469390v1)
+
 ## Introduction
 
 SCEVAN is an R package that starting from the raw count matrix of scRNA data automatically classifies the cells present in the biopsy by segregating non-malignant cells of tumor microenviroment from the malignant cells and also characterizes the clonal structure of these malignant cells. It identfies cell subpopulations with different copy number architecture and reports g the specific and shared alterations of each subpopulation. The aim of the tool is to automate the entire analysis by allowing it to be performed in a very simple and completely unsupervised way. Analyses carried out on 106 samples and 93332 cells show better classification with an F1 score for all samples of 0.90 compared to 0.63 obtained with the state-of-the-art tools. It also explits a greedy multichannel segmentation algorithms making it particularly fast even for large datasets. 
@@ -55,3 +57,18 @@ We provide some pre-processed samples used in the examples (vignettes):
 
 - ***HNSCC26.RData*** : scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332), you can download the pre-processed data from [here](https://www.dropbox.com/s/6zns12amobs39g8/HNSCC26_data.RData?dl=0)
 
+## Citation
+
+```bibtex
+@article {De Falco2021.11.20.469390,
+	author = {De Falco, Antonio and Caruso, Francesca P and Su, Xiao Dong and Iavarone, Antonio and Ceccarelli, Michele},
+	title = {A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data},
+	elocation-id = {2021.11.20.469390},
+	year = {2021},
+	doi = {10.1101/2021.11.20.469390},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390},
+	eprint = {https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390.full.pdf},
+	journal = {bioRxiv}
+}
+```
