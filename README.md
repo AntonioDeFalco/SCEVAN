@@ -59,16 +59,15 @@ We provide some pre-processed samples used in the examples (vignettes):
 
 ## Citation
 
-```bibtex
-@article {De Falco2021.11.20.469390,
-	author = {De Falco, Antonio and Caruso, Francesca P and Su, Xiao Dong and Iavarone, Antonio and Ceccarelli, Michele},
-	title = {A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data},
-	elocation-id = {2021.11.20.469390},
-	year = {2021},
-	doi = {10.1101/2021.11.20.469390},
-	publisher = {Cold Spring Harbor Laboratory},
-	URL = {https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390},
-	eprint = {https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390.full.pdf},
-	journal = {bioRxiv}
-}
-```
+> 
+>@article {De Falco2021.11.20.469390,\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	author = {De Falco, Antonio and Caruso, Francesca P and Su, Xiao Dong and Iavarone, Antonio and Ceccarelli, Michele},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	title = {A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	elocation-id = {2021.11.20.469390},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	year = {2021},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	doi = {10.1101/2021.11.20.469390},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	publisher = {Cold Spring Harbor Laboratory},\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	URL = { https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390 },  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	eprint = { https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390.full.pdf }, \
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	journal = {bioRxiv}\
+>}
