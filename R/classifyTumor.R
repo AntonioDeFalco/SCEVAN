@@ -112,11 +112,11 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
   set.seed(1)
   
   if (length(norm_cell_names) < 1){
-    print("8): measuring baselines (pure tumor - synthetic normal cells)")
+    print("7) Measuring baselines (pure tumor - synthetic normal cells)")
     count_mtx_relat <- removeSyntheticBaseline(count_mtx, par_cores=par_cores)
     
   } else {
-    print("8): measuring baselines (confident normal cells)")
+    print("7) Measuring baselines (confident normal cells)")
     
     if(length(norm_cell_names) == 1){
       basel <- count_mtx[, which(colnames(count_mtx) %in% norm_cell_names)]
@@ -132,7 +132,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
   
   ##### smooth data ##### 
   if(SMOOTH){
-    print("7) Smoothing data")
+    print("8) Smoothing data")
     
     niters=100
     alpha=0.5
