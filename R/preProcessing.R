@@ -26,7 +26,11 @@ annotateGenes <- function(mtx){
   edb <- edb[which(as.vector(edb[[use_geneID]]) %in% genes_inters),]
   edb <- edb[!duplicated(edb$gene_name),]
   edb <- edb[order(match(edb[[use_geneID]], rownames(mtx))),]
-  mtx_annot <- cbind(edb, mtx)
+  if(class(mtx)[1]=="dgCMatrix"){
+    mtx_annot <- cbind(edb, as.matrix(mtx))
+  }else{
+    mtx_annot <- cbind(edb, mtx)
+  }
   
   return(mtx_annot)
 }

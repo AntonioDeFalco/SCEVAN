@@ -552,11 +552,18 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   library(ggplot2)
   set.seed(1)
   newmtx <- raw_count_mtx[filt_genes,]
-  tsne <- Rtsne(t(newmtx))
   
   pred <- rep("normal", length(colnames(newmtx)))
   names(pred) <- colnames(newmtx)
   pred[tum_cells] <- "tumor"
+  
+  if(class(newmtx)[1]=="dgCMatrix"){
+    newmtx <- t(as.matrix(newmtx))
+  }else{
+    newmtx <- t(newmtx)
+  }
+  
+  tsne <- Rtsne(newmtx)
   
   df <- data.frame(x = tsne$Y[,1],
                    y = tsne$Y[,2],
