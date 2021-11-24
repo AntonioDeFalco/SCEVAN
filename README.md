@@ -1,6 +1,8 @@
 # Single   CEll   Variational   Aneuploidy aNalysis  (SCEVAN)
 
-![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png)
+<p align="center">
+  <img width="560" height="560" src="https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png">
+</p>
 
 Preprint Link: [A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data](https://www.biorxiv.org/content/10.1101/2021.11.20.469390v1)
 
