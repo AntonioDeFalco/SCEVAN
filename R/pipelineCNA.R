@@ -96,7 +96,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   tum_cells <- res_class$tum_cells
   clustersSub <- res_subclones$clustersSub
-  save(tum_cells,clustersSub, file = paste0(sample,"subcl.RData"))
+  #save(tum_cells,clustersSub, file = paste0(sample,"subcl.RData"))
   
   if(res_subclones$n_subclones>1){
     sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
@@ -151,7 +151,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
       names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
       
-      save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "mgh125_plotcnaline2.RData")
+      #save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "plotcnaline.RData")
       plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
       
       diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
@@ -340,7 +340,7 @@ DEBUGpipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = N
   
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores)
   
-  save(res_class, res_proc, mtx_vega, sample, par_cores, classDf, file = paste0("beforeSubclone", sample,".RData"))
+  #save(res_class, res_proc, mtx_vega, sample, par_cores, classDf, file = paste0("beforeSubclone", sample,".RData"))
   
   if (SUBCLONES) {
     res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)

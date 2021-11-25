@@ -316,7 +316,7 @@ getPossibleSpecAltFromSeg <- function(segm, name){
 
 diffSubclones <- function(sampleAlter, samp, nSub = 2){
   
-  save(sampleAlter, samp, nSub , file ="diffSubclonesMGH125.RData")
+  #save(sampleAlter, samp, nSub , file ="diffSubclones.RData")
   
   all_segm_diff <- list()
   
@@ -413,7 +413,7 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
 
 testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
   
-  save(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub, samp, file = "testSpecificAlteration_MGH125.RData")
+  #save(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub, samp, file = "testSpecificAlteration.RData")
   
   subclonesAlt <- list()
 
@@ -638,7 +638,7 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
 
 genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20){
 
-  save(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores, file = paste0(samp,"genesDE.RData"))
+  #save(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores, file = paste0(samp,"genesDE.RData"))
   
   library(ggrepel)
   library(ggplot2)
@@ -752,7 +752,7 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
   topPathways <- topUp %>% 
     arrange(-NES)
   
-  save(fgseaRes,topPathways, file = paste(samp,"pathwayAnalysis_subclones",sub,".RDATA"))
+  #save(fgseaRes,topPathways, file = paste(samp,"pathwayAnalysis_subclones",sub,".RDATA"))
   png(paste("./output/",samp,"pathwayAnalysis_subclones",sub,".png",sep=""), width = 1600, height = 1080, units = "px", res=100)
 
   colnames(fgseaRes)[3] <- "pvalue"

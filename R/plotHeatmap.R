@@ -546,7 +546,7 @@ dev.off()
 
 plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
   
-  save(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, file = paste0(samp,"plotTSNE.RData"))
+  #save(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, file = paste0(samp,"plotTSNE.RData"))
   
   library(Rtsne)
   library(ggplot2)
