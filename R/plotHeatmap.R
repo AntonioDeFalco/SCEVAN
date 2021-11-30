@@ -563,7 +563,16 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
     newmtx <- t(newmtx)
   }
   
-  tsne <- Rtsne(newmtx)
+  #tsne <- Rtsne(newmtx)
+  
+  tsne <- tryCatch(
+    expr = {
+      Rtsne(newmtx)
+    },
+    error = function(e){ 
+      Rtsne(newmtx, perplexity = 15)
+    }
+  )
   
   df <- data.frame(x = tsne$Y[,1],
                    y = tsne$Y[,2],
@@ -578,7 +587,17 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   dev.off()
   if(length(unique(clustersSub))>0){
 
-    tsne <- Rtsne(t(as.matrix(CNAmat[,tum_cells])))
+    #tsne <- Rtsne(t(as.matrix(CNAmat[,tum_cells])))
+    
+    tsne <- tryCatch(
+      expr = {
+        Rtsne(t(as.matrix(CNAmat[,tum_cells])))
+      },
+      error = function(e){ 
+        Rtsne(t(as.matrix(CNAmat[,tum_cells])), perplexity = 15)
+      }
+    )
+    
     pred <- paste0("subclone_",clustersSub)
     names(pred) <- colnames(tum_cells)
     
