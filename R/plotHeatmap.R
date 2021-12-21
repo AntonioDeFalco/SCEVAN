@@ -521,7 +521,7 @@ my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu"
 col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
 
 hc.clus <- cutree(hcc,n_subclones)
-rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:n_subclones])
+rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:n_subclones])
 subclones <- rbPal5(n_subclones)[as.numeric(factor(hc.clus))]
 cells <- rbind(subclones,subclones)
 
@@ -567,10 +567,10 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   
   tsne <- tryCatch(
     expr = {
-      Rtsne(newmtx)
+      Rtsne(newmtx, check_duplicates = FALSE)
     },
     error = function(e){ 
-      Rtsne(newmtx, perplexity = 15)
+      Rtsne(newmtx, check_duplicates = FALSE, perplexity = 15)
     }
   )
   
@@ -1042,7 +1042,7 @@ plotCNAlineOnlyTumor <- function(samp){
 plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
   oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
   
-  png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=1850, width=1450, res=200)
+  png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2250, width=1450, res=150)
   pp <- pheatmap::pheatmap(t(oncoHeat), color = c("blue","white","red"), cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = c(1,0,-1), legend_labels = c("AMP","","DEL"),cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
   h = grid::convertHeight(sum(pp$gtable$heights), "in", TRUE)
   w = grid::convertWidth(sum(pp$gtable$widths), "in", TRUE)
@@ -1092,6 +1092,8 @@ plotCloneTree <- function(sample,res_subclones){
   
   colors <- colors_samp(res_subclones$n_subclones)
   
+  limit <- 50*res_subclones$n_subclones
+  
   png(paste("./output/",sample,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
   
   pp <- ggtree(tree, layout="daylight", size = 2) + 
@@ -1100,8 +1102,8 @@ plotCloneTree <- function(sample,res_subclones){
     scale_fill_manual(values=colors) + 
     theme_tree2(legend.position = "none") + 
     geom_nodepoint(color="#606060", alpha=1/3, size=10) +
-    xlim(-100,100)  + 
-    ylim(-100,100)  
+    xlim(-limit,limit)  + 
+    ylim(-limit,limit)  
   
   plot(pp)
   

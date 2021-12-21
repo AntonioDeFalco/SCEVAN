@@ -121,10 +121,13 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   }
   
   if(length(cellsFilt)==(ncol(count_mtx_annot)-5)) stop("all cells are filtered")
-  
+
   if(length(cellsFilt)>0){
     count_mtx_annot <-count_mtx_annot[, -which(colnames(count_mtx_annot) %in% cellsFilt)]
   }
+  
+  if((ncol(count_mtx_annot)-5)<15) stop("Bad sample low cells < 15")
+  
   print("6) Log Freeman Turkey transformation")
   
   count_mtx_proc <- data.matrix(count_mtx_annot[, 6:ncol(count_mtx_annot)])
