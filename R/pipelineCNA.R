@@ -109,45 +109,47 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       
       print(diffSubcl)
       
-      nSubl <- grep("subclone",names(diffSubcl))
+      ## new aggregation subclone
+      oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
       
-      nSublSh <- grep("shareSubclone",names(diffSubcl))
-      
-      if(length (nSubl) < res_subclones$n_subclones-1 & length (nSublSh)>0){
+      res <- list()
+      for (sub in 1:nrow(oncoHeat)){
+        res[[sub]] <- apply(oncoHeat[-sub,], 1, function(x) sum(oncoHeat[sub,]==x) == ncol(oncoHeat))
+      }
+      if(any(unlist(lapply(res, function(x) any(x))))){
         
-        indNsub <- substr(names(diffSubcl)[nSubl],nchar(names(diffSubcl)[nSubl]),nchar(names(diffSubcl)[nSubl]))
-        
-        indNsub <- as.integer(indNsub)[!is.na(as.integer(indNsub))]
-        
-        nSubl <- setdiff(1:res_subclones$n_subclones,indNsub)
-        
-        shareSubclone <- diffSubcl[[grep("shareSubclone",names(diffSubcl))]]
-        
-        aggreg <-sum(as.integer(unlist(strsplit(shareSubclone$sh_sub,"-"))) %in% nSubl) == length(nSubl)
-        #aggreg <- as.integer(substr(shareSubclone$sh_sub, 1,1)) %in% nSubl & as.integer(substr(shareSubclone$sh_sub, 3,3)) %in% nSubl
-        aggregShareSubclone <- shareSubclone[aggreg,]
-        
-        if(nrow(aggregShareSubclone)>0){
+        shInd <- unlist(lapply(res, function(x) any(x)))
+        removInd <- c()
+        for(ind in which(shInd)){
+          shNam <- names(res[[ind]][res[[ind]]>0]) 
+          indSh <- as.numeric(substr(shNam,nchar(shNam[1]),nchar(shNam[1])))
           
-          aggregShareSubclone <- aggregShareSubclone[order(aggregShareSubclone$sh_sub, decreasing = TRUE),]
-          aggregInd <- c()
-          for(i in 1:nrow(aggregShareSubclone)){
-            #aggregInd <- append(aggregInd, c(as.integer(substr(shareSubclone$sh_sub[i], 1,1)), as.integer(substr(shareSubclone$sh_sub[i], 3,3))))
-            aggregInd <- append(aggregInd,as.integer(unlist(strsplit(shareSubclone$sh_sub,"-"))))
-            #diffSubcl[[grep("shareSubclone",names(diffSubcl))]] <- diffSubcl[[grep("shareSubclone",names(diffSubcl))]][-i,]
-            diffSubcl <- diffSubcl[-grep("shareSubclone",names(diffSubcl))]
-            diffSubcl[[paste0(sample,"_subclone",min(aggregInd))]] <- aggregShareSubclone[i,c(1,2,3,4,6)]
+          for(ind2 in indSh){          
+            if(ind2>ind){
+              res_subclones$clustersSub[res_subclones$clustersSub==ind2] <- ind
+              removInd <- append(removInd,ind2)
+            }
           }
-          aggregInd <- unique(aggregInd)
-          res_subclones$clustersSub[res_subclones$clustersSub %in% setdiff(aggregInd,min(aggregInd))] <- min(aggregInd)
-          
-          res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
-          
-          res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores)
-          
+
+        }
+        unique(res_subclones$clustersSub)
+        for(i in 1:length(removInd)){
+          res_subclones$clustersSub[res_subclones$clustersSub>(removInd[i]-(i-1))] <- res_subclones$clustersSub[res_subclones$clustersSub>(removInd[i]-(i-1))] - 1
+        }
+        res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
+        
+        if(res_subclones$n_subclones>1){
+        res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores)
+        sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+        
+          if(length(sampleAlter)>1){
+            diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
+            diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
+          } 
         }
       }
       
+      if(res_subclones$n_subclones>1){
       segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
       names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
       
@@ -159,6 +161,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
       
       oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
+      #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
       plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
       
       plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
@@ -169,6 +172,9 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
       
       FOUND_SUBCLONES <- TRUE
+      }else{
+        print("no significant subclones")
+      }
       
     }else{
       print("no significant subclones")
