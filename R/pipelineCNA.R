@@ -61,6 +61,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
   
+  CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
+  save(CNAmtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
+  
   return(classDf)
 }
 
