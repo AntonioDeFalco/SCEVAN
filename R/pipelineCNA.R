@@ -61,8 +61,13 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
   
+  #save CNA matrix
   CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
   save(CNAmtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
+  
+  #remove intermediate files
+  mtx_vega_files <- list.files(path = "./output/", pattern = "_mtx_vega")
+  sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
   
   return(classDf)
 }
@@ -140,6 +145,12 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
           res_subclones$clustersSub[res_subclones$clustersSub>(removInd[i]-(i-1))] <- res_subclones$clustersSub[res_subclones$clustersSub>(removInd[i]-(i-1))] - 1
         }
         res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
+        
+        #remove previous segm file
+        mtx_vega_files <- list.files(path = "./output/", pattern = "vega")
+        mtx_vega_files <- mtx_vega_files[grep(sample,mtx_vega_files)]
+        mtx_vega_files <- mtx_vega_files[grep("subclone",mtx_vega_files)]
+        sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
         
         if(res_subclones$n_subclones>1){
         res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores)
@@ -375,3 +386,7 @@ DEBUGsubclonesAnalysis <- function(count_mtx, res_class, res_proc,mtx_vega, samp
   return(classDf)
   
 }
+
+
+
+
