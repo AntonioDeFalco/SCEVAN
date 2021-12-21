@@ -46,6 +46,21 @@ A single call (compareClonalStructure) allows the comparison of clonal profiles 
 compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
 ```
 
+### Integration with Seurat
+Integration of information obtained with SCEVAN (aneuploidy/diploid, subclones) into Seurat object.
+
+- ***count_mtx*** : Count matrix of sample.
+
+```
+results <- pipelineCNA(count_mtx)
+
+#Create Seurat Object with SCEVAN info
+seurObj <- Seurat::CreateSeuratObject(count_mtx, meta.data = results)
+
+#or add SCEVAN info to an existing Seurat object
+seurObj <-Seurat::AddMetaData(seurObj, metadata = results)
+```
+
 ## Usage examples (vignettes)
 
 - [Intratumoral heterogeneity](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/IntratumoralHeterogeneityInGlioblastoma.html)
