@@ -12,6 +12,7 @@ Imports:
     doMC,
     parallelDist,
     pheatmap,
+    forcats,
     parallel,
     dplyr,
     methods,
