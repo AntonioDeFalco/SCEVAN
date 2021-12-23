@@ -11,6 +11,7 @@ biocViews:
 Imports:
     doMC,
     parallelDist,
+    pheatmap
     parallel,
     dplyr,
     methods,
