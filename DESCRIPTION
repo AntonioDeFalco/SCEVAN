@@ -9,6 +9,7 @@ Description: SCEVAN
 License: GPL-2
 biocViews:
 Imports:
+    doMC,
     parallel,
     dplyr,
     methods,
