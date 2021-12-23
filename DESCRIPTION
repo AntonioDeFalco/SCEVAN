@@ -16,6 +16,7 @@ Imports:
     parallel,
     dplyr,
     methods,
+    fgsea,
     yaGST,
     cluster,
     ggplot2,
