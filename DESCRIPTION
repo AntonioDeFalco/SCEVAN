@@ -10,6 +10,7 @@ License: GPL-2
 biocViews:
 Imports:
     doMC,
+    parallelDist,
     parallel,
     dplyr,
     methods,
