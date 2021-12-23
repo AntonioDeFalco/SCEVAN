@@ -14,6 +14,7 @@ SCEVAN is an R package that starting from the raw count matrix of scRNA data aut
 
 ```
 library(devtools)
+install_github("miccec/yaGST")
 install_github("AntonioDeFalco/SCEVAN")
 library(SCEVAN)
 ```
