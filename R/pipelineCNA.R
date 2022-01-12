@@ -62,8 +62,13 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
   
   #save CNA matrix
-  CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
-  save(CNAmtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
+  #CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
+  #save(CNAmtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
+  
+  #save annotated matrix
+  count_mtx_annot <- res_proc$count_mtx_annot
+  save(count_mtx_annot, file = paste0("./output/",sample,"_count_mtx_annot.RData"))
+  
   
   #remove intermediate files
   mtx_vega_files <- list.files(path = "./output/", pattern = "_mtx_vega")

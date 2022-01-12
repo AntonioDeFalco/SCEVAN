@@ -10,10 +10,9 @@
 #'
 removeSyntheticBaseline <- function(count_mtx, par_cores = 20){ 
   
+
   d <- parallelDist::parDist(t(count_mtx), threads = par_cores) 
-  
   hcc <- hclust(d, method="ward.D2")
-  
   sCalinsky <- calinsky(hcc, d, gMax = 10)
   k <- which.max(sCalinsky)
   hcc_k <- cutree(hcc, k=k)
@@ -204,7 +203,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     print("11) plot heatmap")
     
     plotCNA(annot_mtx$seqnames, CNA_mtx, hcc, sample)
-    
+    save(CNA_mtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
 
   } else {
     
@@ -250,6 +249,8 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     print("11) plot heatmap")
     
     plotCNA(annot_mtx$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth)
+    
+    save(CNA_mtx_relat, file = paste0("./output/",sample,"_CNAmtx.RData"))
     
   }
   if(length(norm_cell_names) < 1){
