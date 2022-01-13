@@ -165,6 +165,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
     hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
 
     plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp)
+    save(results.com, file = paste0("./output/",sample,"_CNAmtxSubclones.RData"))
       
   }else{
       n_subclones <- 0
@@ -248,7 +249,8 @@ ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores){
   hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
   
   plotSubclones(CNAmat[,2], results.com, hcc, n_subclones, samp)
-
+  save(results.com, file = paste0("./output/",sample,"_CNAmtxSubclones.RData"))
+  
   ress <- list(n_subclones, breaks_subclones, results.com, hc.clus)
   
   names(ress) <- c("n_subclones", "breaks_subclones", "logCNA", "clustersSub")
