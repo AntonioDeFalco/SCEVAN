@@ -673,7 +673,17 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
         
         return(data.frame(p_value,fc,geneID))
       }
-      test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
+      
+      #test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
+      
+      if(Sys.info()["sysname"]=="Windows"){
+        cl <- parallel::makeCluster(getOption("cl.cores", par_cores))
+        test.mc <- parallel::parLapply(cl, 1:length(top_genes), parDE)
+        parallel::stopCluster(cl)
+      }else{
+        test.mc <-parallel::mclapply(1:length(top_genes), parDE, mc.cores = par_cores)
+      }
+      
       fact_spec2 <- do.call(rbind, test.mc)
       
       fact_spec2["p_value"][fact_spec2["p_value"]==0] <- (10^-1)*min(fact_spec2["p_value"][fact_spec2["p_value"]!=0])

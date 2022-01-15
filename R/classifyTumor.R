@@ -44,7 +44,8 @@ computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
   
   n <- nrow(count_mtx)
   
-  seg.test <- parallel::mclapply(1:ncol(count_mtx), function(z){
+  funcCNA <- function(z){
+    
     x<-numeric(n)
     for (i in 1:(length(breaks)-1)){
       
@@ -58,7 +59,34 @@ computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
       x[breaks[i]:breaks[i+1]] <- meanValue
     }
     return(x)
-  }, mc.cores = par_cores)
+  }
+  
+  if(Sys.info()["sysname"]=="Windows"){
+    
+    cl <- parallel::makeCluster(getOption("cl.cores", par_cores))
+    
+    seg.test <- parallel::parLapply(cl, 1:ncol(count_mtx), funcCNA)
+    
+    parallel::stopCluster(cl)
+  }else{
+    seg.test <- parallel::mclapply(1:ncol(count_mtx), funcCNA, mc.cores = par_cores)
+  }
+  
+  # seg.test <- parallel::mclapply(1:ncol(count_mtx), function(z){
+  #   x<-numeric(n)
+  #   for (i in 1:(length(breaks)-1)){
+  #     
+  #     if(segmAlt[i]){
+  #       #meanValue <- (mean(count_mtx[breaks[i]:breaks[i+1],z]) - mean(count_mtx[,z])) / sd(count_mtx[,z])
+  #       meanValue <- mean(count_mtx[breaks[i]:breaks[i+1],z])
+  #     }else{
+  #       meanValue <- 0
+  #     }
+  #     
+  #     x[breaks[i]:breaks[i+1]] <- meanValue
+  #   }
+  #   return(x)
+  # }, mc.cores = par_cores)
   
   CNA <- matrix(unlist(seg.test), ncol = ncol(count_mtx), byrow = FALSE)
   
@@ -152,8 +180,15 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
       return(y)
     } 
     
+    #test.mc <- parallel::mclapply(1:ncol(count_mtx_relat), nonLinSmooth, mc.cores = par_cores)
     
-    test.mc <-parallel::mclapply(1:ncol(count_mtx_relat), nonLinSmooth, mc.cores = par_cores)
+    if(Sys.info()["sysname"]=="Windows"){
+      cl <- parallel::makeCluster(getOption("cl.cores", par_cores))
+      test.mc <- parallel::parLapply(cl, 1:ncol(count_mtx_relat), nonLinSmooth)
+      parallel::stopCluster(cl)
+    }else{
+      test.mc <- parallel::mclapply(1:ncol(count_mtx_relat), nonLinSmooth, mc.cores = par_cores)
+    }
     
     count_mtx_smooth <- matrix(unlist(test.mc), ncol = ncol(count_mtx_relat), byrow = FALSE)
     rm(test.mc)
