@@ -5,10 +5,30 @@ ssMwwGst <- function(geData, geneSet, ncore,  minLenGeneSet = 15 , regulon = FAL
     means <- rowMeans(geData)
     sds <- apply(geData, 1, sd)
   }
-  library(doMC)
-  registerDoMC(ncore)
-  ans <- foreach(ss = 1:ncol(geData)) %dopar% {
-    # for(ss in 1:nSamples){
+  # library(doMC)
+  # registerDoMC(ncore)
+  # ans <- foreach(ss = 1:ncol(geData)) %dopar% {
+  #   # for(ss in 1:nSamples){
+  #   if (standardize){
+  #     currentSample <- (geData[, ss] - means)/sds
+  #   }
+  #   else{
+  #     currentSample <- geData[, ss]
+  #   }
+  #   rankedList <- sort(currentSample, decreasing = T)
+  #   if(regulon == FALSE){
+  #     aMwwGST <- lapply(geneSet, function(x) mwwGST(rankedList, geneSet = x, minLenGeneSet = minLenGeneSet, alternative = "two.sided"))
+  #   }else{
+  #     aMwwGST <- lapply(geneSet, function(x) mwwExtGST(rankedList, geneSetUp = x$pos, geneSetDown = x$neg, minLenGeneSet = minLenGeneSet))
+  #   }
+  #   aMwwGST <- aMwwGST[sapply(aMwwGST, length) != 0]
+  #   tmp_NES <- sapply(aMwwGST, function(x) x$log.pu)
+  #   tmp_pValue <- sapply(aMwwGST, function(x) x$p.value)
+  #   ans <- list(tmp_NES = tmp_NES, tmp_pValue = tmp_pValue)
+  #   return(ans)
+  # }
+  
+  execMww <- function(ss){
     if (standardize){
       currentSample <- (geData[, ss] - means)/sds
     }
@@ -27,6 +47,15 @@ ssMwwGst <- function(geData, geneSet, ncore,  minLenGeneSet = 15 , regulon = FAL
     ans <- list(tmp_NES = tmp_NES, tmp_pValue = tmp_pValue)
     return(ans)
   }
+  
+  if(Sys.info()["sysname"]=="Windows"){
+    cl <- parallel::makeCluster(getOption("cl.cores", ncore))
+    ans <-  parallel::parLapply(cl, 1:ncol(geData), execMww)
+    parallel::stopCluster(cl)
+  }else{
+    ans <- parallel::mclapply(1:ncol(geData), execMww, mc.cores = ncore)
+  }
+  
   NES <- sapply(ans, function(x) x$tmp_NES)
   pValue <- sapply(ans, function(x) x$tmp_pValue)
   colnames(NES) <- colnames(pValue) <- colnames(geData)
