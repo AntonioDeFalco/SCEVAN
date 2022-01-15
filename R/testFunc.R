@@ -708,7 +708,7 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       
       if(FOUND_SIGN_DE){
       
-      png(paste("./output/",samp,"- DE", "chr",chrr,":",startpos,":",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
+      png(paste("./output/",samp,"-DE", "chr",chrr,"-",startpos,"-",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
       
       p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + txtRepel +
         xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE", "chr",chrr,":",startpos,":",endpos)) + theme_bw(base_size = 16) + 
