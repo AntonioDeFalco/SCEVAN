@@ -50,7 +50,7 @@ ssMwwGst <- function(geData, geneSet, ncore,  minLenGeneSet = 15 , regulon = FAL
   
   if(Sys.info()["sysname"]=="Windows"){
     cl <- parallel::makeCluster(getOption("cl.cores", ncore))
-    clusterExport(cl, c("execMww", "geData"), 
+    clusterExport(cl, c("mwwGST", "mwwExtGST","geneSet"), 
                   envir=environment())
     ans <-  parallel::parLapply(cl, 1:ncol(geData), execMww)
     parallel::stopCluster(cl)
