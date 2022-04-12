@@ -60,7 +60,7 @@ int num_of_probes;
 int num_of_samples;
 
 /* constant used in the stop condition*/
-float beta;
+float beta_value;
 
 char messages[MSGSIZE];
 
@@ -410,7 +410,7 @@ data= the data matrix NxM (N samples and M markers)
 markers_start = start/end marker
 start/end/size/mean = output matrix pointers
 n = number of probes
-be = beta
+be = beta_value
 std = data imput standard deviation
 n_reg = number of comuted regions
 n_samples = number of observed samples
@@ -428,7 +428,7 @@ void vegaMC(float **data, int *markers_start, int *start, int *end, int *size,
         tmp_sd = 0;
     num_of_probes = *n;
     num_of_samples = *n_samples;
-    beta = *be;
+    beta_value = *be;
     breakpoint brks[num_of_probes + 1], brk_del;
     binary_heap b;
     int node_index;
@@ -436,14 +436,14 @@ void vegaMC(float **data, int *markers_start, int *start, int *end, int *size,
 
     /*
        compute the stop condition based on the standard deviation of each
-       sample, the weigth associated to each sample and the constant beta 
+       sample, the weigth associated to each sample and the constant beta_value 
      */
     for (j = 0; j < num_of_samples; j++) {
         tmp_sd += *(std + j) * (*(weight + j));
     }
 
 
-    stop_lambda_gradient = (tmp_sd / (*weight_sum)) * beta;
+    stop_lambda_gradient = (tmp_sd / (*weight_sum)) * beta_value;
 
     /*
        Init"ialize the binary heap 

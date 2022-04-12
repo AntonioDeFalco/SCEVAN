@@ -15,8 +15,8 @@
 /*
  * Input parameters 
  */
-char *dataset;
-char *output_file_name;
+char *dataset_sort;
+char *output_file_name_sort;
 
 /*
  * Probes have to be sorted 
@@ -83,8 +83,8 @@ int sort_data(char **data, char **output)
     /*
      * Takes dataset and output files 
      */
-    dataset = *data;
-    output_file_name = *output;
+    dataset_sort = *data;
+    output_file_name_sort = *output;
 
     /*
      * Load Data 
@@ -99,9 +99,9 @@ int sort_data(char **data, char **output)
      * Write Data 
      */
     Rprintf("\nSTEP 2: Writing Results in '%s' Output File\n",
-            output_file_name);
+            output_file_name_sort);
     write_data();
-    Rprintf("\tFile '%s' Correctly Written\n", output_file_name);
+    Rprintf("\tFile '%s' Correctly Written\n", output_file_name_sort);
     Rprintf("\n------ DATA SORTING SUCCESFULLY COMPLETED------\n");
     return 0;
 }
@@ -116,7 +116,7 @@ void sort_dataset()
     int nchar;
     num_cols = 0;
     num_rows = 0;
-    FILE *file = fopen(dataset, "r");
+    FILE *file = fopen(dataset_sort, "r");
     /*
        Read header of Data File 
      */
@@ -189,7 +189,7 @@ void sort_dataset()
 
 void write_data()
 {
-    FILE *file = fopen(output_file_name, "w");
+    FILE *file = fopen(output_file_name_sort, "w");
     int i, j;
     fprintf(file, "%s", header);
 
