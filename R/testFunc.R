@@ -75,7 +75,7 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
 #' @export
 #'
 #' @examples
-subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores){
+subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores, beta_vega){
   
   library(scran)
   
@@ -88,6 +88,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
     tum_cells <- gsub("-", "\\.",tum_cells)
   }
   
+  #save(tum_cells, norm.mat.relat, file = "debug.RData")
   norm.mat.relat <- norm.mat.relat[,tum_cells]
   
   library(igraph)
@@ -139,7 +140,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
         
         colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
         
-        breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i))
+        breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = beta_vega)
         
         subSegm <- read.csv(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"), sep = "\t")
         
@@ -184,7 +185,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
 }
 
 
-ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores){
+ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores, beta_vega){
   
     norm.mat.relat <- CNAmat[,-c(1:3)]
     info_mat <- CNAmat[,c(1:3)]
@@ -222,7 +223,7 @@ ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores){
     
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i))
+    breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = beta_vega)
     
     subSegm <- read.csv(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"), sep = "\t")
     
@@ -436,7 +437,10 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
       posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
       posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
       
-      subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
+      findInd <- regexpr(pattern ='subclone',names(listAltSubclones)[sub])
+      subInd <- substr(names(listAltSubclones)[sub],findInd[1]+8,nchar(names(listAltSubclones)[sub]))
+    
+      #subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
       
       subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones==subInd])]
       subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones!=subInd])]
@@ -578,7 +582,10 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
       posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
       posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
       
-      subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
+      findInd <- regexpr(pattern ='share',names(listAltSubclones)[sub])
+      subInd <- substr(names(listAltSubclones)[sub],findInd[1]+5,nchar(names(listAltSubclones)[sub]))
+      
+      #subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
       subIndSh <- as.numeric(listAltSubclones[[sub]][i,]$sh_sub)
       subInd <- as.numeric(subInd)
       #subIndSh <- as.numeric(otherSim$sh_sub)
@@ -890,7 +897,7 @@ plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
   annotdf <- data.frame(row.names = rownames(oncoHeat), 
                         Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
   
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:12])
   subclones <- rbPal5(nSub)
   names(subclones) <- unique(annotdf$Subclone)
   mycolors <- list(Subclone = subclones)

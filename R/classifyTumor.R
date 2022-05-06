@@ -134,7 +134,7 @@ classifyCluster <- function(hcc2, norm_cell_names){
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = FALSE){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = FALSE, beta_vega = 0.5){
   
   set.seed(1)
   
@@ -205,7 +205,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample)
+    breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample, beta_vega)
     
     subSegm <- read.csv(paste0("./output/ ",sample," vega_output"), sep = "\t")
     

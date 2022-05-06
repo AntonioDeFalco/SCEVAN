@@ -442,9 +442,9 @@ void vegaMC(float **data, int *markers_start, int *start, int *end, int *size,
         tmp_sd += *(std + j) * (*(weight + j));
     }
 
-
+    
     stop_lambda_gradient = (tmp_sd / (*weight_sum)) * beta_value;
-
+    
     /*
        Init"ialize the binary heap 
      */
@@ -455,10 +455,12 @@ void vegaMC(float **data, int *markers_start, int *start, int *end, int *size,
      */
     init_trivial_segmentation(brks, data, &b, weight);
     lambda = (heap_max(&b)->p) - EPSILON;
-    lambda_gradient = abs(lambda);
+    lambda_gradient = fabs(lambda);
 
 
     while ((b.heap_size > 0) && (lambda_gradient <= stop_lambda_gradient)) {
+        //Rprintf("b.heap_size %d \n", b.heap_size); || b.heap_size > 2
+        
         while ((b.heap_size > 0) && (heap_max(&b)->p > lambda)) {
 
             max = heap_extract_max(&b);
