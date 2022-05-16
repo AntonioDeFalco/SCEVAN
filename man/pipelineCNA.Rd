@@ -2,14 +2,19 @@
 % Please edit documentation in R/pipelineCNA.R
 \name{pipelineCNA}
 \alias{pipelineCNA}
-\title{Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix}
+\title{pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.}
 \usage{
 pipelineCNA(
   count_mtx,
   sample = "",
   par_cores = 20,
-  gr_truth = NULL,
-  SUBCLONES = TRUE
+  norm_cell = NULL,
+  SUBCLONES = TRUE,
+  beta_vega = 0.5,
+  ClonalCN = FALSE,
+  plotTree = FALSE,
+  AdditionalGeneSets = NULL,
+  SCEVANsignatures = TRUE
 )
 }
 \arguments{
@@ -17,18 +22,28 @@ pipelineCNA(
 
 \item{sample}{sample name (optional)}
 
-\item{par_cores}{number of cores (optional)}
+\item{par_cores}{number of cores (default 20)}
 
-\item{gr_truth}{ground truth of classification (optional)}
+\item{norm_cell}{vector of normal cells if already known (optional)}
 
-\item{SUBCLONES}{find subclones (optional)}
+\item{SUBCLONES}{find subclones (default TRUE)}
+
+\item{beta_vega}{specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5)}
+
+\item{ClonalCN}{clonal profile inference from tumour cells (optional)}
+
+\item{plotTree}{find subclones (optional)}
+
+\item{AdditionalGeneSets}{list of additional signatures of normal cell types (optional)}
+
+\item{SCEVANsignatures}{FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)}
 }
 \value{
 
 }
 \description{
-Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
+pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.
 }
 \examples{
-res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
+res_pip <- pipelineCNA(count_mtx)
 }

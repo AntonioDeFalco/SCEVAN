@@ -2,7 +2,7 @@
 % Please edit documentation in R/classifyTumor.R
 \name{removeSyntheticBaseline}
 \alias{removeSyntheticBaseline}
-\title{Removes a synthetic baseline from a tumour cell-only matrix}
+\title{removeSyntheticBaseline Removes a synthetic baseline from a tumour pure matrix}
 \usage{
 removeSyntheticBaseline(count_mtx, par_cores = 20)
 }
@@ -12,10 +12,10 @@ removeSyntheticBaseline(count_mtx, par_cores = 20)
 \item{par_cores}{number of cores for parallel computing.}
 }
 \value{
-
+relative matrix
 }
 \description{
-Removes a synthetic baseline from a tumour cell-only matrix
+removeSyntheticBaseline Removes a synthetic baseline from a tumour pure matrix
 }
 \examples{
 

@@ -2,15 +2,32 @@
 % Please edit documentation in R/confidentNormal.R
 \name{getConfidentNormalCells}
 \alias{getConfidentNormalCells}
-\title{Get at most top 30 confident normal cells}
+\title{getConfidentNormalCells Get at most top 30 confident normal cells from count matrix.}
 \usage{
-getConfidentNormalCells(mtx, par_cores = 20)
+getConfidentNormalCells(
+  mtx,
+  sample = "",
+  par_cores = 20,
+  AdditionalGeneSets = NULL,
+  SCEVANsignatures = TRUE
+)
+}
+\arguments{
+\item{mtx}{count matrix}
+
+\item{sample}{sample name (optional)}
+
+\item{par_cores}{number of cores (default 20)}
+
+\item{AdditionalGeneSets}{list of additional signatures of normal cell types (optional)}
+
+\item{SCEVANsignatures}{FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)}
 }
 \value{
 
 }
 \description{
-Get at most top 30 confident normal cells
+getConfidentNormalCells Get at most top 30 confident normal cells from count matrix.
 }
 \examples{
 

@@ -1,4 +1,4 @@
-#' SCEVAN: A package for
+#' SCEVAN: R package that automatically classifies the cells in the scRNA data by segregating non-malignant cells of tumor microenviroment from the malignant cells. It also infers the copy number profile of malignant cells, identifies subclonal structures and analyses the specific and shared alterations of each subpopulation.
 #'
 #' The SCEVAN package
 #' 
@@ -14,29 +14,35 @@ NULL
 
 
 
-#' Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
+#' pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.
 #'
 #' @param count_mtx raw count matrix
 #' @param sample sample name (optional)
-#' @param par_cores number of cores (optional)
-#' @param norm_cell vector normal cells if known (optional)
-#' @param gr_truth ground truth of classification (optional)
-#' @param SUBCLONES find subclones (optional)
+#' @param par_cores number of cores (default 20)
+#' @param norm_cell vector of normal cells if already known (optional)
+#' @param SUBCLONES find subclones (default TRUE)
+#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
+#' @param ClonalCN clonal profile inference from tumour cells (optional)
+#' @param plotTree find subclones (optional)
+#' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
+#' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
 #'
 #' @return
 #' @export
 #'
-#' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
+#' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, plotTree = FALSE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = FALSE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
   
   dir.create(file.path("./output"), showWarnings = FALSE)
   
   start_time <- Sys.time()
   
-  res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores)
+  normalNotKnown <- length(norm_cell)==0
   
-  if(length(norm_cell)==0) norm_cell <- names(res_proc$norm_cell)
+  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures)
+  
+  if(normalNotKnown) norm_cell <- names(res_proc$norm_cell)
 
   res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega)
   
@@ -49,6 +55,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
 
+  if(ClonalCN) getClonalCNProfile(res_class, sample, par_cores)
+  
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
 
   if (SUBCLONES) {
@@ -59,7 +67,9 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
     FOUND_SUBCLONES <- FALSE
   }
   
-  if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
+  #if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample) getClonalCNProfile(sample,)
+  
+  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN)
   
   #save CNA matrix
   #CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
@@ -77,6 +87,26 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   return(classDf)
 }
 
+
+getClonalCNProfile <- function(res_class, sample, par_cores, beta_vega = 3){
+  
+  mtx <- res_class$CNAmat[,res_class$tum_cells]
+  # hcc <- hclust(parallelDist::parDist(t(mtx),threads =par_cores, method = "euclidean"), method = "ward.D")
+  # hcc2 <- cutree(hcc,2)
+  # clonalClust <- as.integer(names(which.max(table(hcc2))))
+  # mtx <- mtx[,names(hcc2[hcc2==clonalClust])]
+ 
+  mtx_vega <- cbind(res_class$CNAmat[,1:3], mtx)
+  colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,2], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
+  
+  subSegm <- read.csv(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"), sep = "\t")
+  
+  # out <- boxplot.stats(subSegm$Mean)$out
+  # out_ind <- which(subSegm$Mean %in% c(out))
+  # subSegm[out_ind,]$Mean <- 0
+  
+}
 
 segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5){
   
@@ -210,12 +240,13 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   return(res)
 }
 
-#' compareClonalStructure
+#' compareClonalStructure Compare the clonal structure of two samples.
 #'
-#' @param count_mtx raw count matrix
-#' @param sample sample name (optional)
-#' @param par_cores number of cores (optional)
-#' @param SUBCLONES find subclones (optional)
+#' @param count_mtx raw count matrix of sample 1
+#' @param count_mtx raw count matrix of sample 2
+#' @param sample sample name of sample 1 (optional)
+#' @param sample sample name of sample 2 (optional)
+#' @param par_cores number of cores (default 20)
 #'
 #' @return
 #' @export
@@ -232,13 +263,13 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
   count_mtx<- count_mtx[,-1]
   
   print(samp_1)
-  res_proc_1 <- preprocessingMtx(count_mtx1, par_cores=par_cores)
+  res_proc_1 <- preprocessingMtx(count_mtx1,samp_1, par_cores=par_cores)
   norm_cell <- names(res_proc_1$norm_cell)
   res_class_1 <- classifyTumorCells(res_proc_1$count_mtx_norm,res_proc_1$count_mtx_annot, samp_1, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   print(paste("found", length(res_class_1$tum_cells), "tumor cells"))
   
   print(samp_2)
-  res_proc_2 <- preprocessingMtx(count_mtx2, par_cores=par_cores)
+  res_proc_2 <- preprocessingMtx(count_mtx2,samp_2, par_cores=par_cores)
   norm_cell <- names(res_proc_2$norm_cell)
   res_class_2 <- classifyTumorCells(res_proc_2$count_mtx_norm,res_proc_2$count_mtx_annot, samp_2, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
   print(paste("found", length(res_class_2$tum_cells), "tumor cells"))
@@ -317,28 +348,13 @@ compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2=""
 
 
 
-
-#' Run pipeline runs the pipeline that classifies tumour and normal cells from the raw count matrix and looks for possible sub-clones in the tumour cell matrix
-#'
-#' @param count_mtx raw count matrix
-#' @param sample sample name (optional)
-#' @param par_cores number of cores (optional)
-#' @param norm_cell vector normal cells if known (optional)
-#' @param gr_truth ground truth of classification (optional)
-#' @param SUBCLONES find subclones (optional)
-#'
-#' @return
-#' @export
-#'
-#' @examples res_pip <- pipelineCNA(count_mtx, par_cores = 20, gr_truth = gr_truth, SUBCLONES = TRUE)
-
 DEBUGpipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL,  gr_truth = NULL, SUBCLONES = TRUE){   
 
   dir.create(file.path("./output"), showWarnings = FALSE)
   
   start_time <- Sys.time()
   
-  res_proc <- preprocessingMtx(count_mtx, par_cores=par_cores)
+  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores)
   
   if(length(norm_cell)==0) norm_cell <- names(res_proc$norm_cell)
   

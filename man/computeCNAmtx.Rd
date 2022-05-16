@@ -2,9 +2,9 @@
 % Please edit documentation in R/classifyTumor.R
 \name{computeCNAmtx}
 \alias{computeCNAmtx}
-\title{Calculates the CNA matrix using the break points obtained from segmentation}
+\title{computeCNAmtx computed the CNA matrix using the break points obtained from segmentation}
 \usage{
-computeCNAmtx(count_mtx, breaks, par_cores = 20)
+computeCNAmtx(count_mtx, breaks, par_cores = 20, segmAlt)
 }
 \arguments{
 \item{count_mtx}{count matrix}
@@ -14,10 +14,10 @@ computeCNAmtx(count_mtx, breaks, par_cores = 20)
 \item{breaksbreak}{points obtained from segmentation}
 }
 \value{
-
+CNA matrix
 }
 \description{
-Calculates the CNA matrix using the break points obtained from segmentation
+computeCNAmtx computed the CNA matrix using the break points obtained from segmentation
 }
 \examples{
 

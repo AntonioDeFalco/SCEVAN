@@ -2,20 +2,36 @@
 % Please edit documentation in R/testFunc.R
 \name{subclonesTumorCells}
 \alias{subclonesTumorCells}
-\title{Title}
+\title{subclonesTumorCells  Check the presence of subclonal structures in tumor cells, by determining the optimal number of clusters present in the CNA matrix of 
+tumor cells using the Calinski-Harabasz Index as a criterion \cite{Calinski}. For each possible subclone the joint segmentation algorithm is 
+applied and the separate segmentation results are analyzed to see if there are any significant alterations specific to one subclone compared to
+the others.}
 \usage{
-subclonesTumorCells(tum_cells, CNAmat, sample)
+subclonesTumorCells(
+  tum_cells,
+  CNAmat,
+  relativeSmoothMtx,
+  samp,
+  n.cores,
+  beta_vega
+)
 }
 \arguments{
-\item{tum_cells}{}
+\item{tum_cells}{malignant cells}
 
-\item{CNAmat}{}
+\item{CNAmat}{CNA matrix}
 
-\item{sample}{}
+\item{samp}{sample name}
 }
 \value{
-
+n_subclones number of subclones
+breaks_subclones breakpoints of subclones
+logCNA CNA matrix
+clustersSub clustering of subclones
 }
 \description{
-Title
+subclonesTumorCells  Check the presence of subclonal structures in tumor cells, by determining the optimal number of clusters present in the CNA matrix of 
+tumor cells using the Calinski-Harabasz Index as a criterion \cite{Calinski}. For each possible subclone the joint segmentation algorithm is 
+applied and the separate segmentation results are analyzed to see if there are any significant alterations specific to one subclone compared to
+the others.
 }

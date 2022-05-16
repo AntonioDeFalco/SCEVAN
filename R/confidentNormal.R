@@ -44,26 +44,34 @@ top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_
 
 
 
-#' Get at most top 30 confident normal cells 
+#' getConfidentNormalCells Get at most top 30 confident normal cells from count matrix.
 #'
-#' @param 
-#' @param 
-#' @param 
+#' @param mtx count matrix
+#' @param sample sample name (optional)
+#' @param par_cores = 20,
+#' @param par_cores number of cores (default 20)
+#' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
+#' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
 #'
 #' @return
 #'
 #' @examples
 #' 
 #' @export
-getConfidentNormalCells <- function(mtx, par_cores = 20){
+getConfidentNormalCells <- function(mtx, sample = "", par_cores = 20, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
   
-  system.time(ssMwwGst(geData = mtx, geneSet = geneSet , ncore = par_cores, minLenGeneSet = 5, filename = "./output/confidentNormal", standardize = TRUE))
-  load("./output/confidentNormal_MWW.RData")
+  if(length(AdditionalGeneSets)>0 & SCEVANsignatures){
+    geneSet <- append(geneSet, AdditionalGeneSets)
+  }else if(length(AdditionalGeneSets)>0){
+    geneSet <- AdditionalGeneSets
+  }
+  
+  system.time(ssMwwGst(geData = mtx, geneSet = geneSet , ncore = par_cores, minLenGeneSet = 5, filename = paste0("./output/",sample,"_confidentNormal"), standardize = TRUE))
+  load(paste0("./output/",sample,"_confidentNormal_MWW.RData"))
   norm.cell.names <- top30classification(NES = NES, FDR = FDR, pValue = pValue, fdr_filter = TRUE, pval_filter = TRUE, pval_cutoff = 1*10^(-10), nes_cutoff = 1.0, nNES = 1)
-  
+  file.remove(paste0("./output/",sample,"_confidentNormal_MWW.RData"))
   print(paste("found", length(norm.cell.names), "confident non malignant cells", sep=" "))
   
   return(norm.cell.names)
   
 }
-

@@ -2,19 +2,19 @@
 % Please edit documentation in R/preProcessing.R
 \name{annotateGenes}
 \alias{annotateGenes}
-\title{annotateGenes  genes with reference to hg38}
+\title{annotateGenes Annotate genes with genomic coordinates with reference to hg38 using Ensembl based annotation package}
 \usage{
 annotateGenes(mtx)
 }
 \arguments{
-\item{mtx}{raw count matrix}
+\item{mtx}{Count matrix with genes on row names (Ensemble or Symbol)}
 }
 \value{
-annotations of each genes in rows with chrom and positions.
+Annotated matrix
 }
 \description{
-annotateGenes  genes with reference to hg38
+annotateGenes Annotate genes with genomic coordinates with reference to hg38 using Ensembl based annotation package
 }
 \examples{
-test.count_mtx_annot <- annotateGenes(mat=matx)
+count_mtx_annot <- annotateGenes(count_mtx)
 }

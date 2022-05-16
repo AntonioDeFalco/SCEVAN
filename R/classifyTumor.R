@@ -118,23 +118,25 @@ classifyCluster <- function(hcc2, norm_cell_names){
 
 
 
-#' classifyTumorCells classify tumour and normal cells from the raw count matrix
+#' classifyTumorCells Classify tumour and normal cells from the raw count matrix, using normal cells in the matrix or by subtracting a synthetic baseline from the matrix if there are no normal cells in the matrix.
 #'
 #' @param count_mtx raw count matrix
-#' @param annot_mtx matrix containing the annotations of the genes
+#' @param annot_mtx matrix containing the annotations of the genes (rows: genes, columns: chr start end)
 #' @param sample sample name (optional)
-#' @param distance distance used in hierarchical clustering (optional)
-#' @param par_cores number of cores (optional)
+#' @param distance distance used in hierarchical clustering (default euclidean)
+#' @param par_cores number of cores (default 20)
 #' @param gr_truth ground truth of classification (optional)
 #' @param norm_cell_names confident normal cells (optional)
-#' @param SEGMENTATION_CLASS Boolean value to perform segmentation before classification (optional)
+#' @param SEGMENTATION_CLASS Boolean value to perform segmentation before classification (default TRUE)
+#' @param SMOOTH Boolean value to perform smoothing (default TRUE)
+#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
 #'
 #' @return
 #'
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = FALSE, beta_vega = 0.5){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = 0.5){
   
   set.seed(1)
   

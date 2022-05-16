@@ -2,7 +2,7 @@
 % Please edit documentation in R/classifyTumor.R
 \name{classifyTumorCells}
 \alias{classifyTumorCells}
-\title{classifyTumorCells classify tumour and normal cells from the raw count matrix}
+\title{classifyTumorCells Classify tumour and normal cells from the raw count matrix, using normal cells in the matrix or by subtracting a synthetic baseline from the matrix if there are no normal cells in the matrix.}
 \usage{
 classifyTumorCells(
   count_mtx,
@@ -11,24 +11,30 @@ classifyTumorCells(
   distance = "euclidean",
   par_cores = 20,
   ground_truth = NULL,
-  norm.cell.names = NULL,
-  SEGMENTATION_CLASS = TRUE
+  norm_cell_names = NULL,
+  SEGMENTATION_CLASS = TRUE,
+  SMOOTH = TRUE,
+  beta_vega = 0.5
 )
 }
 \arguments{
 \item{count_mtx}{raw count matrix}
 
-\item{annot_mtx}{matrix containing the annotations of the genes}
+\item{annot_mtx}{matrix containing the annotations of the genes (rows: genes, columns: chr start end)}
 
 \item{sample}{sample name (optional)}
 
-\item{distance}{distance used in hierarchical clustering (optional)}
+\item{distance}{distance used in hierarchical clustering (default euclidean)}
 
-\item{par_cores}{number of cores (optional)}
+\item{par_cores}{number of cores (default 20)}
 
-\item{norm.cell.names}{confident normal cells (optional)}
+\item{norm_cell_names}{confident normal cells (optional)}
 
-\item{SEGMENTATION_CLASS}{Boolean value to perform segmentation before classification (optional)}
+\item{SEGMENTATION_CLASS}{Boolean value to perform segmentation before classification (default TRUE)}
+
+\item{SMOOTH}{Boolean value to perform smoothing (default TRUE)}
+
+\item{beta_vega}{specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5)}
 
 \item{gr_truth}{ground truth of classification (optional)}
 }
@@ -36,7 +42,7 @@ classifyTumorCells(
 
 }
 \description{
-classifyTumorCells classify tumour and normal cells from the raw count matrix
+classifyTumorCells Classify tumour and normal cells from the raw count matrix, using normal cells in the matrix or by subtracting a synthetic baseline from the matrix if there are no normal cells in the matrix.
 }
 \examples{
 

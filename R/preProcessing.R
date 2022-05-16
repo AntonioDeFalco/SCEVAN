@@ -1,8 +1,8 @@
-#' annotateGenes  Annotation of genes with chromosome information and start / end position using Ensembl based annotation package
+#' annotateGenes Annotate genes with genomic coordinates with reference to hg38 using Ensembl based annotation package
 #'
-#' @param mtx raw count matrix
+#' @param mtx Count matrix with genes on row names (Ensemble or Symbol)
 #'
-#' @return annotated matrix
+#' @return Annotated matrix
 #'
 #' @examples
 #' count_mtx_annot <- annotateGenes(count_mtx)
@@ -36,15 +36,18 @@ annotateGenes <- function(mtx){
 }
 
 
-#' preprocessingMtx  Cells with less than 200 genes and the genes expressed in less than 1% of cells are removed. Genes are annotated and sorted 
-#' according to genomic coordinates. Genes involved in the cell cycle pathway are removed.  Log-Freeman–Tukey transformation to stabilize variance 
-#' and a polynomial dynamic linear modeling (DLM) to smooth out the outliers.
+#' preprocessingMtx  Pre-processing steps: Cells with less than 200 genes and the genes expressed in less than 1% of cells are removed. Genes are annotated and sorted 
+#' according to genomic coordinates. Highly confident normal cells are sought in the matrix. Genes involved in the cell cycle pathway are removed.  Log-Freeman–Tukey transformation to stabilize variance 
+#' and a polynomial dynamic linear modeling (DLM) to smooth out the outliers. 
 #'
 #' @param count_mtx raw count matrix
 #' @param ngenes_chr minimum number of genes per chromosome (optional)
 #' @param perc_genes percentage of cells in which each gene is to be expressed (optional)
 #' @param par_cores number of cores (optional)
 #' @param SMOOTH Boolean value to perform smoothing (optional)
+#' @param findConfident Boolean value to search for normal cells (default TRUE)
+#' @param AdditionalGeneSets List of additional signatures to be used to search for normal cells (optional)
+#' @param SCEVANsignatures Boolean value TRUE to use internal SCEVAN signatures for normal cells or FALSE to use only signatures specified in AdditionalGeneSets (default TRUE)
 #'
 #' @return 
 #' count_mtx_smooth processed and smoothed matrix
@@ -53,7 +56,7 @@ annotateGenes <- function(mtx){
 #' @examples
 #' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
-preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=20){
+preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, par_cores=20, findConfident = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
   
   set.seed(123)
   
@@ -91,7 +94,12 @@ preprocessingMtx <- function(count_mtx, ngenes_chr=5, perc_genes=0.1, par_cores=
   
   count_mtx <- count_mtx_annot[,-c(1:5)]
   rownames(count_mtx) <- count_mtx_annot$gene_name
-  norm_cell <- getConfidentNormalCells(count_mtx, par_cores = par_cores)
+  
+  if(findConfident){
+    norm_cell <- getConfidentNormalCells(count_mtx, sample, par_cores = par_cores, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures)
+  }else{
+    norm_cell <- NULL
+  }
   
   rm(count_mtx)
   

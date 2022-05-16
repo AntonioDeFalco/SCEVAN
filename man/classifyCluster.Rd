@@ -2,18 +2,18 @@
 % Please edit documentation in R/classifyTumor.R
 \name{classifyCluster}
 \alias{classifyCluster}
-\title{Classify the two clusters on the basis of confident normal cells}
+\title{classifyCluster Classify the two major clusters of CNA matrix on the basis of confident normal cells}
 \usage{
-classifyCluster(hcc2, norm.cell.names)
+classifyCluster(hcc2, norm_cell_names)
 }
 \arguments{
 \item{hcc2}{Two clusters from hierarchical clustering}
 
-\item{norm.cell.names}{Vector of confident normal cells}
+\item{norm_cell_names}{Vector of confident normal cells}
 }
 \value{
-
+classification of tumor and normal cells
 }
 \description{
-Classify the two clusters on the basis of confident normal cells
+classifyCluster Classify the two major clusters of CNA matrix on the basis of confident normal cells
 }

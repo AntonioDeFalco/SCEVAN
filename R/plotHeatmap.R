@@ -1,6 +1,4 @@
-#' heatmap3 function modified from from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
-#'
-#' @export
+# heatmap3 function modified from from "https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R"
 heatmap.3 <- function(x,
                       Rowv = TRUE, Colv = if (symm) "Rowv" else TRUE,
                       hcr,
@@ -957,6 +955,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL){
   dev.off()
   
 }
+
 
 
 plotCNAlineOnlyTumor <- function(samp){

@@ -1,12 +1,3 @@
-#' computeF1score compute F1 score
-#'
-#' @param pred inferred classification 
-#' @param ground_truth  ground truth of classification
-#'
-#' @return F1 Score
-#' @export
-#'
-#' @examples
 computeF1score <- function(pred, ground_truth){
   
   TP <- length(intersect(pred,ground_truth))

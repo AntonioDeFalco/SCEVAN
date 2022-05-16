@@ -1,4 +1,4 @@
-vegaMC <- function(dataset, output_file_name="output", 
+vegaMC_R <- function(dataset, output_file_name="output", 
                      beta=0.5, min_region_bp_size=1000, correction=FALSE,
                      loss_threshold=-0.2, gain_threshold=0.2, baf=FALSE,
                      loh_threshold=0.75, loh_frequency=0.8, bs=1000,
@@ -97,21 +97,14 @@ vegaMC <- function(dataset, output_file_name="output",
 }
 
 
-
-
-#The main input of VegaMC is the dataset file that has a row for each probe.
-#The first three columns of the file specify:
-# The probe name
-# The chromosome in which the probe is located
-# The genomic position of the probe
-
-#' Title
+#' getBreaksVegaMC Get SCEVAN segmentation of the matrix.
 #'
-#' @param mtx 
-#' @param chr_vect 
-#' @param sample 
+#' @param mtx count matrix
+#' @param chr_vect Vector specifying for each gene the chromosome where it is located
+#' @param sample sample name (optional)
+#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
 #'
-#' @return
+#' @return breakpoints
 #' @export
 #'
 #' @examples
@@ -119,7 +112,7 @@ getBreaksVegaMC <- function(mtx, chr_vect, sample = "", beta_vega = 0.5){
   
   write.table(mtx, paste("./output/", sample, "_mtx_vega.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
   
-  res_vega <- vegaMC(paste("./output/", sample, "_mtx_vega.txt", sep=""),output_file_name=paste("./output/", sample,"vega_output"), beta = beta_vega);
+  res_vega <- vegaMC_R(paste("./output/", sample, "_mtx_vega.txt", sep=""),output_file_name=paste("./output/", sample,"vega_output"), beta = beta_vega);
   
   BR <- unlist(lapply(res_vega$Start, function(x) which(chr_vect == x)[1]))
   n <- nrow(mtx)
