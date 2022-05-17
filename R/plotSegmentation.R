@@ -119,18 +119,19 @@ getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
   CNV_infer
 }
 
-heatmapConsensusPlot <- function(segm){
+heatmapConsensusPlot <- function(segm,sample,file){
  
+    segm[abs(segm$Mean)<0.05,]$Mean <- 0
     x <- getModifyPosSeg(segm)
   
-    dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(min(x$Pos),max(min(x$Pos)), length.out = 1000000), ties = "ordered"))
+    dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(min(x$Pos),max(x$Pos), length.out = 1000000), ties = "ordered"))
     colnames(dfL) <- c("Pos","Mean")
     dfL$Mean[is.na(dfL$Mean)] <- 0
     
     dfL$Chr <- rep(1, nrow(dfL))
-    for (ch in 2:22){
+    for (ch in 1:21){
       maxCh <- max(x[x$Chr==ch,]$Pos)
-      dfL[dfL$Pos>maxCh,]$Chr <- dfL[dfL$Pos>maxCh,]$Chr+1
+      dfL[dfL$Pos>maxCh,]$Chr <- ch+1
     }
     
     chr <- as.numeric(dfL$Chr) %% 2+1
@@ -142,12 +143,14 @@ heatmapConsensusPlot <- function(segm){
     cells <- rbind(rbPal5(1),rbPal5(1))
     my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
     
+    
     heatmap.3(t(cbind(dfL$Mean,dfL$Mean)),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = dfL$Chr, keysize=1, density.info="none", trace="none",
               cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
               ColSideColors=chr1,
-              symm=F,symkey=F,symbreaks=T,cex=3.0, main="", cex.main=4, margins=c(10,10), key=FALSE,
+              symm=F,symkey=F,symbreaks=T,cex=3.0, main="", cex.main=4, margins=c(10,20), key=FALSE,
               notecol="black",col=my_palette, RowSideColors=t(cells))
-  
+    
+    
 }
 
 plotCNclonal <- function(sample,ClonalCN){
@@ -170,8 +173,8 @@ plotCNclonal <- function(sample,ClonalCN){
     png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
     plotSegmentation(CNV = segm)
     dev.off()
-    png(paste("./output/",sample,file,"consensus.png",sep=""), height=1050, width=2250, res=250) 
-    heatmapConsensusPlot(segm)
+    png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
+    heatmapConsensusPlot(segm,sample,file)
     dev.off()
     }
 }
