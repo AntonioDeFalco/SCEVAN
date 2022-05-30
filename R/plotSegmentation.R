@@ -23,7 +23,8 @@ modifySEG <- function(segDF){
 
 modifyPOS <- function(CNV){
   
-  add_chr <- read.table("/home/adefalco/singleCell/AllData/ClassTumorCells/VegaMC/sizeGRCh38.csv", header = TRUE)
+  add_chr <- sizeGRCh38
+  #add_chr <- read.table("/home/adefalco/singleCell/AllData/ClassTumorCells/VegaMC/sizeGRCh38.csv", header = TRUE)
   add_chr <- (add_chr$Size/1000)[1:21]
   
   CNV$Pos <- CNV$Pos/1000
@@ -108,6 +109,8 @@ plotSegmentation <- function(CNV){
 }
 
 
+
+
 getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
   CNV_infer <- read.table(paste0(path,"./output/ ",sample, beta," vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   
@@ -141,7 +144,7 @@ heatmapConsensusPlot <- function(segm,sample,file){
     
     rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
     cells <- rbind(rbPal5(1),rbPal5(1))
-    my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
+    my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 11, name = "RdBu")))(n = 999)
     
     
     heatmap.3(t(cbind(dfL$Mean,dfL$Mean)),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = dfL$Chr, keysize=1, density.info="none", trace="none",
