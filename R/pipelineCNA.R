@@ -32,7 +32,7 @@ NULL
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = FALSE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = FALSE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
   
   dir.create(file.path("./output"), showWarnings = FALSE)
   
@@ -40,7 +40,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   normalNotKnown <- length(norm_cell)==0
   
-  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures)
+  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism)
   
   if(normalNotKnown) norm_cell <- names(res_proc$norm_cell)
 
@@ -61,6 +61,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
 
   if (SUBCLONES) {
     res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree)
+    #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
   }else{
@@ -69,7 +70,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   #if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample) getClonalCNProfile(sample,)
   
-  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN)
+  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism)
   
   #save CNA matrix
   #CNAmtx <- res_class$CNAmat[,-c(1,2,3)]

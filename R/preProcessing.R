@@ -7,10 +7,15 @@
 #' @examples
 #' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
-annotateGenes <- function(mtx){
+annotateGenes <- function(mtx, organism = "human"){
   library(dplyr)
 
-  edb <- EnsDB_Hsapiens_v86 #From EnsDb.Hsapiens.v86
+  if(organism == "human"){
+    edb <- EnsDB_Hsapiens_v86 #From EnsDb.Hsapiens.v86
+  }else{
+    edb <- EnsDb_Mmusculus_v79 #From EnsDb.Hsapiens.v86
+  }
+  
   chr <- 1:22  
   edb <- (edb[edb$seqnames %in% chr,c(1,2,3,6,7)])
   edb$seqnames <- as.numeric(as.character(edb$seqnames))
@@ -56,7 +61,7 @@ annotateGenes <- function(mtx){
 #' @examples
 #' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
-preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, par_cores=20, findConfident = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
+preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, par_cores=20, findConfident = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
   
   set.seed(123)
   
@@ -90,13 +95,13 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   
   print("3) Annotations gene coordinates")
   
-  count_mtx_annot <- annotateGenes(count_mtx) 
+  count_mtx_annot <- annotateGenes(count_mtx, organism) 
   
   count_mtx <- count_mtx_annot[,-c(1:5)]
   rownames(count_mtx) <- count_mtx_annot$gene_name
   
   if(findConfident){
-    norm_cell <- getConfidentNormalCells(count_mtx, sample, par_cores = par_cores, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures)
+    norm_cell <- getConfidentNormalCells(count_mtx, sample, par_cores = par_cores, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism)
   }else{
     norm_cell <- NULL
   }
@@ -110,8 +115,17 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   print(paste(nrow(count_mtx_annot)," genes annotated", sep=""))
   
   print("4) Filter: genes involved in the cell cycle")
+  
+  if(organism == "human"){
+    totChr <- 22
+    cellcycle <- reactome_cellcycle #From EnsDb.Hsapiens.v86
+  }else{
+    totChr <- 19
+    cellcycle <- reactome_cellcycle_Mmusculus #From EnsDb.Hsapiens.v86
+  }
+  
   HLAs <- count_mtx_annot$gene_name[grep("^HLA-", count_mtx_annot$gene_name)]
-  toRev <- which(count_mtx_annot$gene_name %in% c(as.vector(reactome_cellcycle), HLAs))
+  toRev <- which(count_mtx_annot$gene_name %in% c(as.vector(cellcycle), HLAs))
   if(length(toRev)>0){
     count_mtx_annot <- count_mtx_annot[-toRev, ]
   }
@@ -120,10 +134,12 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   
   print(paste0("5)  Filter: cells > ", ngenes_chr, "genes per chromosome "))
   cellsFilt <- NULL
+  
+  
   for(i in 6:ncol(count_mtx_annot)){
     cellChr <- cbind(count_mtx_annot$seqnames, count_mtx_annot[,i])
     cellChr <- cellChr[cellChr[,2]!=0,]
-    if(length(rle(cellChr[,1])$length)<22|min(rle(cellChr[,1])$length)< ngenes_chr){
+    if(length(rle(cellChr[,1])$length)<totChr|min(rle(cellChr[,1])$length)< ngenes_chr){
       cellsFilt <- c(cellsFilt, colnames(count_mtx_annot)[i])
     }
   }

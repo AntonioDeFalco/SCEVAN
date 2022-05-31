@@ -21,31 +21,46 @@ modifySEG <- function(segDF){
   segDF
 }
 
-modifyPOS <- function(CNV){
+modifyPOS <- function(CNV, organism = "human"){
   
-  add_chr <- sizeGRCh38
+  if(organism == "human"){
+    totChr <- 22
+    add_chr <- sizeGRCh38
+  }else{
+    totChr <- 19
+    add_chr <- sizeGRCm39
+  }
+  
+  
   #add_chr <- read.table("/home/adefalco/singleCell/AllData/ClassTumorCells/VegaMC/sizeGRCh38.csv", header = TRUE)
-  add_chr <- (add_chr$Size/1000)[1:21]
+  add_chr <- (add_chr$Size/1000)[1:(totChr-1)]
   
   CNV$Pos <- CNV$Pos/1000
   
-  extr_chr <- unlist(lapply(1:22, function(x) max(which(CNV$Chr==x))))
+  extr_chr <- unlist(lapply(1:totChr, function(x) max(which(CNV$Chr==x))))
   
-  for (i in 1:21){
+  for (i in 1:(totChr-1)){
     CNV[(extr_chr[i]+1):extr_chr[(i+1)],]$Pos <- (CNV[(extr_chr[i]+1):extr_chr[(i+1)],]$Pos + sum(add_chr[1:i]))
   }
   
   CNV
 }
 
-addInterval <- function(segm){
+addInterval <- function(segm, organism = "human"){
   
   #add_chr <- read.table("/home/adefalco/singleCell/AllData/ClassTumorCells/VegaMC/sizeGRCh38.csv", header = TRUE)
   
-  add_chr <- sizeGRCh38
+  if(organism == "human"){
+    totChr <- 22
+    add_chr <- sizeGRCh38
+  }else{
+    totChr <- 19
+    add_chr <- sizeGRCm39
+  }
+  
   
   toAdd <- c()
-  for(x in 1:22){
+  for(x in 1:totChr){
     subset <- segm[segm$Chr==x,]
     if(nrow(subset)>0){
       if(min(subset$Pos)!=0) toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = 0, End = min(subset$Pos)-1, Mean = 0))
@@ -67,15 +82,21 @@ addInterval <- function(segm){
   segm
 }
 
-getModifyPosSeg <- function(x){
-    mod <- addInterval(x)
+getModifyPosSeg <- function(x, organism = "human"){
+    mod <- addInterval(x, organism)
     mod <- modifySEG(mod)
-    mod <- modifyPOS(mod)
+    mod <- modifyPOS(mod, organism)
     mod
 }
 
 #CNV c( "Chr","Start","End","Mean")
-plotSegmentation <- function(CNV){
+plotSegmentation <- function(CNV, organism = "human"){
+  
+  if(organism == "human"){
+    totChr <- 22
+  }else{
+    totChr <- 19
+  }
   
   CNV <- getModifyPosSeg(CNV)
   
@@ -100,10 +121,10 @@ plotSegmentation <- function(CNV){
   
   abline(h = 0, col = "gray60", lwd = 1)
   
-  extr_chr <- CNV[unlist(lapply(1:22, function(x) max(which(CNV$Chr==x)))),]$Pos
+  extr_chr <- CNV[unlist(lapply(1:totChr, function(x) max(which(CNV$Chr==x)))),]$Pos
   
   extr_chr <- append(1, extr_chr)
-  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
+  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:totChr, las = 1, line = 0.2, tick = 0,
        cex.axis = 1.0, gap.axis = 0)
   abline(v=extr_chr, col="black", lwd = 2)
 }
@@ -156,7 +177,7 @@ heatmapConsensusPlot <- function(segm,sample,file){
     
 }
 
-plotCNclonal <- function(sample,ClonalCN){
+plotCNclonal <- function(sample,ClonalCN, organism = "human"){
   
   if(ClonalCN) {
     fileNames <- c("ClonalCNProfile","onlytumor")
@@ -174,7 +195,7 @@ plotCNclonal <- function(sample,ClonalCN){
     
     segm <- getScevanCNV(paste0(sample,name))
     png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
-    plotSegmentation(CNV = segm)
+    plotSegmentation(CNV = segm, organism = organism)
     dev.off()
     png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
     heatmapConsensusPlot(segm,sample,file)

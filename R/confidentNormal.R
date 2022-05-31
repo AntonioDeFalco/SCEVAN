@@ -58,7 +58,14 @@ top30classification <- function(NES, pValue, FDR, pval_filter, fdr_filter, pval_
 #' @examples
 #' 
 #' @export
-getConfidentNormalCells <- function(mtx, sample = "", par_cores = 20, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE){
+getConfidentNormalCells <- function(mtx, sample = "", par_cores = 20, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
+  
+  
+  if(organism == "human"){
+    geneSet <- geneSet 
+  }else{
+    geneSet <- geneSetMouse 
+  }
   
   if(length(AdditionalGeneSets)>0 & SCEVANsignatures){
     geneSet <- append(geneSet, AdditionalGeneSets)

@@ -92,7 +92,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
   #}else{
   graph <- buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
-  #}
+  #}install.packages("igraph")
   lc <- cluster_louvain(graph)
   #nSub <- 3
   #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
@@ -100,6 +100,12 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   
   hc.clus <- membership(lc)
   names(hc.clus) <- colnames(relativeSmoothMtx)
+  
+  perc_cells_subclones <- table(hc.clus)/length(hc.clus)
+  
+  removeSubcl <- as.numeric(names(perc_cells_subclones[perc_cells_subclones<0.02]))
+  
+  if(length(removeSubcl)>0) hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
   
   n_subclones <- length(unique(hc.clus))
   
