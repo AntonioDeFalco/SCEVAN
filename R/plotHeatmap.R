@@ -869,7 +869,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL){
   cells <- rbind(colors_samp(nSub),colors_samp(nSub))
   
   png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
-  heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
+  heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = 1:22, keysize=1, density.info="none", trace="none",
             cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
             ColSideColors=chr1,
             symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Sample:", samp), cex.main=4, margins=c(10,10), key=FALSE,
