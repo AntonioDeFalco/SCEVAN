@@ -1060,7 +1060,9 @@ plotCloneTree <- function(sample,res_subclones){
   library(tidytree)
   
   segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
-  names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
+  #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
+  
+  names(segmList) <- paste0(" ",1:res_subclones$n_subclones," ")
   
   segmList <- lapply(segmList, function(x) segmPos(x))
   
@@ -1093,18 +1095,14 @@ plotCloneTree <- function(sample,res_subclones){
   
   colors <- colors_samp(res_subclones$n_subclones)
   
-  limit <- 50*res_subclones$n_subclones
-  
   png(paste("./output/",sample,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
   
   pp <- ggtree(tree, layout="daylight", size = 2) + 
     ggtitle(paste0(sample,"-Clone Tree")) + 
-    geom_tiplab(aes(fill=group), geom = "label", size = 8) +
+    geom_tiplab(aes(fill=group), geom = "label", size = 4) +
     scale_fill_manual(values=colors) + 
     theme_tree2(legend.position = "none") + 
-    geom_nodepoint(color="#606060", alpha=1/3, size=10) +
-    xlim(-limit,limit)  + 
-    ylim(-limit,limit)  
+    geom_nodepoint(color="#606060", alpha=1/3, size=10)  
   
   plot(pp)
   
