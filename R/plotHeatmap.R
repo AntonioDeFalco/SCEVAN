@@ -1104,7 +1104,9 @@ plotCloneTree <- function(sample,res_subclones){
     theme_tree2(legend.position = "none") + 
     geom_nodepoint(color="#606060", alpha=1/3, size=10)  
   
-  plot(pp)
+  #plot(pp)
+  
+  plot(pp + xlim_expand(c(-5, 5), 'Dot'))
   
   dev.off()
 }
