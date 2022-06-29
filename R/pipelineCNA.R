@@ -211,7 +211,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         #save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "plotcnaline.RData")
         #plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
         
-        diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
+        #diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
         perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
         
