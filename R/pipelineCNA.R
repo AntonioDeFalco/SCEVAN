@@ -55,7 +55,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
 
-  if(ClonalCN) getClonalCNProfile(res_class, sample, par_cores)
+  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores)
   
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
 
@@ -89,7 +89,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
 }
 
 
-getClonalCNProfile <- function(res_class, sample, par_cores, beta_vega = 3){
+getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3){
   
   mtx <- res_class$CNAmat[,res_class$tum_cells]
   # hcc <- hclust(parallelDist::parDist(t(mtx),threads =par_cores, method = "euclidean"), method = "ward.D")
@@ -99,13 +99,15 @@ getClonalCNProfile <- function(res_class, sample, par_cores, beta_vega = 3){
  
   mtx_vega <- cbind(res_class$CNAmat[,1:3], mtx)
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,2], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
   
-  subSegm <- read.csv(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"), sep = "\t")
+  mtx_CNA3 <- computeCNAmtx(mtx, breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
   
-  # out <- boxplot.stats(subSegm$Mean)$out
-  # out_ind <- which(subSegm$Mean %in% c(out))
-  # subSegm[out_ind,]$Mean <- 0
+  colnames(mtx_CNA3) <- res_class$tum_cells
+  
+  save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
+  
+  CNV <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = sample)
   
 }
 
@@ -132,11 +134,14 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
 
 subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE){
   
+  #save(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, file = "debug_subclonesTumorCells.RData")
+  
   start_time <- Sys.time()
   
   FOUND_SUBCLONES <- FALSE
-    
-  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample, par_cores, beta_vega)
+  
+  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample, par_cores, beta_vega, res_proc)
+  #res_subclones <- subclonesTumorCells(tum_cells, CNAmat,relativeSmoothMtx, sample, par_cores, beta_vega, res_proc)
   
   tum_cells <- res_class$tum_cells
   clustersSub <- res_subclones$clustersSub
@@ -174,7 +179,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
               removInd <- append(removInd,ind2)
             }
           }
-
+          
         }
         unique(res_subclones$clustersSub)
         for(i in 1:length(removInd)){
@@ -189,9 +194,9 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
         
         if(res_subclones$n_subclones>1){
-        res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
-        sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
-        
+          res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
+          sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+          
           if(length(sampleAlter)>1){
             diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
             diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
@@ -200,28 +205,28 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       }
       
       if(res_subclones$n_subclones>1){
-      segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
-      names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
-      
-      #save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "plotcnaline.RData")
-      plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
-      
-      diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
-      
-      perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
-      
-      oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
-      #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
-      plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
-      
-      plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
-      classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
-      if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
-      
-      if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-      pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
-      
-      FOUND_SUBCLONES <- TRUE
+        #segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
+        #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
+        
+        #save(res_proc, res_subclones, segmList,diffSubcl,sample, file = "plotcnaline.RData")
+        #plotCNAline(segmList, diffSubcl, sample, res_subclones$n_subclones)
+        
+        diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
+        
+        perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
+        
+        oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
+        #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
+        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
+        
+        plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
+        classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
+        if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
+        
+        if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
+        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
+        
+        FOUND_SUBCLONES <- TRUE
       }else{
         print("no significant subclones")
       }

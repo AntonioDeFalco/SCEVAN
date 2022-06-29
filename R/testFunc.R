@@ -49,25 +49,8 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
   return(ans)
 }
 
-#' subclonesTumorCells  Check the presence of subclonal structures in tumor cells, by determining the optimal number of clusters present in the CNA matrix of 
-#' tumor cells using the Calinski-Harabasz Index as a criterion \cite{Calinski}. For each possible subclone the joint segmentation algorithm is 
-#' applied and the separate segmentation results are analyzed to see if there are any significant alterations specific to one subclone compared to
-#' the others.
-#'
-#' @param tum_cells malignant cells
-#' @param CNAmat CNA matrix
-#' @param samp sample name
-#'
-#' @return
-#' n_subclones number of subclones
-#' breaks_subclones breakpoints of subclones
-#' logCNA CNA matrix
-#' clustersSub clustering of subclones
-#' @export
-#'
-#' @examples
-subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores, beta_vega){
-  
+
+subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores, beta_vega, res_proc){
   library(scran)
   
   norm.mat.relat <- CNAmat[,-c(1:3)]
@@ -85,7 +68,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   library(igraph)
   dd <- 30
   if(dim(relativeSmoothMtx)[2]<=50){
-      dd <- 5
+    dd <- 5
   }
   
   #if(packageVersion("scran")>"1.16.0"){
@@ -124,28 +107,37 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
     
     logCNAl <- list()
     
+    CNV <- list()
+    
     colName <- c()
-      
+    
     for (i in 1:n_subclones){
-        
-        print(paste("Segmentation of subclone : ", i))
-        
-        tum_cells_sub1 <- names(hc.clus[hc.clus==i])
-        colName <- append(colName,tum_cells_sub1)
-        
-        mtx_vega <- cbind(info_mat, norm.mat.relat[,tum_cells_sub1])
-        
-        colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-        
-        breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = beta_vega)
-        
-        subSegm <- read.csv(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"), sep = "\t")
-        
-        segmAlt <- abs(subSegm$Mean)>0.10 | (subSegm$G.pv<0.5 | subSegm$L.pv<0.5)
-
-        logCNAl[[i]] <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, segmAlt)
-     }
       
+      print(paste("Segmentation of subclone : ", i))
+      
+      tum_cells_sub1 <- names(hc.clus[hc.clus==i])
+      colName <- append(colName,tum_cells_sub1)
+      
+      mtx_vega <- cbind(info_mat, norm.mat.relat[,tum_cells_sub1])
+      
+      colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
+      
+      breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = 0.5)
+      
+      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], par_cores, rep(TRUE, length(breaks_subclones[[i]])))
+      
+      colnames(mtx_CNA3) <- tum_cells_sub1
+      rownames(mtx_CNA3) <- rownames(norm.mat.relat)
+      
+      #save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
+      
+      CNV[[i]] <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = samp, subclone = i, par_cores = par_cores)
+      
+      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], par_cores, CNV[[i]]$Mean != 0)
+      
+      logCNAl[[i]] <- mtx_CNA3
+    }
+    
     BR <- c()
     
     BR <- sort(unique(unlist(breaks_subclones)))
@@ -159,27 +151,25 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
     
     colnames(results$logCNA) <- colName #colnames(norm.mat.relat)
     results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
- 
+    
     hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
-
+    
     plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp)
     save(results.com, file = paste0("./output/",samp,"_CNAmtxSubclones.RData"))
-      
+    
   }else{
-      n_subclones <- 0
-      hc.clus <- 0
-      print(paste("found", n_subclones, "subclones", sep = " "))
+    n_subclones <- 0
+    hc.clus <- 0
+    print(paste("found", n_subclones, "subclones", sep = " "))
   }
-
-  
   
   ress <- list(n_subclones, breaks_subclones, results.com, hc.clus)
   
   names(ress) <- c("n_subclones", "breaks_subclones", "logCNA", "clustersSub")
   
   return(ress)
-  
 }
+
 
 
 ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores, beta_vega){
@@ -262,6 +252,21 @@ analyzeSegm <- function(samp, nSub = 1){
   
   for (i in 1:nSub){
     
+    segm <- read.csv(paste0("./output/ ",samp," _ ",i," _CN.seg"), sep = "\t")
+    all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
+    
+  }
+  
+  return(all_segm)
+  
+}
+
+analyzeSegm2 <- function(samp, nSub = 1){
+  
+  all_segm <- list()
+  
+  for (i in 1:nSub){
+    
     segm <- read.csv(paste0("./output/ ",samp,"_subclone",i," vega_output"), sep = "\t")
     all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
     
@@ -272,6 +277,62 @@ analyzeSegm <- function(samp, nSub = 1){
 }
 
 getPossibleSpecAltFromSeg <- function(segm, name){
+  
+  segm <- segm[segm$Mean!=0,]
+  
+  #segm <- segm[abs(segm$Mean)>=0.10 | (segm$G.pv<=0.5 | segm$L.pv<=0.5),]
+  segm_new <- c()
+  
+  if(dim(segm)[1]>0){
+    
+    # segm$Alteration <- "D"
+    #segm$Alteration[segm$G.pv<5*10^{-5}] <- "A"
+    # segm$Alteration[segm$Mean>0.01] <- "A"
+    #  
+    #  segm <- segm[,c(1,2,3, ncol(segm))]
+    
+    colnames(segm)[2] <- "Start"
+    colnames(segm)[4] <- "Alteration"
+    
+    for (ch in unique(segm$Chr)) {
+      segm_ch <- segm[segm$Chr==ch,]
+      
+      br <- 2
+      
+      while(nrow(segm_ch)>1){
+        
+        if(br>nrow(segm_ch)){
+          break
+        }
+        
+        if( (abs((segm_ch$End[(br-1)] - segm_ch$Start[br])) < 10000000) & (abs((segm_ch$Alteration[(br-1)] - segm_ch$Alteration[br]))<2)){
+          if(segm_ch$Alteration[(br-1)]<0){
+            altt <- min(segm_ch$Alteration[(br-1)],segm_ch$Alteration[br])
+          }else{
+            altt <- max(segm_ch$Alteration[(br-1)],segm_ch$Alteration[br])
+          }
+          
+          segm_ch$End[(br-1)] <- segm_ch$End[br]
+          segm_ch <- segm_ch[-(br),]
+          segm_ch$Alteration[(br-1)] <- altt
+        }else{
+          br <- br + 1
+        }
+        
+      }
+      segm_new <- rbind(segm_new,segm_ch)
+    }
+    
+  }
+  
+  
+  
+  return(segm_new)
+  
+} 
+
+
+getPossibleSpecAltFromSeg2 <- function(segm, name){
   
   segm <- segm[abs(segm$Mean)>=0.10 | (segm$G.pv<=0.5 | segm$L.pv<=0.5),]
   segm_new <- c()
@@ -315,6 +376,115 @@ getPossibleSpecAltFromSeg <- function(segm, name){
 
 
 diffSubclones <- function(sampleAlter, samp, nSub = 2){
+  
+  #save(sampleAlter, samp, nSub , file ="diffSubclones.RData")
+  
+  all_segm_diff <- list()
+  
+  vectSubcl <- 1:nSub
+  
+  for(sub in vectSubcl){
+    segm_sh <- c()
+    segm_new <- c()
+    segm_sh_sub <- c()
+    
+    cl1 <- sampleAlter[[sub]]
+    
+    for (ch in 1:22) {
+      
+      if(sum(cl1$Chr==ch)>0){
+        
+        cl1_ch <- cl1[cl1$Chr==ch,]
+        remInd <- c()
+        for (br in 1:nrow(cl1_ch)) {
+          
+          
+          sh_sub <- c()
+          FOUND <- 0
+          FOUND_small <- 0
+          
+          for(sub2 in vectSubcl[-sub]){
+            
+            cl2 <- sampleAlter[[sub2]]
+            
+            cl2_ch <- cl2[cl2$Chr==ch,]
+            
+            AltPres <- which(abs(cl2_ch$Alteration - cl1_ch[br,]$Alteration)<2)
+            
+            if(length(AltPres)>0){
+              
+              for(br2 in AltPres){
+                FOUND_br2 <- FALSE
+                
+                if( abs(cl1_ch[br,]$Start - cl2_ch[br2,]$Start)<1000000 | abs(cl1_ch[br,]$End - cl2_ch[br2,]$End)<1000000){
+                  
+                  if( ((cl1_ch[br,]$Start >= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End <= cl2_ch[br2,]$End)) | ((cl1_ch[br,]$Start <= cl2_ch[br2,]$Start) | (cl1_ch[br,]$End >= cl2_ch[br2,]$End))){
+                    
+                    cl_ch_new <- cl1_ch[br,]
+                    
+                    if(cl1_ch[br,]$Alteration<0){
+                      cl_ch_new$Alteration <- min(cl1_ch[br,]$Alteration, cl2_ch[br2,]$Alteration)
+                    }else{
+                      cl_ch_new$Alteration <- max(cl1_ch[br,]$Alteration, cl2_ch[br2,]$Alteration)
+                    }
+                    
+                    cl_ch_new$Start <- max(cl1_ch[br,]$Start, cl2_ch[br2,]$Start)
+                    cl_ch_new$End <- min(cl1_ch[br,]$End, cl2_ch[br2,]$End)
+                    
+                    if( ((cl1_ch[br,]$End - cl1_ch[br,]$Start) / (cl2_ch[br2,]$End - cl2_ch[br2,]$Start) < 0.40 ) | ((cl2_ch[br2,]$End - cl2_ch[br2,]$Start) / (cl1_ch[br,]$End - cl1_ch[br,]$Start)  < 0.40 )){
+                      
+                      FOUND_small <- 1
+                      
+                    }else{
+                      sh_sub <- append(sh_sub, sub2)
+                      
+                      FOUND <- FOUND + 1
+                      FOUND_br2 <- TRUE
+                      
+                      remInd <- append(remInd, br2)
+                      
+                      break 
+                    }
+                  }
+                  
+                  
+                }
+              }
+            }
+            
+            sampleAlter[[sub2]] <- sampleAlter[[sub2]][]
+            
+          }
+          
+          if(FOUND==(nSub-1)){
+            segm_sh <- rbind(segm_sh,cl_ch_new) 
+          }else if(FOUND>0){
+            segm_sh_sub <- rbind(segm_sh_sub,cbind(cl_ch_new,sh_sub))
+          }else if(FOUND==0 & FOUND_small<1){
+            segm_new <- rbind(segm_new,cl1_ch[br,])  
+          }
+        }
+        
+      }
+      
+      all_segm_diff[[paste0(samp,"_subclone", sub)]] <- segm_new
+      all_segm_diff[[paste0(samp,"_clone", sub)]] <- segm_sh
+      all_segm_diff[[paste0(samp,"_share", sub)]] <- segm_sh_sub
+    }
+    
+  }
+  
+  all_segm_diff
+  
+  return(all_segm_diff)
+}  
+
+
+
+
+
+
+diffSubclones2 <- function(sampleAlter, samp, nSub = 2){
   
   #save(sampleAlter, samp, nSub , file ="diffSubclones.RData")
   
@@ -420,51 +590,16 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   segm_sh <- c()  
   
   nSubl <- grep("subclone",names(listAltSubclones))
-
+  
   for(sub in nSubl){
     
-    listAltSubclones[[sub]]$Mean <- 0
-
-    segm_new <- c()  
+    findInd <- regexpr(pattern ='subclone',names(listAltSubclones)[sub])
+    subInd <- substr(names(listAltSubclones)[sub],findInd[1]+8,nchar(names(listAltSubclones)[sub]))
     
-    for (i in 1:nrow(listAltSubclones[[sub]])){
-
-      subsetChr <- mtx_annot[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
-      subsetCna <- count_mtx[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
-      posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
-      posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
-      
-      findInd <- regexpr(pattern ='subclone',names(listAltSubclones)[sub])
-      subInd <- substr(names(listAltSubclones)[sub],findInd[1]+8,nchar(names(listAltSubclones)[sub]))
+    subclonesAlt[[paste0(samp,"_subclone", subInd)]] <- listAltSubclones[[sub]] 
     
-      #subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
-      
-      subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones==subInd])]
-      subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones!=subInd])]
-
-      subClone1 <- apply(subClone1,1, mean)
-      subClone2 <- apply(subClone2,1, mean)
-
-      if( listAltSubclones[[sub]][i,]$Alteration == "A" ){
-        test <- t.test(subClone1,subClone2, alternative = "greater")
-      }else{
-        test <- t.test(subClone1,subClone2, alternative = "less")
-      }
-      
-      if(test$p.value<10^{-10} & abs(mean(subClone1)-mean(subClone2))>=0.05  & abs(mean(subClone1))>=0.10){
-
-        listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
-        
-        segm_new <- rbind(segm_new, listAltSubclones[[sub]][i,])
-
-      }else{
-        segm_sh <- rbind(segm_sh, listAltSubclones[[sub]][i,])
-     }
-      
-    }
-    
-    if(length(segm_new)>0)  subclonesAlt[[paste0(samp,"_subclone", subInd)]] <- segm_new
   }
+
 
   clone <- c()
   for(i in grep("_clone",names(listAltSubclones))){
@@ -494,44 +629,25 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   
   clone <- clone[order(clone$Chr,clone$Start),]
   
+  
   #subclonesAlt[[paste0(samp,"_clone")]] <- rbind(segm_sh)#, listAltSubclones[[grep("_clone",names(listAltSubclones))]])
 
   subclonesAlt[[paste0(samp,"_clone")]] <- clone
   
-  subclonesAlt[[paste0(samp,"_clone")]]$Mean <- 0
+  #subclonesAlt[[paste0(samp,"_clone")]]$Mean <- 0
   
   if(nSub>2) subclonesAlt[[paste0(samp,"_shareSubclone")]] <- testSpecificSubclonesAlteration(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub, samp)
   
-  subclonesAlt
-  
-  remov_alt <- c()
-  for (i in 1:nrow(subclonesAlt[[paste0(samp,"_clone")]])){
-    
-    subsetChr <- mtx_annot[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
-    subsetCna <- count_mtx[mtx_annot$seqnames == subclonesAlt[[paste0(samp,"_clone")]][i,]$Chr,] 
-    posSta <- which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$Start)
-    posEnd <-which(subsetChr$end == subclonesAlt[[paste0(samp,"_clone")]][i,]$End)
-    
-    subCna <- as.matrix(subsetCna[posSta:posEnd,names(clust_subclones)])
-    
-    meanS <- mean(subCna)
-    
-    subclonesAlt[[paste0(samp,"_clone")]][i,]$Mean <- meanS
-    
-      if(abs(meanS)<0.05){
-        remov_alt <- append(remov_alt,i)
-      }
-  }
-  if(length(remov_alt>0)) subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][-remov_alt,]
+  subclonesAlt <- lapply(subclonesAlt, function(x) x[x$Alteration!=0,])
   
   #subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][order(as.numeric(as.character(subclonesAlt[[paste0(samp,"_clone")]]$Chr))),]
 
   nSubl <- grep("subclone",names(subclonesAlt))
   
   for(sub in nSubl){
-    subclonesAlt[[sub]] <- subclonesAlt[[sub]][order(abs(subclonesAlt[[sub]]$Mean), decreasing = TRUE),]
+    subclonesAlt[[sub]] <- subclonesAlt[[sub]][order(abs(subclonesAlt[[sub]]$Alteration), decreasing = TRUE),]
   }
-  subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][order(abs(subclonesAlt[[paste0(samp,"_clone")]]$Mean), decreasing = TRUE),]
+  subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][order(abs(subclonesAlt[[paste0(samp,"_clone")]]$Alteration), decreasing = TRUE),]
   
   return(subclonesAlt)
 }
@@ -574,42 +690,42 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
     
     for (i in 1:nrow(listAltSubclones[[sub]])){
       
-      subsetChr <- mtx_annot[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
-      subsetCna <- count_mtx[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
-      posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
-      posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
-      
-      findInd <- regexpr(pattern ='share',names(listAltSubclones)[sub])
-      subInd <- substr(names(listAltSubclones)[sub],findInd[1]+5,nchar(names(listAltSubclones)[sub]))
-      
-      #subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
-      subIndSh <- as.numeric(listAltSubclones[[sub]][i,]$sh_sub)
-      subInd <- as.numeric(subInd)
-      #subIndSh <- as.numeric(otherSim$sh_sub)
-      
-      subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones %in% c(subInd,subIndSh)])]
-      subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[!(clust_subclones %in% c(subInd,subIndSh))])]
-      
-      subClone1 <- apply(subClone1, 1, mean)
-      subClone2 <- apply(subClone2, 1, mean)
-      
-      if( listAltSubclones[[sub]][i,]$Alteration == "A" ){
-        test <- t.test(subClone1,subClone2, alternative = "greater")
-      }else{
-        test <- t.test(subClone1,subClone2, alternative = "less")
-      }
-    
-      if(test$p.value<10^{-10} & abs(mean(subClone1)-mean(subClone2))>=0.05  & abs(mean(subClone1))>=0.10){
-        
-        listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
-        
-        listAltSubclones[[sub]][i,]$sh_sub <- paste(subInd, listAltSubclones[[sub]][i,]$sh_sub, sep = "-")
-        
-        segm_new <- rbind(segm_new, listAltSubclones[[sub]][i,])
-      }else{
-        listAltSubclones[[sub]][i,]$Mean <- mean(append(subClone1,subClone2))
-        segm_sh <- rbind(segm_sh, listAltSubclones[[sub]][i,])
-      }
+      # subsetChr <- mtx_annot[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
+      # subsetCna <- count_mtx[mtx_annot$seqnames == listAltSubclones[[sub]][i,]$Chr,] 
+      # posSta <- which(subsetChr$end == listAltSubclones[[sub]][i,]$Start)
+      # posEnd <- which(subsetChr$end == listAltSubclones[[sub]][i,]$End)
+      # 
+       findInd <- regexpr(pattern ='share',names(listAltSubclones)[sub])
+       subInd <- substr(names(listAltSubclones)[sub],findInd[1]+5,nchar(names(listAltSubclones)[sub]))
+      # 
+      # #subInd <- substr(names(listAltSubclones)[sub],nchar(names(listAltSubclones)[sub]),nchar(names(listAltSubclones)[sub]))
+      # subIndSh <- as.numeric(listAltSubclones[[sub]][i,]$sh_sub)
+       subInd <- as.numeric(subInd)
+      # #subIndSh <- as.numeric(otherSim$sh_sub)
+      # 
+      # subClone1 <- subsetCna[posSta:posEnd, names(clust_subclones[clust_subclones %in% c(subInd,subIndSh)])]
+      # subClone2 <- subsetCna[posSta:posEnd, names(clust_subclones[!(clust_subclones %in% c(subInd,subIndSh))])]
+      # 
+      # subClone1 <- apply(subClone1, 1, mean)
+      # subClone2 <- apply(subClone2, 1, mean)
+      # 
+      # if( listAltSubclones[[sub]][i,]$Alteration == "A" ){
+      #   test <- t.test(subClone1,subClone2, alternative = "greater")
+      # }else{
+      #   test <- t.test(subClone1,subClone2, alternative = "less")
+      # }
+      # 
+      # if(test$p.value<10^{-10} & abs(mean(subClone1)-mean(subClone2))>=0.05  & abs(mean(subClone1))>=0.10){
+      #   
+      #   listAltSubclones[[sub]][i,]$Mean <- mean(subClone1)
+      #   
+         listAltSubclones[[sub]][i,]$sh_sub <- paste(subInd, listAltSubclones[[sub]][i,]$sh_sub, sep = "-")
+      #   
+         segm_new <- rbind(segm_new, listAltSubclones[[sub]][i,])
+      # }else{
+      #   listAltSubclones[[sub]][i,]$Mean <- mean(append(subClone1,subClone2))
+      #  segm_sh <- rbind(segm_sh, listAltSubclones[[sub]][i,])
+      # }
       
     }
     
@@ -626,7 +742,7 @@ testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclon
   
   for (i in 1:nrow(subclonesAlt2)){
     
-    duplShared <- (subclonesAlt2[,]$Chr == subclonesAlt2[i,]$Chr) & (abs(subclonesAlt2[,]$Start - subclonesAlt2[i,]$Start)<10000000) & (abs(subclonesAlt2[,]$End - subclonesAlt2[i,]$End)<10000000) & (subclonesAlt2[,]$sh_sub == subclonesAlt2[i,]$sh_sub) & (subclonesAlt2[,]$Alteration == subclonesAlt2[i,]$Alteration)
+    duplShared <- (subclonesAlt2[,]$Chr == subclonesAlt2[i,]$Chr) & (abs(subclonesAlt2[,]$Start - subclonesAlt2[i,]$Start)<10000000) & (abs(subclonesAlt2[,]$End - subclonesAlt2[i,]$End)<10000000) & (subclonesAlt2[,]$sh_sub == subclonesAlt2[i,]$sh_sub) & (abs(subclonesAlt2[,]$Alteration - subclonesAlt2[i,]$Alteration)<2) #(subclonesAlt2[,]$Alteration == subclonesAlt2[i,]$Alteration) 
     duplShared[is.na(duplShared)] <- FALSE
     
     if(sum(duplShared)>1){
@@ -655,7 +771,9 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       chrr <- specAlt[[nsub]][i,]$Chr
       startpos <- specAlt[[nsub]][i,]$Start
       endpos <- specAlt[[nsub]][i,]$End
-      strr <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$end==startpos)
+      
+      strr <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$start==startpos)
+      #strr <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$end==startpos)
       endd <- which(count_mtx_annot$seqnames==chrr & count_mtx_annot$end==endpos)
       
       #top_genes <- rownames(count_mtx)
@@ -798,7 +916,7 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
     if(nrow(diffSub[[elem]])!=0){
       for(r in 1:nrow(diffSub[[elem]])){
         subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
-        posSta <- which(subset$end == diffSub[[elem]][r,]$Start)
+        posSta <- which(subset$start == diffSub[[elem]][r,]$Start)
         posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
         geneToAnn <- subset[posSta:posEnd, ]$gene_name
         found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
@@ -820,12 +938,14 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
       for(j in 1:nrow(diffSub[[i]])){
         
         indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
-        vect <- rep(0, nSub)
-        if(diffSub[[i]][j,]$Alteration=="A"){
-          vect[indNsub] <- 1
-        }else{
-          vect[indNsub] <- -1
-        }
+         vect <- rep(0, nSub)
+        # if(diffSub[[i]][j,]$Alteration=="A"){
+        #   vect[indNsub] <- 1
+        # }else{
+        #   vect[indNsub] <- -1
+        # }
+        
+        vect[indNsub] <- diffSub[[i]][j,]$Alteration
         
         oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
       }
@@ -842,18 +962,20 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
       
       for(j in 1:nrow(diffSub[[i]])){
         
-        if(abs(diffSub[[i]][j,]$Mean)>0.10){
+        #if(abs(diffSub[[i]][j,]$Mean)>0.10){
           
           indNsub <- as.numeric(substr(names(diffSub)[i],nchar(names(diffSub)[i]),nchar(names(diffSub)[i])))
           
-          if(diffSub[[i]][j,]$Alteration=="A"){
-            vect <- rep(1, nSub)
-          }else{
-            vect <- rep(-1, nSub)
-          }
+          # if(diffSub[[i]][j,]$Alteration=="A"){
+          #   vect <- rep(1, nSub)
+          # }else{
+          #   vect <- rep(-1, nSub)
+          # }
+          # 
+          vect <- rep(diffSub[[i]][j,]$Alteration, nSub)
           
           oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
-        }
+        #}
       }
       
     }
@@ -873,11 +995,12 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
         indNsub <- as.integer(unlist(strsplit(diffSub[[i]][j,]$sh_sub,"-")))
         
         vect <- rep(0, nSub)
-        if(diffSub[[i]][j,]$Alteration=="A"){
-          vect[indNsub] <- 1
-        }else{
-          vect[indNsub] <- -1
-        }
+        # if(diffSub[[i]][j,]$Alteration=="A"){
+        #   vect[indNsub] <- 1
+        # }else{
+        #   vect[indNsub] <- -1
+        # }
+        vect[indNsub] <- diffSub[[i]][j,]$Alteration
         
         oncoHeat[diffSub[[i]][j,]$Chr]  <- vect
       }
@@ -894,7 +1017,8 @@ plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
   annotdf <- data.frame(row.names = rownames(oncoHeat), 
                         Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
   
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:12])
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
   subclones <- rbPal5(nSub)
   names(subclones) <- unique(annotdf$Subclone)
   mycolors <- list(Subclone = subclones)

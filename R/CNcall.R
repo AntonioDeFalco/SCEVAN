@@ -217,7 +217,7 @@ getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,
     totChr <- 22
   }else{
     totChr <- 19
-  }
+  }.   
   
   library(parallel)
   call <- mclapply(1:totChr, getMajorityCall ,mc.cores = par_cores)
@@ -232,12 +232,12 @@ getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,
 }
 
 
-getCNVfastCALL <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par_cores = 20){
+getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par_cores = 20){
   
   truncBoundLeft <- 0.1
   truncBoundRight <- 0.1
   CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], MatrixSeg, truncBoundRight, truncBoundLeft)
-  plotSegmentation(CNV)
+  #plotSegmentation(CNV)
   write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
   
 }
