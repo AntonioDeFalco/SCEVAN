@@ -133,7 +133,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
       
       CNV[[i]] <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = samp, subclone = i, par_cores = par_cores)
       
-      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], par_cores, CNV[[i]]$Mean != 0)
+      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], par_cores, CNV[[i]]$Call != 2)
       
       logCNAl[[i]] <- mtx_CNA3
     }

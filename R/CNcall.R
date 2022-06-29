@@ -217,7 +217,7 @@ getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,
     totChr <- 22
   }else{
     totChr <- 19
-  }.   
+  }   
   
   library(parallel)
   call <- mclapply(1:totChr, getMajorityCall ,mc.cores = par_cores)
@@ -239,5 +239,5 @@ getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par
   CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], MatrixSeg, truncBoundRight, truncBoundLeft)
   #plotSegmentation(CNV)
   write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
-  
+  CNV
 }
