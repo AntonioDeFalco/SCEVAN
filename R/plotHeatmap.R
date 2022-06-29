@@ -1041,6 +1041,38 @@ plotCNAlineOnlyTumor <- function(samp){
 }
 
 plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
+  
+  legendBreaks <- sort(unique(as.numeric(as.matrix(oncoHeat))), decreasing = TRUE)
+  legendLabels <-c("AMP","GAIN","","LOSS","DEL")
+  i <- 1
+  okLabels <- c()
+  for(state in 2:-2){
+    if(state %in% legendBreaks){
+      okLabels <- c(okLabels,i)
+    }
+    i <- i+1
+  }
+  legendLabels <- legendLabels[okLabels]
+  legendColors <- rev(c("blue","#add8e6","white","#FF7F7F","red"))
+  legendColors <- rev(legendColors[okLabels])
+  
+  listPos <- unlist(lapply(colnames(oncoHeat), function(x) strsplit(x, split = " ")[[1]][2]))
+  
+  dff <- data.frame(chr = as.numeric(substr(colnames(oncoHeat), 1,2)), let = substr(listPos,2,2), pos= as.numeric(substr(listPos,3,4)))
+  
+  dff[dff$let=="p",]$pos <- -dff[dff$let=="p",]$pos
+  
+  oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE))]
+  
+  png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2250, width=1450, res=150)
+  pp <- pheatmap::pheatmap(t(oncoHeat), color = legendColors, cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = legendBreaks, legend_labels = legendLabels,cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
+  h = grid::convertHeight(sum(pp$gtable$heights), "in", TRUE)
+  w = grid::convertWidth(sum(pp$gtable$widths), "in", TRUE)
+  ggplot2::ggsave(paste("./output/",samp,"OncoHeat.png",sep=""), device = "png", pp$gtable, width=w, height=h, dpi=300)
+  dev.off()
+}
+
+plotOncoHeat2 <- function(oncoHeat, nSub, samp, annotdf, mycolors){
   oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]
   
   png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2250, width=1450, res=150)
@@ -1104,7 +1136,9 @@ plotCloneTree <- function(sample,res_subclones){
     theme_tree2(legend.position = "none") + 
     geom_nodepoint(color="#606060", alpha=1/3, size=10)  
   
-  plot(pp)
+  #plot(pp)
+  
+  plot(pp + xlim_expand(c(-5, 5), 'Dot'))
   
   dev.off()
 }

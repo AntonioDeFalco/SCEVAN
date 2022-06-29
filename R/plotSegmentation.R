@@ -1,4 +1,5 @@
 
+
 getCorrelationCN <- function(CNVref, CNVcomp){
   
   df_1 <- as.data.frame(approx(CNVcomp$Pos,CNVcomp$Mean, seq(min(CNVref$Pos,CNVcomp$Pos),max(CNVref$Pos,CNVcomp$Pos), by = 1), ties = "ordered"))
@@ -46,7 +47,7 @@ modifyPOS <- function(CNV, organism = "human"){
   CNV
 }
 
-addInterval <- function(segm, organism = "human"){
+addInterval <- function(segm, organism = "human", ref = 0){
   
   #add_chr <- read.table("/home/adefalco/singleCell/AllData/ClassTumorCells/VegaMC/sizeGRCh38.csv", header = TRUE)
   
@@ -63,17 +64,17 @@ addInterval <- function(segm, organism = "human"){
   for(x in 1:totChr){
     subset <- segm[segm$Chr==x,]
     if(nrow(subset)>0){
-      if(min(subset$Pos)!=0) toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = 0, End = min(subset$Pos)-1, Mean = 0))
+      if(min(subset$Pos)!=0) toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = 0, End = min(subset$Pos)-1, Mean = ref))
       if(max(subset$End) < add_chr[add_chr$Chr==x,]$Size) toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = max(subset$End)+1, End = add_chr[add_chr$Chr==x,]$Size, Mean = 0))
       if(nrow(subset)>1){
         for(i in 2:nrow(subset)){
           if(subset[i,]$Pos-1 - subset[i-1,]$End+1 > 2){
-            toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = subset[i-1,]$End+1, End = subset[i,]$Pos-1, Mean = 0))
+            toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = subset[i-1,]$End+1, End = subset[i,]$Pos-1, Mean = ref))
           }
         }
       }
     }else{
-      toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = 0, End = add_chr[add_chr$Chr==x,]$Size, Mean = 0))
+      toAdd <- rbind(toAdd,data.frame(Chr = x, Pos = 0, End = add_chr[add_chr$Chr==x,]$Size, Mean = ref))
     }
   }
   
@@ -82,44 +83,52 @@ addInterval <- function(segm, organism = "human"){
   segm
 }
 
-getModifyPosSeg <- function(x, organism = "human"){
-    mod <- addInterval(x, organism)
+getModifyPosSeg <- function(x, organism = "human", ref = 0){
+    mod <- addInterval(x, organism, ref)
     mod <- modifySEG(mod)
     mod <- modifyPOS(mod, organism)
     mod
 }
 
 #CNV c( "Chr","Start","End","Mean")
-plotSegmentation <- function(CNV, organism = "human"){
+plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE){
   
+  if(colnames(CNV)[4]=="Call"){
+    colnames(CNV)[4] <- "Mean"
+    ref <- 2  
+  }else{
+    ref <- 0  
+  } 
+    #CNV$Call <- CNV$Call-2
+    
   if(organism == "human"){
     totChr <- 22
   }else{
     totChr <- 19
   }
   
-  CNV <- getModifyPosSeg(CNV)
+  if(modifyPosSeg) CNV <- getModifyPosSeg(CNV, organism = organism, ref = ref)
   
   par(cex=1, cex.main = 1.5, cex.lab = 1.5,xaxs="i")
   with(data = CNV,
        expr = {
          plot(x = Pos,
               y = Mean,
-              pch = NA_integer_,ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xgap.axis = 0)
+              pch = NA_integer_,ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xgap.axis = ref)
          polygon(x = c(min(Pos), Pos, max(Pos)),
-                 y = c(0, Mean, 0),
+                 y = c(ref, Mean, ref),
                  col = "red")
          clip(x1 = min(Pos),
               x2 = max(Pos),
               y1 = min(Mean),
-              y2 = 0)
+              y2 = ref)
          polygon(x = c(min(Pos), Pos, max(Pos)),
-                 y = c(0, Mean, 0),
+                 y = c(ref, Mean, ref),
                  col = "blue")
          
        })
   
-  abline(h = 0, col = "gray60", lwd = 1)
+  abline(h = ref, col = "gray60", lwd = 1)
   
   extr_chr <- CNV[unlist(lapply(1:totChr, function(x) max(which(CNV$Chr==x)))),]$Pos
   
