@@ -278,6 +278,9 @@ analyzeSegm2 <- function(samp, nSub = 1){
 
 getPossibleSpecAltFromSeg <- function(segm, name){
   
+  colnames(segm)[4] <- "Mean"
+  segm$Mean <- segm$Mean-2
+  
   segm <- segm[segm$Mean!=0,]
   
   #segm <- segm[abs(segm$Mean)>=0.10 | (segm$G.pv<=0.5 | segm$L.pv<=0.5),]
