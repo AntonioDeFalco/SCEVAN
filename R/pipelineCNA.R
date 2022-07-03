@@ -107,7 +107,7 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
   
-  CNV <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = sample)
+  CNV <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = sample, CLONAL = TRUE)
   
 }
 

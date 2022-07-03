@@ -93,8 +93,9 @@ getModifyPosSeg <- function(x, organism = "human", ref = 0){
 #CNV c( "Chr","Start","End","Mean")
 plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE){
   
-  if(colnames(CNV)[4]=="Call"){
-    colnames(CNV)[4] <- "Mean"
+  indMean <- grepl("Call",colnames(CNV))
+  if(any(indMean)){
+    colnames(CNV)[indMean] <- "Mean"
     ref <- 2  
   }else{
     ref <- 0  

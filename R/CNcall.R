@@ -3,7 +3,7 @@ getInitParameters <- function(segmVect,meanVect,sdVect, truncBoundRight,truncBou
   
   truncBoundLeftVect<-c(meanVect[2]*3,meanVect[2]-(3*sdVect[2]),-truncBoundLeft,truncBoundRight,meanVect[4]+(3*sdVect[4]))
   truncBoundRightVect<-c(meanVect[2]-(3*sdVect[2]),-truncBoundLeft,truncBoundRight,meanVect[4]+(3*sdVect[4]),meanVect[4]*3)
-
+  
   for (i in 1:length(meanVect)){ 
     ind <- which(segmVect<=truncBoundRightVect[i] & segmVect>=truncBoundLeftVect[i])
     
@@ -14,7 +14,7 @@ getInitParameters <- function(segmVect,meanVect,sdVect, truncBoundRight,truncBou
       sdVect[i]<-sd(segmVect[ind])
     }
   }
-
+  
   truncBoundLeftVect<-c(meanVect[2]*3,meanVect[2]-(3*sdVect[2]),-truncBoundLeft,truncBoundRight,meanVect[4]+(3*sdVect[4]))
   truncBoundRightVect<-c(meanVect[2]-(3*sdVect[2]),-truncBoundLeft,truncBoundRight,meanVect[4]+(3*sdVect[4]),meanVect[4]*3)
   
@@ -78,7 +78,7 @@ getConditionalProbabilities <-function(meanVect,prior,normaldataMat){
 
 ######## Posterior Probability Function ##########
 getPosteriorProbability<-function(segmVect,meanVect,sdVect,prior){
-   
+  
   normaldataMat <- mapply(function(x,y) dnorm(segmVect,mean=x,sd=y), meanVect, sdVect)
   
   tauMat <- getConditionalProbabilities(meanVect,prior,normaldataMat)
@@ -89,7 +89,7 @@ getPosteriorProbability<-function(segmVect,meanVect,sdVect,prior){
 
 ####### Expectation Step #############
 EStep<-function(segmVect,meanVect,sdVect,prior,truncBoundLeftVect,truncBoundRightVect){
-
+  
   normaldataMat <- do.call(cbind,lapply(1:length(meanVect), function(x) {
     mu<-meanVect[x]
     sdev<-sdVect[x]
@@ -97,8 +97,8 @@ EStep<-function(segmVect,meanVect,sdVect,prior,truncBoundLeftVect,truncBoundRigh
     u<-truncBoundRightVect[x]
     if (sum((segmVect<=u)*(segmVect>=l))!=0){
       
-      normaldataVec<- getTruncatedGaussianDensity(t(segmVect),mu,sdev,l,u)
-
+      normaldataVec<- getTruncatedGaussianDensity(t(segmVect),mu,sdev,l,u) #EQ 16
+      
       if(any(is.infinite(normaldataVec))){
         normaldataVec[which(is.infinite(normaldataVec))]<-100
       }
@@ -110,8 +110,8 @@ EStep<-function(segmVect,meanVect,sdVect,prior,truncBoundLeftVect,truncBoundRigh
   }))
   
   
-  tauMat <- getConditionalProbabilities(meanVect,prior,normaldataMat)
-
+  tauMat <- getConditionalProbabilities(meanVect,prior,normaldataMat) #EQ (18)
+  
   deno <- rowSums(tauMat)
   ind0 <- which(deno==0)
   
@@ -138,9 +138,9 @@ MStep<-function(segmVect,taux,meanVect,sdVect){
     if (priorTemp[j]!=0){
       mean[j] <- (taux[,j]%*%segmVect)/priorTemp[j] #EQ 19
       sdevNew <- sqrt((taux[,j]%*%((segmVect-mean[j])^2))/priorTemp[j]) #EQ 20
-        if (sdevNew > 0){ 
-          sdev[j]<- sdevNew
-        }
+      if (sdevNew > 0){ 
+        sdev[j]<- sdevNew
+      }
       prior[j] <- priorTemp[j]/length(segmVect) #EQ 21
     } 
   }
@@ -155,7 +155,7 @@ MStep<-function(segmVect,taux,meanVect,sdVect){
 
 
 getExtractSegm <- function(MatrixSeg){
-
+  
   cellSegm <- MatrixSeg[,1]
   breaks <- which(diff(cellSegm)!=0)
   startseg <- c(1,(1+breaks))
@@ -187,9 +187,10 @@ getLabelCall <- function(posteriorProbability){
 }
 
 
-getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft, organism = "human"){
-  
-  meanVect <- c(-truncBoundLeft*2,-truncBoundLeft*1.5,0,truncBoundRight*1.5,truncBoundRight*2)
+getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,meanVect, organism = "human", par_cores = 20){
+
+  #meanVect <- c(-truncBoundLeft*2,-truncBoundLeft*1.5,0,truncBoundRight*1.5,truncBoundRight*2)
+  #meanVect <- c(-truncBoundLeft*4,-truncBoundLeft*2,0,truncBoundRight*2,truncBoundRight*4)
   sdVect <- c(0.01,0.01,0.01,0.01,0.01)
   
   ExtractSegm <- getExtractSegm(MatrixSeg)
@@ -232,11 +233,19 @@ getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,
 }
 
 
-getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par_cores = 20){
+getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par_cores = 20, CLONAL = FALSE){
   
-  truncBoundLeft <- 0.1
-  truncBoundRight <- 0.1
-  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], MatrixSeg, truncBoundRight, truncBoundLeft)
+  if(CLONAL){
+    truncBoundLeft <- 0.05
+    truncBoundRight <- 0.05
+    meanVect <- c(-truncBoundLeft*4,-truncBoundLeft*2,0,truncBoundRight*2,truncBoundRight*4)
+  }else{
+    truncBoundLeft <- 0.1
+    truncBoundRight <- 0.1
+    meanVect <- c(-truncBoundLeft*2,-truncBoundLeft*1.5,0,truncBoundRight*1.5,truncBoundRight*2)
+  }
+  
+  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], MatrixSeg, truncBoundRight, truncBoundLeft, meanVect, par_cores = par_cores)
   #plotSegmentation(CNV)
   write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
   CNV
