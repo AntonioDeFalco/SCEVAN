@@ -36,14 +36,6 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 - ***SCEVANsignatures*** : FALSE if you only want to use only the signatures specified in AdditionalGeneSets(optional - default TRUE) 
 - ***organism*** : Organism to be analysed (optional - default human)
 
-
-#' @param SUBCLONES find subclones (default TRUE)
-#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
-#' @param ClonalCN clonal profile inference from tumour cells (optional)
-#' @param plotTree find subclones (optional)
-#' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
-#' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
-
 ```
 results <- pipelineCNA(count_mtx)
 ```
