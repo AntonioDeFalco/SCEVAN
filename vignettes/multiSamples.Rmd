@@ -1,0 +1,45 @@
+---
+title: "Intratumoral heterogeneity in Glioblastoma"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##  Load data
+
+We load the scRNA data of three samples MGH102 , MGH104 and MGH105 from the public dataset of Gliobastoma (GSE131928)
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+load(url("https://www.dropbox.com/s/esqvnltucdqajg1/listCountMtx.RData?raw=1"))
+```
+
+## Run pipeline   
+
+We run the pipeline that performs the classification of malignant and non-malignant cells of each sample and then the compare the inferred copy number between the different samples.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+
+library(SCEVAN)
+results <- SCEVAN::multiSampleComparisonClonalCN(listCountMtx, analysisName = "all", organism = "human" , par_cores = 20)
+
+```
+
+## Output
+
+The pipeline returns in ***results*** a data frame containing for each sample the classification (tumor/normal)
+
+### Copy Number (compareClonalCN.png)
+
+Copy Number of each sample.
+
+<img src="./output/all_compareClonalCN.png" alt="heatmap" width="1280"/>
+
+### OncoPrint-like plot (OncoHeat.png)
+
+OncoPrint-like plot that highlighting specific alteration, shared alteration between subclones, or clonal alteration.
+
+<img src="./output/allOncoHeat2.png" alt="heatmap" width="1280"/>

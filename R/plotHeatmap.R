@@ -1064,13 +1064,33 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
   
   oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE))]
   
-  png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2250, width=1450, res=150)
+  png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2350, width=1050, res=150)
   pp <- pheatmap::pheatmap(t(oncoHeat), color = legendColors, cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = legendBreaks, legend_labels = legendLabels,cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
   h = grid::convertHeight(sum(pp$gtable$heights), "in", TRUE)
   w = grid::convertWidth(sum(pp$gtable$widths), "in", TRUE)
   ggplot2::ggsave(paste("./output/",samp,"OncoHeat.png",sep=""), device = "png", pp$gtable, width=w, height=h, dpi=300)
   dev.off()
 }
+
+
+plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
+  
+  if(!is.null(perc_subclones)){
+    annotdf <- data.frame(row.names = rownames(oncoHeat), 
+                          Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
+  }else{
+    annotdf <- data.frame(row.names = rownames(oncoHeat), 
+                          Sample = rownames(oncoHeat) )  
+  }
+  
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
+  subclones <- rbPal5(nSub)
+  names(subclones) <- unique(annotdf$Subclone)
+  mycolors <- list(Subclone = subclones)
+  
+  plotOncoHeat(oncoHeat, nSub, samp, annotdf, mycolors)
+}
+
 
 plotOncoHeat2 <- function(oncoHeat, nSub, samp, annotdf, mycolors){
   oncoHeat <- oncoHeat[,order(as.numeric(substr(colnames(oncoHeat), 1,2)),decreasing = FALSE)]

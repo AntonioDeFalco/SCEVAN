@@ -26,25 +26,38 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 
 - ***count_mtx*** : Count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 - ***sample*** : Sample name to save results (optional)
-- ***par_cores*** : Number of cores to run the pipeline  (optional)
+- ***par_cores*** : Number of cores to run the pipeline  (optional - default 20)
 - ***norm_cells*** : vectors of normal cells if the classification is already known and you are only interested in the clonal structure (optional)
-- ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional)
+- ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default 20)
+- ***beta_vega*** : Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
+- ***ClonalCN*** :  Get clonal CN profile inference from all tumour cells (optional)
+- ***plotTree*** : Plot Phylogenetic tree (optional - default FALSE) 
+- ***AdditionalGeneSets*** : list of additional signatures of normal cell types (optional)
+- ***SCEVANsignatures*** : FALSE if you only want to use only the signatures specified in AdditionalGeneSets(optional - default TRUE) 
+- ***organism*** : Organism to be analysed (optional - default human)
+
+
+#' @param SUBCLONES find subclones (default TRUE)
+#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
+#' @param ClonalCN clonal profile inference from tumour cells (optional)
+#' @param plotTree find subclones (optional)
+#' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
+#' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
 
 ```
 results <- pipelineCNA(count_mtx)
 ```
 
 ### Multi-sample analysis
-A single call (compareClonalStructure) allows the comparison of clonal profiles of the different samples.
+A single call (multiSampleComparisonClonalCN) allows the comparison of clonal profiles of multiple samples.
 
-- ***count_mtx1*** : Count matrix of sample 1.
-- ***count_mtx2*** : Count matrix of sample 2.
-- ***samp_1*** : Name of sample 1.
-- ***samp_2*** : Name of sample 2.
-- ***par_cores*** : Number of cores to run the pipeline  (optional)
+- ***listCountMtx*** : Named list of raw count matrix of samples to be analysed
+- ***analysisName*** : Name of the analysis (default "all")
+- ***organism*** : Organism to be analysed (default human)
+- ***par_cores*** : Number of cores (default 20)
 
 ```
-compareClonalStructure(count_mtx1, count_mtx2, samp_1, samp_2)
+multiSampleComparisonClonalCN(listCountMtx)
 ```
 
 ### Integration with Seurat
@@ -65,6 +78,7 @@ seurObj <-Seurat::AddMetaData(seurObj, metadata = results)
 ## Usage examples (vignettes)
 
 - [Intratumoral heterogeneity](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/IntratumoralHeterogeneityInGlioblastoma.html)
+- [Multi-sample analysis](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamples.html)
 - [Comparison of clonal profiles](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/ComparisonOfClonalProfiles.html)
 
 ## Sample Datasets

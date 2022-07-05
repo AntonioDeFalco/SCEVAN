@@ -1020,22 +1020,6 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
   
 }
 
-plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
 
-  if(!is.null(perc_subclones)){
-    annotdf <- data.frame(row.names = rownames(oncoHeat), 
-                        Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
-  }else{
-    annotdf <- data.frame(row.names = rownames(oncoHeat), 
-                          Sample = rownames(oncoHeat) )  
-  }
-  
-  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
-  subclones <- rbPal5(nSub)
-  names(subclones) <- unique(annotdf$Subclone)
-  mycolors <- list(Subclone = subclones)
-  
-  plotOncoHeat(oncoHeat, nSub, samp, annotdf, mycolors)
-}
 
 
