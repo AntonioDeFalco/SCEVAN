@@ -154,7 +154,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       
       diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
       
-      diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
+      diffSubcl <- testSpecificAlteration(diffSubcl, res_subclones$n_subclones, sample)
       
       print(diffSubcl)
       
@@ -199,7 +199,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
           
           if(length(sampleAlter)>1){
             diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
-            diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, diffSubcl, res_subclones$clustersSub, res_subclones$n_subclones, sample)
+            diffSubcl <- testSpecificAlteration(diffSubcl, res_subclones$n_subclones, sample)
           } 
         }
       }

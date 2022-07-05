@@ -250,11 +250,16 @@ analyzeSegm <- function(samp, nSub = 1){
   
   all_segm <- list()
   
-  for (i in 1:nSub){
-    
-    segm <- read.csv(paste0("./output/ ",samp," _ ",i," _CN.seg"), sep = "\t")
-    all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
-    
+  if(nSub > 0){
+    for (i in 1:nSub){
+      
+      segm <- read.csv(paste0("./output/ ",samp," _ ",i," _CN.seg"), sep = "\t")
+      all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
+      
+    }
+  }else{
+    segm <- read.csv(paste0("./output/ ",samp," _  _CN.seg"), sep = "\t")
+    all_segm <- getPossibleSpecAltFromSeg(segm)
   }
   
   return(all_segm)
@@ -584,7 +589,7 @@ diffSubclones2 <- function(sampleAlter, samp, nSub = 2){
   return(all_segm_diff)
 }
 
-testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
+testSpecificAlteration <- function(listAltSubclones, nSub = 2, samp){
   
   #save(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub, samp, file = "testSpecificAlteration.RData")
   
@@ -639,7 +644,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
   
   #subclonesAlt[[paste0(samp,"_clone")]]$Mean <- 0
   
-  if(nSub>2) subclonesAlt[[paste0(samp,"_shareSubclone")]] <- testSpecificSubclonesAlteration(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub, samp)
+  if(nSub>2) subclonesAlt[[paste0(samp,"_shareSubclone")]] <- testSpecificSubclonesAlteration(listAltSubclones, nSub, samp)
   
   subclonesAlt <- lapply(subclonesAlt, function(x) x[x$Alteration!=0,])
   
@@ -656,7 +661,7 @@ testSpecificAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust
 }
 
 
-testSpecificSubclonesAlteration <- function(count_mtx, mtx_annot, listAltSubclones, clust_subclones, nSub = 2, samp){
+testSpecificSubclonesAlteration <- function(listAltSubclones, nSub = 2, samp){
   
   subclonesAltClone <- list()
   subclonesAlt <- list()
@@ -1017,9 +1022,13 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
 
 plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
 
-  annotdf <- data.frame(row.names = rownames(oncoHeat), 
+  if(!is.null(perc_subclones)){
+    annotdf <- data.frame(row.names = rownames(oncoHeat), 
                         Subclone = rep(paste0("Subclone", seq(nSub), " (",round(perc_subclones*100,digits=2), "%)")) )  
-  
+  }else{
+    annotdf <- data.frame(row.names = rownames(oncoHeat), 
+                          Sample = rownames(oncoHeat) )  
+  }
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
   subclones <- rbPal5(nSub)
