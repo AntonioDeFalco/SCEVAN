@@ -40,27 +40,54 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 #'
 #' @examples
 #'
+#'
+#'
+#'
+
 computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
   
   n <- nrow(count_mtx)
-  
+
+  startBreaks <- breaks[-length(breaks)]
+  endBreaks <- c(startBreaks[-1])
+  endBreaks <- c(endBreaks-1,n)
+
   funcCNA <- function(z){
-    
+
     x<-numeric(n)
-    for (i in 1:(length(breaks)-1)){
-      
+    for (i in 1:length(startBreaks)){
+
       if(segmAlt[i]){
         #meanValue <- (mean(count_mtx[breaks[i]:breaks[i+1],z]) - mean(count_mtx[,z])) / sd(count_mtx[,z])
-        meanValue <- mean(count_mtx[breaks[i]:breaks[i+1],z])
+        meanValue <- mean(count_mtx[startBreaks[i]:endBreaks[i],z])
       }else{
         meanValue <- 0
       }
-      
-      x[breaks[i]:breaks[i+1]] <- meanValue
+
+      x[startBreaks[i]:endBreaks[i]] <- meanValue
     }
     return(x)
   }
   
+  # n <- nrow(count_mtx)
+  # 
+  # funcCNA <- function(z){
+  #   
+  #   x<-numeric(n)
+  #   for (i in 1:(length(breaks)-1)){
+  #     
+  #     if(segmAlt[i]){
+  #       #meanValue <- (mean(count_mtx[breaks[i]:breaks[i+1],z]) - mean(count_mtx[,z])) / sd(count_mtx[,z])
+  #       meanValue <- mean(count_mtx[breaks[i]:breaks[i+1],z])
+  #     }else{
+  #       meanValue <- 0
+  #     }
+  #     
+  #     x[breaks[i]:breaks[i+1]] <- meanValue
+  #   }
+  #   return(x)
+  # }
+  # 
   if(Sys.info()["sysname"]=="Windows"){
     
     cl <- parallel::makeCluster(getOption("cl.cores", par_cores))

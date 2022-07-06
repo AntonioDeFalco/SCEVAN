@@ -101,13 +101,17 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
   
-  mtx_CNA3 <- computeCNAmtx(mtx, breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
+  #mtx_CNA3 <- computeCNAmtx(mtx, breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
   
-  colnames(mtx_CNA3) <- res_class$tum_cells
+  #colnames(mtx_CNA3) <- res_class$tum_cells
   
-  save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
+  #save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
   
-  CNV <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = sample, CLONAL = TRUE)
+  CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE)
+  
+  #segm.mean <- apply((apply(mtx_CNA3,2,unique)),1,mean)
+  #CNV <- cbind(CNV,segm.mean)
+  #write.table(CNV, file = paste("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
   
 }
 

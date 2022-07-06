@@ -154,7 +154,47 @@ MStep<-function(segmVect,taux,meanVect,sdVect){
 }
 
 
-getExtractSegm <- function(MatrixSeg){
+getExtractSegm <- function(count_mtx, breaks, par_cores = 20){
+  
+  n <- nrow(count_mtx)
+  
+  startBreaks <- breaks[-length(breaks)]
+  endBreaks <- c(startBreaks[-1])
+  endBreaks <- c(endBreaks-1,n)
+  
+  funcCNA <- function(cell){
+    
+    x<-c()
+    for (i in 1:length(startBreaks)){
+      
+      meanValue <- mean(count_mtx[startBreaks[i]:endBreaks[i],cell])
+      
+      x <- rbind(x,c(cell,startBreaks[i],endBreaks[i],meanValue,0))
+      
+    }
+    return(x)
+  }
+  
+  if(Sys.info()["sysname"]=="Windows"){
+    
+    cl <- parallel::makeCluster(getOption("cl.cores", par_cores))
+    
+    seg.test <- parallel::parLapply(cl, 1:ncol(count_mtx), funcCNA)
+    
+    parallel::stopCluster(cl)
+  }else{
+    seg.test <- parallel::mclapply(1:ncol(count_mtx), funcCNA, mc.cores = par_cores)
+  }
+  
+  
+  ExtractSegm <- as.data.frame(Reduce(rbind,seg.test))
+  colnames(ExtractSegm) <- c("cell", "startseg","endseg","mean","sdVect")
+  
+  return(ExtractSegm)
+}
+
+
+getExtractSegm_old <- function(MatrixSeg){
   
   cellSegm <- MatrixSeg[,1]
   breaks <- which(diff(cellSegm)!=0)
@@ -187,13 +227,11 @@ getLabelCall <- function(posteriorProbability){
 }
 
 
-getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,meanVect, organism = "human", par_cores = 20){
+getCallingCN <- function(AnnotMatrix,ExtractSegm, truncBoundRight,truncBoundLeft,meanVect, organism = "human", par_cores = 20){
 
   #meanVect <- c(-truncBoundLeft*2,-truncBoundLeft*1.5,0,truncBoundRight*1.5,truncBoundRight*2)
   #meanVect <- c(-truncBoundLeft*4,-truncBoundLeft*2,0,truncBoundRight*2,truncBoundRight*4)
   sdVect <- c(0.01,0.01,0.01,0.01,0.01)
-  
-  ExtractSegm <- getExtractSegm(MatrixSeg)
   
   prior <- c(0.05,0.1,0.7,0.1,0.05)
   
@@ -233,7 +271,7 @@ getCallingCN <- function(AnnotMatrix, MatrixSeg, truncBoundRight,truncBoundLeft,
 }
 
 
-getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par_cores = 20, CLONAL = FALSE){
+getCNcall <- function(MatrixSeg, count_mtx_annot, breaks, sample = "",subclone = "", par_cores = 20, CLONAL = FALSE){
   
   if(CLONAL){
     truncBoundLeft <- 0.05
@@ -245,8 +283,15 @@ getCNcall <- function(MatrixSeg, count_mtx_annot, sample = "",subclone = "", par
     meanVect <- c(-truncBoundLeft*2,-truncBoundLeft*1.5,0,truncBoundRight*1.5,truncBoundRight*2)
   }
   
-  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], MatrixSeg, truncBoundRight, truncBoundLeft, meanVect, par_cores = par_cores)
+  ExtractSegm <- getExtractSegm(MatrixSeg, breaks, par_cores)
+  
+  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], ExtractSegm, truncBoundRight, truncBoundLeft, meanVect, par_cores = par_cores)
   #plotSegmentation(CNV)
   write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
   CNV
 }
+
+
+
+
+

@@ -124,14 +124,14 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
       
       breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = 0.5)
       
-      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, rep(TRUE, length(breaks_subclones[[i]])))
+      #mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, rep(TRUE, length(breaks_subclones[[i]])))
       
-      colnames(mtx_CNA3) <- tum_cells_sub1
-      rownames(mtx_CNA3) <- rownames(norm.mat.relat)
+      #colnames(mtx_CNA3) <- tum_cells_sub1
+      #rownames(mtx_CNA3) <- rownames(norm.mat.relat)
       
       #save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
       
-      CNV[[i]] <- getCNcall(mtx_CNA3, res_proc$count_mtx_annot, sample = samp, subclone = i, par_cores = n.cores)
+      CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores)
       
       mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$Call != 2)
       
