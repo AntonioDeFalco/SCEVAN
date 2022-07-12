@@ -271,7 +271,7 @@ getCallingCN <- function(AnnotMatrix,ExtractSegm, truncBoundRight,truncBoundLeft
 }
 
 
-getCNcall <- function(MatrixSeg, count_mtx_annot, breaks, sample = "",subclone = "", par_cores = 20, CLONAL = FALSE){
+getCNcall <- function(MatrixSeg, count_mtx_annot, breaks, sample = "",subclone = "", par_cores = 20, CLONAL = FALSE, organism = "human"){
   
   if(CLONAL){
     truncBoundLeft <- 0.05
@@ -285,7 +285,7 @@ getCNcall <- function(MatrixSeg, count_mtx_annot, breaks, sample = "",subclone =
   
   ExtractSegm <- getExtractSegm(MatrixSeg, breaks, par_cores)
   
-  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], ExtractSegm, truncBoundRight, truncBoundLeft, meanVect, par_cores = par_cores)
+  CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], ExtractSegm, truncBoundRight, truncBoundLeft, meanVect, organism = organism, par_cores = par_cores)
   #plotSegmentation(CNV)
   #write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
   CNV

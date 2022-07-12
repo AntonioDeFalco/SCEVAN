@@ -55,7 +55,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
 
-  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores)
+  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism)
   
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
 
@@ -89,7 +89,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
 }
 
 
-getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3){
+getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3, organism = "human"){
   
   mtx <- res_class$CNAmat[,res_class$tum_cells]
   # hcc <- hclust(parallelDist::parDist(t(mtx),threads =par_cores, method = "euclidean"), method = "ward.D")
@@ -107,7 +107,7 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   #save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
   
-  CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE)
+  CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE, organism = organism)
   
   segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
   CNV <- cbind(CNV,segm.mean)

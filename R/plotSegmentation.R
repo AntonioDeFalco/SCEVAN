@@ -148,7 +148,7 @@ plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE, CN = 
   extr_chr <- CNV[unlist(lapply(1:totChr, function(x) max(which(CNV$Chr==x)))),]$Pos
   
   extr_chr <- append(1, extr_chr)
-  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:totChr, las = 1, line = 0.2, tick = 0,
+  axis(1, extr_chr[2:(totChr+1)] - diff(extr_chr)/2, labels = 1:totChr, las = 1, line = 0.2, tick = 0,
        cex.axis = 1.0, gap.axis = 0)
   abline(v=extr_chr, col="black", lwd = 2)
 }
