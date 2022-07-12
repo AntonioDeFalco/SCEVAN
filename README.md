@@ -1,7 +1,7 @@
 # Single   CEll   Variational   Aneuploidy aNalysis  (SCEVAN)
 
 <p align="center">
-  <img width="560" height="560" src="https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png">
+  <img width="819" height="1027" src="https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png">
 </p>
 
 Preprint Link: [A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data](https://www.biorxiv.org/content/10.1101/2021.11.20.469390v1)
@@ -70,14 +70,14 @@ seurObj <-Seurat::AddMetaData(seurObj, metadata = results)
 ## Usage examples (vignettes)
 
 - [Intratumoral heterogeneity](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/IntratumoralHeterogeneityInGlioblastoma.html)
-- [Multi-sample analysis](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamples.html)
-- [Comparison of clonal profiles](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/ComparisonOfClonalProfiles.html)
+- [Multi-sample analysis (2 samples)](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamplesHeadNeck.html)
+- [Multi-sample analysis (3 samples)](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamples.html)
 
 ## Sample Datasets
 
 We provide some pre-processed samples used in the examples (vignettes):
 
-- ***MGH106.RData*** : scRNA data of MGH106 sample from the public dataset of Gliobastoma (GSE131928), you can download the pre-processed data from [here](https://www.dropbox.com/s/b9udpvhnc2ez9pc/MGH106_data.RData?dl=0)
+- ***MGH106.RData*** and ***listCountMtx.RData***: scRNA data of MGH102, MGH104, MGH105 and MGH106 samples from the public dataset of Gliobastoma (GSE131928), you can download the pre-processed data from [here](https://www.dropbox.com/s/b9udpvhnc2ez9pc/MGH106_data.RData?dl=0) and [here](https://www.dropbox.com/s/esqvnltucdqajg1/listCountMtx.RData?dl=0)  
 
 - ***HNSCC26.RData*** : scRNA data of HNSCC26 Primary and HNSCC26 Lymph Node sample from the public dataset of Head&Neck cancer (GSE10332), you can download the pre-processed data from [here](https://www.dropbox.com/s/6zns12amobs39g8/HNSCC26_data.RData?dl=0)
 
