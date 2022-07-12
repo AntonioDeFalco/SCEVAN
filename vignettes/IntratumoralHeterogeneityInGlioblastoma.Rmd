@@ -24,7 +24,7 @@ We run the pipeline that performs the classification of malignant and non-malign
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 
 library(SCEVAN)
-results <- SCEVAN::pipelineCNA(count_mtx, sample = "MGH106", par_cores = 20, SUBCLONES = TRUE)
+results <- SCEVAN::pipelineCNA(count_mtx, sample = "MGH106", par_cores = 20, SUBCLONES = TRUE, plotTree = TRUE)
 
 ```
 
@@ -70,15 +70,15 @@ Compact plot of the alterations present in each subpopulation.
 
 OncoPrint-like plot that highlighting specific alteration, shared alteration between subclones, or clonal alteration.
 
-<img src="./output/MGH106OncoHeat.png" alt="heatmap" width="1280"/>
+<img src="./output/MGH106OncoHeat2.png" alt="heatmap" width="1280"/>
 
 ### DE analysis in specific alterations (DEchr*_subclones.png)
 
 Vulcano plot obtained from differential expression analysis of the genes belonging to the specific alterations found.
 
-<img src="./output/MGH106-DEchr3_subclones.png" alt="heatmap" width="720"/>
+<img src="./output/MGH106-DEchr1-155320896-160358952_subclones.png" alt="heatmap" width="720"/>
 
-<img src="./output/MGH106-DEchr12_subclones.png" alt="heatmap" width="720"/>
+<img src="./output/MGH106-DEchr12-109088188-120904371_subclones.png" alt="heatmap" width="720"/>
 
 ### Pathway Analysis of subclones (pathwayAnalysis_subclones*.png)
 

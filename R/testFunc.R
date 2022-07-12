@@ -49,8 +49,8 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
   return(ans)
 }
 
-
-subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.cores, beta_vega, res_proc){
+subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res_proc, hc.clus = NULL, relativeSmoothMtx = NULL){
+  
   library(scran)
   
   norm.mat.relat <- CNAmat[,-c(1:3)]
@@ -65,30 +65,34 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
   #save(tum_cells, norm.mat.relat, file = "debug.RData")
   norm.mat.relat <- norm.mat.relat[,tum_cells]
   
-  library(igraph)
-  dd <- 30
-  if(dim(relativeSmoothMtx)[2]<=50){
-    dd <- 5
+  if(is.null(hc.clus)){
+  
+    library(igraph)
+    dd <- 30
+    if(dim(relativeSmoothMtx)[2]<=50){
+      dd <- 5
+    }
+    
+    #if(packageVersion("scran")>"1.16.0"){
+    #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
+    #}else{
+    graph <- buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
+    #}install.packages("igraph")
+    lc <- cluster_louvain(graph)
+    #nSub <- 3
+    #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
+    #plot(graph, vertex.color=rbPal5(nSub)[lc$membership])
+    
+    hc.clus <- membership(lc)
+    names(hc.clus) <- colnames(relativeSmoothMtx)
+    
+    perc_cells_subclones <- table(hc.clus)/length(hc.clus)
+    
+    removeSubcl <- as.numeric(names(perc_cells_subclones[perc_cells_subclones<0.02]))
+    
+    if(length(removeSubcl)>0) hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
+  
   }
-  
-  #if(packageVersion("scran")>"1.16.0"){
-  #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
-  #}else{
-  graph <- buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
-  #}install.packages("igraph")
-  lc <- cluster_louvain(graph)
-  #nSub <- 3
-  #rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
-  #plot(graph, vertex.color=rbPal5(nSub)[lc$membership])
-  
-  hc.clus <- membership(lc)
-  names(hc.clus) <- colnames(relativeSmoothMtx)
-  
-  perc_cells_subclones <- table(hc.clus)/length(hc.clus)
-  
-  removeSubcl <- as.numeric(names(perc_cells_subclones[perc_cells_subclones<0.02]))
-  
-  if(length(removeSubcl)>0) hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
   
   n_subclones <- length(unique(hc.clus))
   
@@ -133,7 +137,12 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
       
       CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores)
       
-      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$Call != 2)
+      segm.mean <- getScevanCNV(paste0(samp,"_subclone",i))$Mean
+      CNV[[i]] <- cbind(CNV[[i]],segm.mean)
+      write.table(CNV[[i]], file = paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t", quote = FALSE)
+      file.remove(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"))
+      
+      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$CN != 2)
       
       logCNAl[[i]] <- mtx_CNA3
     }
@@ -171,94 +180,20 @@ subclonesTumorCells <- function(tum_cells, CNAmat, relativeSmoothMtx, samp, n.co
 }
 
 
-
-ReSegmSubclones <- function(tum_cells, CNAmat, samp, hc.clus, n.cores, beta_vega){
-  
-    norm.mat.relat <- CNAmat[,-c(1:3)]
-    info_mat <- CNAmat[,c(1:3)]
-  
-    if(isTRUE(grep("\\.",(tum_cells)[1])==1) & isTRUE(grep("-",colnames(norm.mat.relat)[1])==1)){
-      tum_cells <- gsub("\\.", "-",tum_cells)
-    }else if( isTRUE(grep("-",(tum_cells)[1])==1) & isTRUE(grep("\\.",colnames(norm.mat.relat)[1])==1)){
-      tum_cells <- gsub("-", "\\.",tum_cells)
-    }
-    
-    norm.mat.relat <- norm.mat.relat[,tum_cells]
-    
-    #n.cores = 20 
-    #distance="euclidean"
-    
-  perc_cells_subclones <- table(hc.clus)/length(hc.clus)
-  
-  n_subclones <- length(unique(hc.clus))
-  
-  print(paste("found", n_subclones, "subclones", sep = " "))
-  names(perc_cells_subclones) <- paste0("percentage_cells_subsclone_",names(perc_cells_subclones))
-  print(perc_cells_subclones)
-  
-  breaks_subclones <- list()
-  
-  logCNAl <- list()
-  
-  for (i in 1:n_subclones){
-    
-    print(paste("Segmentation of subclone : ", i))
-    
-    tum_cells_sub1 <- names(hc.clus[hc.clus==i])
-    
-    mtx_vega <- cbind(info_mat, norm.mat.relat[,tum_cells_sub1])
-    
-    colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-    
-    breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = beta_vega)
-    
-    subSegm <- read.csv(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"), sep = "\t")
-    
-    segmAlt <- abs(subSegm$Mean)>0.10 | (subSegm$G.pv<0.5 | subSegm$L.pv<0.5)
-    #segmAlt <- rep(TRUE, length(subSegm$Mean))
-    
-    logCNAl[[i]] <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, segmAlt)
-  }
-  
-  BR <- c()
-  
-  BR <- sort(unique(unlist(breaks_subclones)))
-  
-  paste0(samp,"_subclone",i)
-  
-  logCNA <- do.call(cbind, logCNAl)
-  
-  results <- list(logCNA, BR)
-  names(results) <- c("logCNA","breaks")
-  
-  colnames(results$logCNA) <- colnames(norm.mat.relat)
-  results.com <- apply(results$logCNA,2, function(x)(x <- x-mean(x)))
-  
-  hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
-  
-  plotSubclones(CNAmat[,2], results.com, hcc, n_subclones, samp)
-  save(results.com, file = paste0("./output/",samp,"_CNAmtxSubclones.RData"))
-  
-  ress <- list(n_subclones, breaks_subclones, results.com, hc.clus)
-  
-  names(ress) <- c("n_subclones", "breaks_subclones", "logCNA", "clustersSub")
-
-  return(ress)
-}
-
 analyzeSegm <- function(samp, nSub = 1){
   
   all_segm <- list()
   
   if(nSub > 0){
     for (i in 1:nSub){
-      
-      segm <- read.csv(paste0("./output/ ",samp," _ ",i," _CN.seg"), sep = "\t")
+
+      segm <- read.csv(paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t")
       all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
       
     }
   }else{
-    segm <- read.csv(paste0("./output/ ",samp," _  _CN.seg"), sep = "\t")
+    #segm <- read.csv(paste0("./output/ ",samp," _  _CN.seg"), sep = "\t")
+    segm <- read.csv(paste0("./output/",samp,"_Clonal_CN.seg"), sep = "\t")
     all_segm <- getPossibleSpecAltFromSeg(segm)
   }
   
@@ -468,7 +403,7 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
             segm_sh <- rbind(segm_sh,cl_ch_new) 
           }else if(FOUND>0){
             segm_sh_sub <- rbind(segm_sh_sub,cbind(cl_ch_new,sh_sub))
-          }else if(FOUND==0 & FOUND_small<1){
+          }else if(FOUND==0 | FOUND_small==1){
             segm_new <- rbind(segm_new,cl1_ch[br,])  
           }
         }

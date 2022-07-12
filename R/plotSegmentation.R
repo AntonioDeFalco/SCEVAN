@@ -91,15 +91,29 @@ getModifyPosSeg <- function(x, organism = "human", ref = 0){
 }
 
 #CNV c( "Chr","Start","End","Mean")
-plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE){
+plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE, CN = TRUE){
   
-  indMean <- grepl("Call",colnames(CNV))
-  if(any(indMean)){
-    colnames(CNV)[indMean] <- "Mean"
-    ref <- 2  
+  if(ncol(CNV)>4){
+    if(CN){
+      CNV <- CNV[,-5]
+      colnames(CNV)[4] <- "Mean"
+      ref <- 2 
+    }else{
+      CNV <- CNV[,-4]
+      colnames(CNV)[4] <- "Mean"
+      ref <- 0
+    }
   }else{
-    ref <- 0  
-  } 
+  
+    indMean <- grepl("Alteration",colnames(CNV))
+    if(any(indMean)){
+      colnames(CNV)[indMean] <- "Mean"
+      ref <- 2
+    }else{
+      ref <- 0
+    }
+  }
+  
     #CNV$Call <- CNV$Call-2
     
   if(organism == "human"){
@@ -139,7 +153,14 @@ plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE){
   abline(v=extr_chr, col="black", lwd = 2)
 }
 
-
+getScevanCNVfinal <- function(sample , path = "", subclone = NULL){
+  if(is.null(subclone)){
+    CNV_infer <- read.table(paste0(path,"./output/",sample, "_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
+  }else{
+    CNV_infer <- read.table(paste0(path,"./output/",sample,"_subclone",subclone,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
+  }
+  CNV_infer
+}
 
 
 getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
@@ -153,10 +174,33 @@ getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
   CNV_infer
 }
 
-heatmapConsensusPlot <- function(segm,sample,file){
+heatmapConsensusPlot <- function(CNV,sample,file, CN = TRUE){
  
-    segm[abs(segm$Mean)<0.05,]$Mean <- 0
-    x <- getModifyPosSeg(segm)
+  if(ncol(CNV)>4){
+    if(CN){
+      CNV <- CNV[,-5]
+      colnames(CNV)[4] <- "Mean"
+      ref <- 2
+      CNV$Mean <- CNV$Mean - ref
+    }else{
+      CNV <- CNV[,-4]
+      colnames(CNV)[4] <- "Mean"
+      CNV[abs(CNV$Mean)<0.05,]$Mean <- 0
+      ref <- 0
+    }
+  }else{
+    
+    indMean <- grepl("Alteration",colnames(CNV))
+    if(any(indMean)){
+      colnames(CNV)[indMean] <- "Mean"
+      ref <- 2
+    }else{
+      CNV[abs(CNV$Mean)<0.05,]$Mean <- 0
+      ref <- 0
+    }
+  }
+  
+    x <- getModifyPosSeg(CNV, ref = ref)
   
     dfL <- as.data.frame(approx(x$Pos,x$Mean, seq(min(x$Pos),max(x$Pos), length.out = 1000000), ties = "ordered"))
     colnames(dfL) <- c("Pos","Mean")
@@ -187,7 +231,7 @@ heatmapConsensusPlot <- function(segm,sample,file){
     
 }
 
-plotCNclonal <- function(sample,ClonalCN, organism = "human"){
+plotCNclonal_old <- function(sample,ClonalCN, organism = "human"){
   
   if(ClonalCN) {
     fileNames <- c("ClonalCNProfile","onlytumor")
@@ -213,3 +257,35 @@ plotCNclonal <- function(sample,ClonalCN, organism = "human"){
     }
 }
   
+
+
+plotCNclonal <- function(sample, ClonalCN, organism = "human"){
+  
+  if(ClonalCN) {
+    fileNames <- c("ClonalCNProfile","onlytumor")
+  }else{
+    fileNames <- c("onlytumor")
+  }
+  
+  for(name in fileNames){
+    
+    if(name == "ClonalCNProfile"){
+      file = "_coarse-grained"
+    }else{
+      file = "_fine-grain_"
+    }
+    
+    if(file == "_coarse-grained"){
+      segm <- getScevanCNVfinal(sample)
+    }else{
+      segm <- getScevanCNV(paste0(sample,name))
+    }
+    png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
+    plotSegmentation(CNV = segm, organism = organism)
+    dev.off()
+    png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
+    heatmapConsensusPlot(segm,sample,file)
+    dev.off()
+  }
+}
+

@@ -1104,19 +1104,49 @@ plotOncoHeat2 <- function(oncoHeat, nSub, samp, annotdf, mycolors){
 }
 
 
+modifyNameCNV <- function(CNV, CN = TRUE){
+  
+  if(ncol(CNV)>4){
+    if(CN){
+      CNV <- CNV[,-5]
+      colnames(CNV)[4] <- "Mean"
+      ref <- 2 
+    }else{
+      CNV <- CNV[,-4]
+      colnames(CNV)[4] <- "Mean"
+      ref <- 0
+    }
+  }else{
+    
+    indMean <- grepl("Alteration",colnames(CNV))
+    if(any(indMean)){
+      colnames(CNV)[indMean] <- "Mean"
+      ref <- 2
+    }else{
+      ref <- 0
+    }
+  }
+  
+  return(list(CNV,ref))
+}
+
 
 plotCloneTree <- function(sample,res_subclones){
 
+  library(tidytree)
   library(ape)
   library(ggtree)
-  library(tidytree)
+  library(ggplot2)
   
-  segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/ ",sample,"_subclone",x," vega_output"), sep="\t", header=TRUE, as.is=TRUE))
+  segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/",sample,"_subclone",x,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
   #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
   
   names(segmList) <- paste0(" ",1:res_subclones$n_subclones," ")
   
-  segmList <- lapply(segmList, function(x) segmPos(x))
+  segmList <- lapply(segmList, function(x) modifyNameCNV(x, CN = FALSE)[[1]])
+  segmList <- lapply(segmList, function(x) getModifyPosSeg(x))
+  
+  #segmList <- lapply(segmList, function(x) segmPos(x))
   
   minPos <- 1
   add_chr <- sizeGRCh38

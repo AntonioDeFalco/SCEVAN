@@ -3,7 +3,6 @@
 export()
 export(annotateGenes)
 export(classifyTumorCells)
-export(compareClonalStructure)
 export(getBreaksVegaMC)
 export(getConfidentNormalCells)
 export(pipelineCNA)

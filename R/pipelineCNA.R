@@ -32,7 +32,7 @@ NULL
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = FALSE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
   
   dir.create(file.path("./output"), showWarnings = FALSE)
   
@@ -109,10 +109,12 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE)
   
-  #segm.mean <- apply((apply(mtx_CNA3,2,unique)),1,mean)
-  #CNV <- cbind(CNV,segm.mean)
-  #write.table(CNV, file = paste("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
+  segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
+  CNV <- cbind(CNV,segm.mean)
+  write.table(CNV, file = paste0("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
+  file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
   
+  CNV
 }
 
 segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5){
@@ -144,7 +146,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   FOUND_SUBCLONES <- FALSE
   
-  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat,mtx_vega, sample, par_cores, beta_vega, res_proc)
+  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega)
   #res_subclones <- subclonesTumorCells(tum_cells, CNAmat,relativeSmoothMtx, sample, par_cores, beta_vega, res_proc)
   
   tum_cells <- res_class$tum_cells
@@ -198,7 +200,10 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
         
         if(res_subclones$n_subclones>1){
-          res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
+          #res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
+          
+          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub)
+          
           sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
           
           if(length(sampleAlter)>1){
@@ -230,6 +235,8 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
         pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
         
+        save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
+        
         FOUND_SUBCLONES <- TRUE
       }else{
         print("no significant subclones")
@@ -249,175 +256,3 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   return(res)
 }
-
-#' compareClonalStructure Compare the clonal structure of two samples.
-#'
-#' @param count_mtx raw count matrix of sample 1
-#' @param count_mtx raw count matrix of sample 2
-#' @param sample sample name of sample 1 (optional)
-#' @param sample sample name of sample 2 (optional)
-#' @param par_cores number of cores (default 20)
-#'
-#' @return
-#' @export
-#'
-#' @examples 
-#' 
-compareClonalStructure <- function(count_mtx1, count_mtx2 , samp_1="", samp_2="", par_cores = 20){
-
-  nSub <- 2
-  
-  count_mtx <- merge(count_mtx1, count_mtx2, by="row.names" ,all = TRUE)
-  count_mtx[is.na(count_mtx)] <- 0
-  rownames(count_mtx) <- count_mtx$Row.names
-  count_mtx<- count_mtx[,-1]
-  
-  print(samp_1)
-  res_proc_1 <- preprocessingMtx(count_mtx1,samp_1, par_cores=par_cores)
-  norm_cell <- names(res_proc_1$norm_cell)
-  res_class_1 <- classifyTumorCells(res_proc_1$count_mtx_norm,res_proc_1$count_mtx_annot, samp_1, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
-  print(paste("found", length(res_class_1$tum_cells), "tumor cells"))
-  
-  print(samp_2)
-  res_proc_2 <- preprocessingMtx(count_mtx2,samp_2, par_cores=par_cores)
-  norm_cell <- names(res_proc_2$norm_cell)
-  res_class_2 <- classifyTumorCells(res_proc_2$count_mtx_norm,res_proc_2$count_mtx_annot, samp_2, par_cores=par_cores,  ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
-  print(paste("found", length(res_class_2$tum_cells), "tumor cells"))
-  
-  sampl <- paste0(samp_1,"-vs-", samp_2)
-  
-  mtx_vega <- segmTumorMatrix(res_proc_1, res_class_1, samp_1, par_cores)
-  mtx_vega <- segmTumorMatrix(res_proc_2, res_class_2, samp_2, par_cores)
-  
-  all_segm <- c()
-  segmList <- list()
-  segmList$subclone1 <- read.csv(paste0("./output/ ",samp_1,"onlytumor vega_output"), sep = "\t")
-  all_segm[[paste0(sampl,"_subclone", 1)]] <- getPossibleSpecAltFromSeg(segmList$subclone1)
-  segmList$subclone2 <- read.csv(paste0("./output/ ",samp_2,"onlytumor vega_output"), sep = "\t")
-  all_segm[[paste0(sampl,"_subclone", 2)]] <- getPossibleSpecAltFromSeg(segmList$subclone2)
-  
-  all_segm <- diffSubclones(all_segm, sampl) 
-  
-  res_class <- list()
-  res_class$CNAmat <- merge(res_class_1$CNAmat, res_class_2$CNAmat, by = "gene_id", all = TRUE)
-  res_class$CNAmat[is.na(res_class$CNAmat)] <- 0
-  
-  res_proc <- list()
-  res_proc$count_mtx_annot <- rbind(res_proc_1$count_mtx_annot, res_proc_2$count_mtx_annot)
-  res_proc$count_mtx_annot <- res_proc$count_mtx_annot[!duplicated(res_proc$count_mtx_annot$gene_id),]
-  res_proc$count_mtx_annot <- res_proc$count_mtx_annot[order(res_proc$count_mtx_annot$seqnames,res_proc$count_mtx_annot$start),]
-  
-  res_proc$count_mtx_norm <- merge(res_proc_1$count_mtx_norm, res_proc_2$count_mtx_norm, by="row.names" , all = TRUE)
-  res_proc$count_mtx_norm[is.na(res_proc$count_mtx_norm)] <- 0
-  
-  rownames(res_class$CNAmat) <- res_class$CNAmat$gene_id
-  res_class$CNAmat <- res_class$CNAmat[res_proc$count_mtx_annot$gene_id,]
-  
-  rownames(res_proc$count_mtx_norm) <- res_proc$count_mtx_norm$Row.names
-  res_proc$count_mtx_norm <- res_proc$count_mtx_norm[,-1]
-  res_proc$count_mtx_norm <- res_proc$count_mtx_norm[res_proc$count_mtx_annot$gene_name,]
-  
-  clust_subclones <- append(rep(1,length(res_class_1$tum_cells)),rep(2,length(res_class_2$tum_cells)))
-  names(clust_subclones) <- append(res_class_1$tum_cells,res_class_2$tum_cells)
-  
-  diffSubcl <- testSpecificAlteration(res_class$CNAmat, res_proc$count_mtx_annot, all_segm, clust_subclones, nSub, sampl)
-  
-  colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Set2")[6:7])
-  plotCNAline(segmList, diffSubcl, sampl, nSub, colors_samp)
-  
-  diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
-  
-  oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, nSub)
-  
-  annotdf <- data.frame(row.names = rownames(oncoHeat), 
-                        Sample = c(samp_1,samp_2) )  
-  
-  
-  subclones <- colors_samp(nSub)
-  names(subclones) <- unique(annotdf$Sample)
-  mycolors <- list(Sample = subclones)
-  
-  ppOncoHeat <- plotOncoHeat(oncoHeat, nSub, sampl, annotdf, mycolors)
-  print(sampl)
-  
-  classDf1 <- data.frame(class = rep("filtered", length(colnames(count_mtx1))), row.names = colnames(count_mtx1))
-  classDf1[colnames(res_class_1$CNAmat)[-(1:3)], "class"] <- "normal"
-  classDf1[res_class_1$tum_cells, "class"] <- "tumor"
-  classDf1[res_class_1$confidentNormal, "confidentNormal"] <- "yes"
-  
-  classDf2 <- data.frame(class = rep("filtered", length(colnames(count_mtx2))), row.names = colnames(count_mtx2))
-  classDf2[colnames(res_class_2$CNAmat)[-(1:3)], "class"] <- "normal"
-  classDf2[res_class_2$tum_cells, "class"] <- "tumor"
-  classDf2[res_class_2$confidentNormal, "confidentNormal"] <- "yes"
-  
-  return(rbind(classDf1,classDf2))
-  
-}
-
-
-
-
-
-DEBUGpipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL,  gr_truth = NULL, SUBCLONES = TRUE){   
-
-  dir.create(file.path("./output"), showWarnings = FALSE)
-  
-  start_time <- Sys.time()
-  
-  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores)
-  
-  if(length(norm_cell)==0) norm_cell <- names(res_proc$norm_cell)
-  
-  print(table(gr_truth[norm_cell]))
-  
-  res_class <- classifyTumorCells(res_proc$count_mtx_norm,res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = gr_truth,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE)
-
-  print(paste("found", length(res_class$tum_cells), "tumor cells"))
-  classDf <- data.frame(class = rep("filtered", length(colnames(count_mtx))), row.names = colnames(count_mtx))
-  classDf[colnames(res_class$CNAmat)[-(1:3)], "class"] <- "normal"
-  classDf[res_class$tum_cells, "class"] <- "tumor"
-  classDf[res_class$confidentNormal, "confidentNormal"] <- "yes"
-  
-  end_time<- Sys.time()
-  print(paste("time classify tumor cells: ", end_time -start_time))
-
-  # DEBUG
-  if(length(gr_truth)>0){
-    ground_truth_mal <- names(gr_truth[gr_truth == "malignant"])
-    pred_mal <- res_class$tum_cells
-    F1_Score <- computeF1score(pred_mal, ground_truth_mal)
-    print(paste("F1_Score: ", F1_Score))
-  }
-  
-  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores)
-  
-  #save(res_class, res_proc, mtx_vega, sample, par_cores, classDf, file = paste0("beforeSubclone", sample,".RData"))
-  
-  if (SUBCLONES) {
-    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)
-    FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
-    classDf <- res_subclones$classDf
-  }else{
-    FOUND_SUBCLONES <- FALSE
-  }
-  
-  if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample)
-  
-  return(classDf)
-  
-}
-
-
-DEBUGsubclonesAnalysis <- function(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf){   
-  
-  res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf)
-  FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
-  classDf <- res_subclones$classDf
-  
-  return(classDf)
-  
-}
-
-
-
-

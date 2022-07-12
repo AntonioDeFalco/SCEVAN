@@ -241,13 +241,13 @@ getCallingCN <- function(AnnotMatrix,ExtractSegm, truncBoundRight,truncBoundLeft
   out <- getLabelCall(posteriorProbability)
   
   df_call <- as.data.frame(cbind(AnnotMatrix[ExtractSegm[,2],1],AnnotMatrix[ExtractSegm[,2],2],AnnotMatrix[ExtractSegm[,3],3],ExtractSegm[,4],out))
-  colnames(df_call) <- c("Chromosome","Start","End","Mean","Call","ProbCall")
+  colnames(df_call) <- c("Chromosome","Start","End","Mean","CN","ProbCall")
   
   getMajorityCall <- function(ch){
     call <- c()
     df_call_ch <- df_call[df_call$Chromosome==ch,]
     for(POSini in unique(df_call_ch$Start)){
-      call <- c(call,as.numeric(names(which.max(table(df_call_ch[df_call_ch$Start==POSini,]$Call)))))
+      call <- c(call,as.numeric(names(which.max(table(df_call_ch[df_call_ch$Start==POSini,]$CN)))))
     }
     call
   }
@@ -264,7 +264,7 @@ getCallingCN <- function(AnnotMatrix,ExtractSegm, truncBoundRight,truncBoundLeft
   
   CNV <- df_call[1:which(df_call$Chromosome==totChr & df_call$End == max(df_call[df_call$Chromosome==totChr,]$End))[1],c(1,2,3,4)]
   CNV$Mean <- call
-  colnames(CNV) <- c("Chr","Pos","End","Call")
+  colnames(CNV) <- c("Chr","Pos","End","CN")
   #plotSegmentation(CNV)
   
   CNV
@@ -287,11 +287,7 @@ getCNcall <- function(MatrixSeg, count_mtx_annot, breaks, sample = "",subclone =
   
   CNV <- getCallingCN(count_mtx_annot[,c(1,2,3)], ExtractSegm, truncBoundRight, truncBoundLeft, meanVect, par_cores = par_cores)
   #plotSegmentation(CNV)
-  write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
+  #write.table(CNV, file = paste("./output/",sample,"_",subclone,"_CN.seg"), sep = "\t", quote = FALSE)
   CNV
 }
-
-
-
-
 

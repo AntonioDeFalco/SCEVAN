@@ -1,7 +1,8 @@
 
 plotAllClonalCN <- function(samples, name){
   
-  CNVtot <- lapply(samples, function(i) read.table(paste0("./output/"," ",i," _  _CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
+  #CNVtot <- lapply(samples, function(i) read.table(paste0("./output/"," ",i," _  _CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
+  CNVtot <- lapply(samples, function(i) read.table(paste0("./output/",i,"_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
   
   png(paste0("./output/",name,"_compareClonalCN.png",sep=""), height=2250, width=1350, res=200)
   
@@ -44,11 +45,9 @@ multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", or
   
   names(sampleAlterList) <- paste0(analysisName,"_subclone", 1:length(names(listCountMtx)))
   
-  diffSubcl <- diffSubclones(sampleAlterList, analysisName, nSub = length(names(listCountMtx)))
+  diffList <- diffSubclones(sampleAlterList, analysisName, nSub = length(names(listCountMtx)))
   
-  diffSubcl <- testSpecificAlteration(diffSubcl, length(names(listCountMtx)), analysisName)
-  
-  print(diffSubcl)
+  diffList <- testSpecificAlteration(diffList, length(names(listCountMtx)), analysisName)
   
   genesMtx <- lapply(listCountMtx, function(x) rownames(x))
   
@@ -58,7 +57,7 @@ multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", or
   
   annot_mtx <- annotateGenes(genesMtx)
   
-  oncoHeat <- annoteBandOncoHeat(annot_mtx, diffSubcl, length(names(listCountMtx)))
+  oncoHeat <- annoteBandOncoHeat(annot_mtx, diffList, length(names(listCountMtx)))
   
   rownames(oncoHeat) <- names(listCountMtx)
   
@@ -66,7 +65,18 @@ multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", or
   
   plotAllClonalCN(names(listCountMtx), name = analysisName)
   
-  resList
+  for(i in 1:length(names(listCountMtx))){
+    names(diffList) <- gsub(paste0("subclone",i), names(listCountMtx)[i], names(diffList))
+  }
+  
+  names(diffList) <- gsub("clone", "shared", names(diffList))
+
+  outputAnalysis <- list(resList, diffList)
+  
+  save(outputAnalysis, file = paste0("./output/",analysisName,"_outputAnalysis.RData"))
+  
+  outputAnalysis
+  
 }
 
 
