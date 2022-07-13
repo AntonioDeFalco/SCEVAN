@@ -798,7 +798,7 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
   
 }
 
-pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_cores = 20){
+pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_cores = 20, organism = "human"){
 
   library(forcats)
   library(ggplot2)
@@ -822,7 +822,11 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
 
   #pathwaysH <- gmt2GO("/storage/qnap_home/adefalco/singleCell/GSEA/c2.cp.reactome.v7.4.symbols.gmt")
 
-  fgseaRes <- fgseaMultilevel(pathwaysH,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
+  if(organism == "human")
+    fgseaRes <- fgseaMultilevel(pathwaysH,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
+  }else{
+    fgseaRes <- fgseaMultilevel(pathwaysHmouse,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
+  }
   
   fgseaRes$pathway <- gsub("REACTOME_","",fgseaRes$pathway)
   
