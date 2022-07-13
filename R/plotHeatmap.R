@@ -1040,7 +1040,7 @@ plotCNAlineOnlyTumor <- function(samp){
   
 }
 
-plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
+plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors, organism = "human"){
   
   legendBreaks <- sort(unique(as.numeric(as.matrix(oncoHeat))), decreasing = TRUE)
   legendLabels <-c("AMP","GAIN","","LOSS","DEL")
@@ -1056,13 +1056,20 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
   legendColors <- rev(c("blue","#add8e6","white","#FF7F7F","red"))
   legendColors <- rev(legendColors[okLabels])
   
-  listPos <- unlist(lapply(colnames(oncoHeat), function(x) strsplit(x, split = " ")[[1]][2]))
-  
-  dff <- data.frame(chr = as.numeric(substr(colnames(oncoHeat), 1,2)), let = substr(listPos,2,2), pos= as.numeric(substr(listPos,3,4)))
-  
-  dff[dff$let=="p",]$pos <- -dff[dff$let=="p",]$pos
-  
-  oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE))]
+  if(organism == "human"){
+    listPos <- unlist(lapply(colnames(oncoHeat), function(x) strsplit(x, split = " ")[[1]][2]))
+    
+    dff <- data.frame(chr = as.numeric(substr(colnames(oncoHeat), 1,2)), let = substr(listPos,2,2), pos= as.numeric(substr(listPos,3,4)))
+    
+    dff[dff$let=="p",]$pos <- -dff[dff$let=="p",]$pos
+    
+    oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE))]
+  }else{
+    listPos <- strsplit(colnames(oncoHeat),"-")
+    ch <- as.numeric(unlist(lapply(listPos, function(x) x[1])))
+    start <- as.numeric(unlist(lapply(listPos, function(x) x[2])))
+    oncoHeat <- oncoHeat[,order(ch,start)]
+  }
   
   png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2350, width=1050, res=150)
   pp <- pheatmap::pheatmap(t(oncoHeat), color = legendColors, cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = legendBreaks, legend_labels = legendLabels,cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
@@ -1073,7 +1080,7 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors){
 }
 
 
-plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
+plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones, organism = "human"){
   
   if(!is.null(perc_subclones)){
     annotdf <- data.frame(row.names = rownames(oncoHeat), 
@@ -1088,7 +1095,7 @@ plotOncoHeatSubclones <- function(oncoHeat, nSub, samp, perc_subclones){
   names(subclones) <- unique(annotdf$Subclone)
   mycolors <- list(Subclone = subclones)
   
-  plotOncoHeat(oncoHeat, nSub, samp, annotdf, mycolors)
+  plotOncoHeat(oncoHeat, nSub, samp, annotdf, mycolors, organism)
 }
 
 

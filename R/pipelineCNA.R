@@ -226,7 +226,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
-        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
+        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism)
         
         plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
         classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
