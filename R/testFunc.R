@@ -822,7 +822,7 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
 
   #pathwaysH <- gmt2GO("/storage/qnap_home/adefalco/singleCell/GSEA/c2.cp.reactome.v7.4.symbols.gmt")
 
-  if(organism == "human")
+  if(organism == "human"){
     fgseaRes <- fgseaMultilevel(pathwaysH,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
   }else{
     fgseaRes <- fgseaMultilevel(pathwaysHmouse,rankData , minSize=15, maxSize = 500, nproc = 1, nPermSimple = 10000, eps = 0)
