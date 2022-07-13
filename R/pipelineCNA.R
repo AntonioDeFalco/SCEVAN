@@ -60,7 +60,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
 
   if (SUBCLONES) {
-    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree)
+    res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism)
     #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
@@ -138,7 +138,7 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
 }
 
 
-subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE){
+subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE, organism  = "human"){
   
   #save(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, file = "debug_subclonesTumorCells.RData")
   
@@ -146,7 +146,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   FOUND_SUBCLONES <- FALSE
   
-  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega)
+  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism)
   #res_subclones <- subclonesTumorCells(tum_cells, CNAmat,relativeSmoothMtx, sample, par_cores, beta_vega, res_proc)
   
   tum_cells <- res_class$tum_cells
@@ -165,7 +165,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
       print(diffSubcl)
       
       ## new aggregation subclone
-      oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
+      oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
       
       res <- list()
       for (sub in 1:nrow(oncoHeat)){
@@ -224,7 +224,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
         
-        oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones)
+        oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
         plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones)
         
@@ -233,7 +233,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
         
         if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
+        if(organism == "human") pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample)
         
         save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
         

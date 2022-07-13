@@ -49,7 +49,7 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
   return(ans)
 }
 
-subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res_proc, hc.clus = NULL, relativeSmoothMtx = NULL){
+subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res_proc, hc.clus = NULL, relativeSmoothMtx = NULL, organism = "human"){
   
   library(scran)
   
@@ -135,7 +135,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
       
       #save(mtx_CNA3, file = paste0("./output/",sample,"_mtx_CNA3.RData"))
       
-      CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores)
+      CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores, organism = organism)
       
       segm.mean <- getScevanCNV(paste0(samp,"_subclone",i))$Mean
       CNV[[i]] <- cbind(CNV[[i]],segm.mean)
@@ -320,6 +320,7 @@ getPossibleSpecAltFromSeg2 <- function(segm, name){
 
 diffSubclones <- function(sampleAlter, samp, nSub = 2){
   
+  totChr <- max(sampleAlter[[1]]$Chr)
   #save(sampleAlter, samp, nSub , file ="diffSubclones.RData")
   
   all_segm_diff <- list()
@@ -333,7 +334,7 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
     
     cl1 <- sampleAlter[[sub]]
     
-    for (ch in 1:22) {
+    for (ch in 1:totChr) {
       
       if(sum(cl1$Chr==ch)>0){
         
@@ -431,6 +432,8 @@ diffSubclones2 <- function(sampleAlter, samp, nSub = 2){
   
   #save(sampleAlter, samp, nSub , file ="diffSubclones.RData")
   
+  totChr <- max(sampleAlter[[1]]$Chr)
+  
   all_segm_diff <- list()
   
   vectSubcl <- 1:nSub
@@ -442,7 +445,7 @@ diffSubclones2 <- function(sampleAlter, samp, nSub = 2){
     
     cl1 <- sampleAlter[[sub]]
     
-    for (ch in 1:22) {
+    for (ch in 1:totChr) {
       
       if(sum(cl1$Chr==ch)>0){
         
@@ -543,11 +546,12 @@ testSpecificAlteration <- function(listAltSubclones, nSub = 2, samp){
     
   }
 
-
   clone <- c()
   for(i in grep("_clone",names(listAltSubclones))){
     clone <- rbind(clone, listAltSubclones[[i]])
   }
+  
+  if(!is.null(clone)){
   
   for (i in 1:nrow(clone)){
     
@@ -577,6 +581,8 @@ testSpecificAlteration <- function(listAltSubclones, nSub = 2, samp){
 
   subclonesAlt[[paste0(samp,"_clone")]] <- clone
   
+  }
+  
   #subclonesAlt[[paste0(samp,"_clone")]]$Mean <- 0
   
   if(nSub>2) subclonesAlt[[paste0(samp,"_shareSubclone")]] <- testSpecificSubclonesAlteration(listAltSubclones, nSub, samp)
@@ -590,7 +596,10 @@ testSpecificAlteration <- function(listAltSubclones, nSub = 2, samp){
   for(sub in nSubl){
     subclonesAlt[[sub]] <- subclonesAlt[[sub]][order(abs(subclonesAlt[[sub]]$Alteration), decreasing = TRUE),]
   }
+  
+  if(!is.null(clone)){
   subclonesAlt[[paste0(samp,"_clone")]] <- subclonesAlt[[paste0(samp,"_clone")]][order(abs(subclonesAlt[[paste0(samp,"_clone")]]$Alteration), decreasing = TRUE),]
+  }
   
   return(subclonesAlt)
 }
@@ -851,22 +860,27 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
 
 
     
-annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub){
+annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub, organism = "human"){
   
   diffSub <- diffSub[unlist(lapply(diffSub, function(x) nrow(x)>0))]
   
   for(elem in 1:length(diffSub)){
     if(nrow(diffSub[[elem]])!=0){
-      for(r in 1:nrow(diffSub[[elem]])){
-        subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
-        posSta <- which(subset$start == diffSub[[elem]][r,]$Start)
-        posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
-        geneToAnn <- subset[posSta:posEnd, ]$gene_name
-        found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
-        min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
-        max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
-        band_str <- paste(min_band,max_band, sep = "-")
-        diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
+      
+      if(organism == "human"){
+        for(r in 1:nrow(diffSub[[elem]])){
+          subset <- mtx_annot[mtx_annot$seqnames == diffSub[[elem]][r,]$Chr,]
+          posSta <- which(subset$start == diffSub[[elem]][r,]$Start)
+          posEnd <- which(subset$end == diffSub[[elem]][r,]$End)
+          geneToAnn <- subset[posSta:posEnd, ]$gene_name
+          found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
+          min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
+          max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
+          band_str <- paste(min_band,max_band, sep = "-")
+          diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
+        }
+      }else{
+        diffSub[[elem]]$Chr <- paste(diffSub[[elem]]$Chr,diffSub[[elem]]$Start,diffSub[[elem]]$End, sep = "-")
       }
     }
   }
