@@ -4,10 +4,6 @@
 #include <math.h>
 #include <time.h>
 #include <R.h>
-
-/* Maximum input line for the data file (1024*200 allows to analyze about 10000
-                                         samples) You can increase this constant for more large datasets */
-  //#define MAX_INPUT_LINE 512000
   
   
   #define ROUND_CNST 1000
@@ -490,24 +486,12 @@ float pval_threshold;
   {
     
     int ns = 0, np = 0;
-    //char line[MAX_INPUT_LINE];
     char *sep = "\t";
     char *elem;
     probe *first_probe, *prev_probe, *temp_probe;
     float *data_tmp;
     
-    //FILE *file = fopen(dataset, "r");
     num_chromosomes = 0;
-    
-    /*
-    if (fgets(line, sizeof(line), file) != 0) {
-      elem = strtok(line, sep);
-      while (elem) {
-        ns++;
-        elem = strtok('\0', sep);
-      }
-    }
-    */
     
     ns = ncol;
     num_samples = ns - 2;
@@ -516,9 +500,7 @@ float pval_threshold;
     int prev_chr = 0;
     
     int i, j;
-    
-    
-    Rprintf("\n pre FOR\n");
+
     for (j = 0; j < nrow; ++j){
       int position, chr;
       for (i = 0; i < ncol; ++i) {
@@ -555,12 +537,8 @@ float pval_threshold;
       np++;
       
     }
-    Rprintf("\n after FOR\n");
-    //}
     
-    //free(matrix);
     free(data_tmp);
-    //fclose(file);
     
     num_probes = np;
     /* Initialize the data structures */
