@@ -1,4 +1,4 @@
-vegaMC_R <- function(dataset, output_file_name="output", 
+vegaMC_R <- function(mtx, output_file_name="output", 
                      beta=0.5, min_region_bp_size=1000, correction=FALSE,
                      loss_threshold=-0.2, gain_threshold=0.2, baf=FALSE,
                      loh_threshold=0.75, loh_frequency=0.8, bs=1000,
@@ -6,10 +6,7 @@ vegaMC_R <- function(dataset, output_file_name="output",
                      mart_database="ensembl",
                      ensembl_dataset="hsapiens_gene_ensembl"){
   
-  if(!file.exists(dataset)){
-    message("ERROR: Specified Input File does not Exists")
-    return(FALSE)
-  }
+  
   if( output_file_name == "" || 
       substr(output_file_name, 
              nchar(output_file_name), nchar(output_file_name)) == "/" ){
@@ -25,7 +22,13 @@ vegaMC_R <- function(dataset, output_file_name="output",
   }else{
     baf=0
   }
-  res <- .C("run_vegaMC", data=as.character(dataset),
+  
+  mtx <- as.matrix(mtx[,-1])
+  
+  res <- .C("run_vegaMC",
+            M=as.double(mtx), 
+            row=as.integer(nrow(mtx)), 
+            col=as.integer(ncol(mtx)),
             out=as.character(output_file_name),   
             b= as.double(beta),
             mrbs = as.integer(min_region_bp_size),
@@ -110,9 +113,9 @@ vegaMC_R <- function(dataset, output_file_name="output",
 #' @examples
 getBreaksVegaMC <- function(mtx, chr_vect, sample = "", beta_vega = 0.5){
   
-  write.table(mtx, paste("./output/", sample, "_mtx_vega.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
+  #write.table(mtx, paste("./output/", sample, "_mtx_vega.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
   
-  res_vega <- vegaMC_R(paste("./output/", sample, "_mtx_vega.txt", sep=""),output_file_name=paste("./output/", sample,"vega_output"), beta = beta_vega);
+  res_vega <- vegaMC_R(mtx = mtx, output_file_name=paste("./output/", sample,"vega_output"), beta = beta_vega);
   
   BR <- unlist(lapply(res_vega$Start, function(x) which(chr_vect == x)[1]))
   n <- nrow(mtx)
