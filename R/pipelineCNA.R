@@ -237,7 +237,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
         
         if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism)
+        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism)
         
         save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
         
