@@ -147,7 +147,11 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   FOUND_SUBCLONES <- FALSE
   
   res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism)
-  #res_subclones <- subclonesTumorCells(tum_cells, CNAmat,relativeSmoothMtx, sample, par_cores, beta_vega, res_proc)
+  
+  if(length(setdiff(res_class$tum_cells,names(res_subclones$clustersSub)))>0){
+    classDf[setdiff(res_class$tum_cells,names(res_subclones$clustersSub)),]$class <- "normal"
+    res_class$tum_cells <- names(res_subclones$clustersSub)
+  }
   
   tum_cells <- res_class$tum_cells
   clustersSub <- res_subclones$clustersSub

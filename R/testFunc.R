@@ -92,6 +92,10 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     
     if(length(removeSubcl)>0) hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
   
+    modular_lc <- modularity(lc)
+    
+  }else{
+    modular_lc <- 0.20
   }
   
   n_subclones <- length(unique(hc.clus))
@@ -99,7 +103,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
   results.com <- NULL
   breaks_subclones <- NULL
   
-  if(n_subclones > 1 & modularity(lc)>0.13){
+  if(n_subclones > 1 & modular_lc>0.13){
     
     perc_cells_subclones <- table(hc.clus)/length(hc.clus)
     
@@ -115,16 +119,19 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     
     colName <- c()
     
+    falseSub <- c()
+    
     for (i in 1:n_subclones){
       
       print(paste("Segmentation of subclone : ", i))
       
       tum_cells_sub1 <- names(hc.clus[hc.clus==i])
-      colName <- append(colName,tum_cells_sub1)
       
       mtx_vega <- cbind(info_mat, norm.mat.relat[,tum_cells_sub1])
       
       colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
+      
+      i <- i - length(falseSub)
       
       breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = 0.5)
       
@@ -137,14 +144,28 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
       
       CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores, organism = organism)
       
-      segm.mean <- getScevanCNV(paste0(samp,"_subclone",i))$Mean
-      CNV[[i]] <- cbind(CNV[[i]],segm.mean)
-      write.table(CNV[[i]], file = paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t", quote = FALSE)
-      file.remove(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"))
-      
-      mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$CN != 2)
-      
-      logCNAl[[i]] <- mtx_CNA3
+      if(any(CNV[[i]]$CN!=2)){
+        segm.mean <- getScevanCNV(paste0(samp,"_subclone",i))$Mean
+        CNV[[i]] <- cbind(CNV[[i]],segm.mean)
+        write.table(CNV[[i]], file = paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t", quote = FALSE)
+        file.remove(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"))
+        
+        mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$CN != 2)
+        
+        logCNAl[[i]] <- mtx_CNA3
+        colName <- append(colName,tum_cells_sub1)
+      }else{
+        print("falseSubclone")
+        falseSub <- c(falseSub,i)
+      }
+    }
+    
+    if(length(falseSub)>0){
+      n_subclones <- n_subclones - length(falseSub)
+      for(falseInd in falseSub){
+        hc.clus <- hc.clus[!names(hc.clus) %in% names(hc.clus[hc.clus==falseInd])] 
+        hc.clus[hc.clus>falseInd] <- hc.clus[hc.clus>falseInd]-1
+      }
     }
     
     BR <- c()
@@ -188,7 +209,9 @@ analyzeSegm <- function(samp, nSub = 1){
     for (i in 1:nSub){
 
       segm <- read.csv(paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t")
-      all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
+      specSegm <- getPossibleSpecAltFromSeg(segm)
+      if(is.null(specSegm)) specSegm <- data.frame()
+      all_segm[[paste0(samp,"_subclone", i)]] <- specSegm
       
     }
   }else{
@@ -348,7 +371,7 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
           FOUND_small <- 0
           
           for(sub2 in vectSubcl[-sub]){
-            
+              
             cl2 <- sampleAlter[[sub2]]
             
             cl2_ch <- cl2[cl2$Chr==ch,]
@@ -397,7 +420,7 @@ diffSubclones <- function(sampleAlter, samp, nSub = 2){
             }
             
             sampleAlter[[sub2]] <- sampleAlter[[sub2]][]
-            
+          
           }
           
           if(FOUND==(nSub-1)){
