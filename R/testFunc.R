@@ -90,7 +90,12 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     
     removeSubcl <- as.numeric(names(perc_cells_subclones[perc_cells_subclones<0.02]))
     
-    if(length(removeSubcl)>0) hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
+    if(length(removeSubcl)>0){
+      hc.clus <- hc.clus[!hc.clus %in% removeSubcl]
+      for(remIdx in removeSubcl){
+        hc.clus[hc.clus>remIdx] <- hc.clus[hc.clus>remIdx]-1
+      }
+    } 
   
     modular_lc <- modularity(lc)
     
