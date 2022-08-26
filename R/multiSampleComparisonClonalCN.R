@@ -1,4 +1,35 @@
 
+#' plotAllSubclonalCN Plot the copy number of each subclone of a sample.
+#'
+#' @param sample Name of the sample.
+#' @param pathOutput Path to the output folder containing the output of pipelineCNA.
+#'
+#' @return
+#' @export
+#'
+#' @examples 
+#' 
+plotAllSubclonalCN <- function(sample, pathOutput = "./output/"){
+  
+  allFile <- list.files(pathOutput, pattern = paste0(sample,"_subclone[1-9]_CN.seg") )
+
+  CNVtot <- lapply(allFile, function(i) read.table(paste0(pathOutput,i), sep="\t", header=TRUE, as.is=TRUE))
+  
+  png(paste0(pathOutput,sample,"_compareSubclonalCN.png",sep=""), height=2250, width=1350, res=100)
+  
+  par(mfrow=c(length(allFile),1),cex=1, cex.main = 1.5, cex.lab = 1.5,xaxs="i")
+  
+  for(i in 1:length(allFile)){
+    
+    CNV <- CNVtot[[i]]
+    
+    plotSegmentation(CNV) 
+    title(gsub("_CN.seg","",allFile[i]))
+    
+  }
+  dev.off()
+}
+
 plotAllClonalCN <- function(samples, name){
   
   #CNVtot <- lapply(samples, function(i) read.table(paste0("./output/"," ",i," _  _CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
