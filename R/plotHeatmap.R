@@ -1063,7 +1063,7 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors, organism = "hu
     
     dff[dff$let=="p",]$pos <- -dff[dff$let=="p",]$pos
     
-    oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE))]
+    oncoHeat <- oncoHeat[,order(dff$chr, dff$let, dff$pos,decreasing = c(FALSE,FALSE,FALSE), method = "radix")]
   }else{
     listPos <- strsplit(colnames(oncoHeat),"-")
     ch <- as.numeric(unlist(lapply(listPos, function(x) x[1])))
