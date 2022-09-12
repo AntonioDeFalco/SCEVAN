@@ -259,7 +259,16 @@ getCallingCN <- function(AnnotMatrix,ExtractSegm, truncBoundRight,truncBoundLeft
   }   
   
   library(parallel)
-  call <- mclapply(1:totChr, getMajorityCall ,mc.cores = par_cores)
+  
+  
+  if(Sys.info()["sysname"]=="Windows"){
+    cl <- parallel::makeCluster(getOption("cl.cores", par_cores))
+    call <- parallel::parLapply(cl, 1:totChr, getMajorityCall)
+    parallel::stopCluster(cl)
+  }else{
+    call <- parallel::mclapply(1:totChr, getMajorityCall ,mc.cores = par_cores)
+  }
+  
   call <- unlist(call)
   
   CNV <- df_call[1:which(df_call$Chromosome==totChr & df_call$End == max(df_call[df_call$Chromosome==totChr,]$End))[1],c(1,2,3,4)]
