@@ -1141,11 +1141,13 @@ modifyNameCNV <- function(CNV, CN = TRUE){
 
 
 plotCloneTree <- function(sample,res_subclones){
-
+    
   library(tidytree)
   library(ape)
   library(ggtree)
   library(ggplot2)
+  
+  if(packageVersion("dplyr")<="1.0.5"){
   
   segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/",sample,"_subclone",x,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
   #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
@@ -1200,4 +1202,8 @@ plotCloneTree <- function(sample,res_subclones){
   plot(pp + xlim_expand(c(-5, 5), 'Dot'))
   
   dev.off()
+  
+  }else{
+    print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5)")
+  }
 }
