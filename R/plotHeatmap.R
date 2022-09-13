@@ -568,7 +568,7 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
       Rtsne(newmtx, check_duplicates = FALSE)
     },
     error = function(e){ 
-      Rtsne(newmtx, check_duplicates = FALSE, perplexity = 15)
+      Rtsne(newmtx, check_duplicates = FALSE, perplexity = floor((nrow(newmtx) - 1) / 3))
     }
   )
   
@@ -594,7 +594,9 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
       },
       error = function(e){ 
         #Rtsne(t(as.matrix(CNAmat[,tum_cells])), perplexity = 15)
-        Rtsne(t(as.matrix(CNAmat[,names(clustersSub)])), perplexity = 15)
+        mtxplot <- t(as.matrix(CNAmat[,names(clustersSub)]))
+        Rtsne(mtxplot, perplexity = floor((nrow(mtxplot) - 1) / 3))
+        rm(mtxplot)
       }
     )
     
