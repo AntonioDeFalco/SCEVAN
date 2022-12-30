@@ -88,11 +88,11 @@ multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", or
   
   annot_mtx <- annotateGenes(genesMtx)
   
-  oncoHeat <- annoteBandOncoHeat(annot_mtx, diffList, length(names(listCountMtx)))
+  oncoHeat <- annoteBandOncoHeat(annot_mtx, diffList, length(names(listCountMtx)), organism)
   
   rownames(oncoHeat) <- names(listCountMtx)
   
-  plotOncoHeatSubclones(oncoHeat, length(names(listCountMtx)), analysisName, NULL)
+  plotOncoHeatSubclones(oncoHeat, length(names(listCountMtx)), analysisName, NULL, organism)
   
   plotAllClonalCN(names(listCountMtx), name = analysisName)
   
