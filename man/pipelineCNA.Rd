@@ -19,21 +19,21 @@ pipelineCNA(
 )
 }
 \arguments{
-\item{count_mtx}{raw count matrix}
+\item{count_mtx}{Raw count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.}
 
-\item{sample}{sample name (optional)}
+\item{sample}{Sample name to save results (optional)}
 
-\item{par_cores}{number of cores (default 20)}
+\item{par_cores}{Number of cores to run the pipeline (optional - default 20)}
 
-\item{norm_cell}{vector of normal cells if already known (optional)}
+\item{norm_cell}{Vector of normal cells if the classification is already known and you are only interested in the clonal structure (optional)}
 
-\item{SUBCLONES}{find subclones (default TRUE)}
+\item{SUBCLONES}{Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)}
 
-\item{beta_vega}{specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5)}
+\item{beta_vega}{Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)}
 
-\item{ClonalCN}{clonal profile inference from tumour cells (optional)}
+\item{ClonalCN}{Get clonal CN profile inference from all tumour cells (optional)}
 
-\item{plotTree}{find subclones (optional)}
+\item{plotTree}{Plot Phylogenetic tree (optional - default FALSE)}
 
 \item{AdditionalGeneSets}{list of additional signatures of normal cell types (optional)}
 

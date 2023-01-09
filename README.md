@@ -27,14 +27,14 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 - ***count_mtx*** : Count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 - ***sample*** : Sample name to save results (optional)
 - ***par_cores*** : Number of cores to run the pipeline  (optional - default 20)
-- ***norm_cells*** : vectors of normal cells if the classification is already known and you are only interested in the clonal structure (optional)
-- ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default 20)
+- ***norm_cells*** : Vector of normal cells if the classification is already known and you are only interested in the clonal structure (optional)
+- ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)
 - ***beta_vega*** : Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
 - ***ClonalCN*** :  Get clonal CN profile inference from all tumour cells (optional)
 - ***plotTree*** : Plot Phylogenetic tree (optional - default FALSE) 
 - ***AdditionalGeneSets*** : list of additional signatures of normal cell types (optional)
 - ***SCEVANsignatures*** : FALSE if you only want to use only the signatures specified in AdditionalGeneSets(optional - default TRUE) 
-- ***organism*** : Organism to be analysed (optional - default human)
+- ***organism*** : Organism to be analysed (optional - "mouse" or "human" - default "human")
 
 ```
 results <- pipelineCNA(count_mtx)
@@ -45,7 +45,7 @@ A single call (multiSampleComparisonClonalCN) allows the comparison of clonal pr
 
 - ***listCountMtx*** : Named list of raw count matrix of samples to be analysed
 - ***analysisName*** : Name of the analysis (optional)
-- ***organism*** : Organism to be analysed (default human)
+- ***organism*** : Organism to be analysed (optional - "mouse" or "human" - default "human")
 - ***par_cores*** : Number of cores (default 20)
 
 ```

@@ -12,18 +12,16 @@ NULL
 #> NULL
 
 
-
-
 #' pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.
 #'
-#' @param count_mtx raw count matrix
-#' @param sample sample name (optional)
-#' @param par_cores number of cores (default 20)
-#' @param norm_cell vector of normal cells if already known (optional)
-#' @param SUBCLONES find subclones (default TRUE)
-#' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
-#' @param ClonalCN clonal profile inference from tumour cells (optional)
-#' @param plotTree find subclones (optional)
+#' @param count_mtx Raw count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
+#' @param sample Sample name to save results (optional)
+#' @param par_cores Number of cores to run the pipeline (optional - default 20)
+#' @param norm_cell Vector of normal cells if the classification is already known and you are only interested in the clonal structure (optional)
+#' @param SUBCLONES Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)
+#' @param beta_vega Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
+#' @param ClonalCN Get clonal CN profile inference from all tumour cells (optional)
+#' @param plotTree Plot Phylogenetic tree (optional - default FALSE)
 #' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
 #' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
 #' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
