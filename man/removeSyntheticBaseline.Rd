@@ -17,6 +17,3 @@ relative matrix
 \description{
 removeSyntheticBaseline Removes a synthetic baseline from a tumour pure matrix
 }
-\examples{
-
-}

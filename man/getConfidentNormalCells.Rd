@@ -9,7 +9,8 @@ getConfidentNormalCells(
   sample = "",
   par_cores = 20,
   AdditionalGeneSets = NULL,
-  SCEVANsignatures = TRUE
+  SCEVANsignatures = TRUE,
+  organism = "human"
 )
 }
 \arguments{
@@ -23,12 +24,6 @@ getConfidentNormalCells(
 
 \item{SCEVANsignatures}{FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)}
 }
-\value{
-
-}
 \description{
 getConfidentNormalCells Get at most top 30 confident normal cells from count matrix.
-}
-\examples{
-
 }

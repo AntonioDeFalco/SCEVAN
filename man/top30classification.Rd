@@ -32,9 +32,6 @@ top30classification(
 
 \item{nNES}{}
 }
-\value{
-
-}
 \description{
 Get at most top 30 confident normal cells
 }

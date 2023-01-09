@@ -11,10 +11,11 @@ pipelineCNA(
   norm_cell = NULL,
   SUBCLONES = TRUE,
   beta_vega = 0.5,
-  ClonalCN = FALSE,
-  plotTree = FALSE,
+  ClonalCN = TRUE,
+  plotTree = TRUE,
   AdditionalGeneSets = NULL,
-  SCEVANsignatures = TRUE
+  SCEVANsignatures = TRUE,
+  organism = "human"
 )
 }
 \arguments{
@@ -37,9 +38,8 @@ pipelineCNA(
 \item{AdditionalGeneSets}{list of additional signatures of normal cell types (optional)}
 
 \item{SCEVANsignatures}{FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)}
-}
-\value{
 
+\item{organism}{Organism to be analysed (optional - "mouse" or "human" - default "human")}
 }
 \description{
 pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.

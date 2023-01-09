@@ -4,7 +4,7 @@
 \alias{annotateGenes}
 \title{annotateGenes Annotate genes with genomic coordinates with reference to hg38 using Ensembl based annotation package}
 \usage{
-annotateGenes(mtx)
+annotateGenes(mtx, organism = "human")
 }
 \arguments{
 \item{mtx}{Count matrix with genes on row names (Ensemble or Symbol)}

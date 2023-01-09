@@ -54,7 +54,7 @@ plotAllClonalCN <- function(samples, name){
 #'
 #' @param listCountMtx Named list of raw count matrix of samples
 #' @param analysisName Name of the analysis (default "all")
-#' @param organism organism to be analysed (default human)
+#' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
 #' @param par_cores number of cores (default 20)
 #'
 #' @return

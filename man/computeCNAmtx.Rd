@@ -19,6 +19,3 @@ CNA matrix
 \description{
 computeCNAmtx computed the CNA matrix using the break points obtained from segmentation
 }
-\examples{
-
-}

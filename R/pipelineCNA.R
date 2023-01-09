@@ -26,6 +26,7 @@ NULL
 #' @param plotTree find subclones (optional)
 #' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
 #' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
+#' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
 #'
 #' @return
 #' @export

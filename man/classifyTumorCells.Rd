@@ -38,12 +38,6 @@ classifyTumorCells(
 
 \item{gr_truth}{ground truth of classification (optional)}
 }
-\value{
-
-}
 \description{
 classifyTumorCells Classify tumour and normal cells from the raw count matrix, using normal cells in the matrix or by subtracting a synthetic baseline from the matrix if there are no normal cells in the matrix.
-}
-\examples{
-
 }
