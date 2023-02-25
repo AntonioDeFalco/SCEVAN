@@ -90,7 +90,7 @@ We provide some pre-processed samples used in the examples (vignettes):
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	title = {A variational algorithm to detect the clonal copy number substructure of tumors from scRNA-seq data},\\
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	year = {2023},\
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	doi = {10.1038/s41467-023-36790-9},\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	URL = {https://www.nature.com/articles/s41467-023-36790-9},  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	eprint = {https://www.nature.com/articles/s41467-023-36790-9.pdf}, \
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	URL = { https://www.nature.com/articles/s41467-023-36790-9 },  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	eprint = { https://www.nature.com/articles/s41467-023-36790-9.pdf }, \
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	journal = {Nature Communications}\
 >}
