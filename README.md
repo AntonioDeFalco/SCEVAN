@@ -4,7 +4,8 @@
   <img width="819" height="1027" src="https://github.com/AntonioDeFalco/SCEVAN/blob/main/SCEVAN.png">
 </p>
 
-Preprint Link: [A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data](https://www.biorxiv.org/content/10.1101/2021.11.20.469390v1)
+Article: [A variational algorithm to detect the clonal copy number substructure of tumors from scRNA-seq data
+](https://www.nature.com/articles/s41467-023-36790-9)
 
 ## Introduction
 
@@ -84,14 +85,12 @@ We provide some pre-processed samples used in the examples (vignettes):
 ## Citation
 
 > 
->@article {De Falco2021.11.20.469390,\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	author = {De Falco, Antonio and Caruso, Francesca P and Su, Xiao Dong and Iavarone, Antonio and Ceccarelli, Michele},\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	title = {A fast variational algorithm to detect the clonal copy number substructure of tumors from single-cell data},\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	elocation-id = {2021.11.20.469390},\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	year = {2021},\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	doi = {10.1101/2021.11.20.469390},\
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	publisher = {Cold Spring Harbor Laboratory},\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	URL = { https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390 },  
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	eprint = { https://www.biorxiv.org/content/early/2021/11/22/2021.11.20.469390.full.pdf }, \
->&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	journal = {bioRxiv}\
+>@article {De Falco2023,\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	author = {Antonio De Falco, Francesca Caruso, Xiao-Dong Su, Antonio Iavarone & Michele Ceccarelli},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	title = {A variational algorithm to detect the clonal copy number substructure of tumors from scRNA-seq data},\\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	year = {2023},\
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	doi = {10.1038/s41467-023-36790-9},\
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	URL = {https://www.nature.com/articles/s41467-023-36790-9},  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	eprint = {https://www.nature.com/articles/s41467-023-36790-9.pdf}, \
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	journal = {Nature Communications}\
 >}
