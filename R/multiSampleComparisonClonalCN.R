@@ -30,14 +30,28 @@ plotAllSubclonalCN <- function(sample, pathOutput = "./output/"){
   dev.off()
 }
 
+
+#' Title plotAllClonalCN
+#'
+#' @param samples Vector with sample names to be plotted
+#' @param name Analysis name
+#'
+#' @return
+#' @export
+#'
+#' @examples
 plotAllClonalCN <- function(samples, name){
   
   #CNVtot <- lapply(samples, function(i) read.table(paste0("./output/"," ",i," _  _CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
   CNVtot <- lapply(samples, function(i) read.table(paste0("./output/",i,"_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
   
-  png(paste0("./output/",name,"_compareClonalCN.png",sep=""), height=2250, width=1350, res=200)
+  png(paste0("./output/",name,"_compareClonalCN.png",sep=""), height=1550, width=2350, res=100)
   
-  par(mfrow=c(length(samples),1),cex=1, cex.main = 1.5, cex.lab = 1.5,xaxs="i")
+  if(length(samples)>3){
+    par(mfrow=c(3,ceiling(length(samples)/3)), cex=1, cex.main = 1.5, cex.lab = 1.5,xaxs="i")
+  }else{
+    par(mfrow=c(length(samples),1),cex=1, cex.main = 1.5, cex.lab = 1.5,xaxs="i")
+  }
   
   for(i in 1:length(samples)){
     
