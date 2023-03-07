@@ -106,7 +106,7 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
     norm_cell <- NULL
   }
   
-  rm(count_mtx)
+  #rm(count_mtx)
   
   count_mtx_annot <- count_mtx_annot[
     with(count_mtx_annot, order(as.numeric(as.character(seqnames)), as.numeric(as.character(end))), decreasing = FALSE),
@@ -167,8 +167,8 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   
   norm_cell <- norm_cell[names(norm_cell) %in% colnames(count_mtx_norm)]
   
-  res <- list(count_mtx_norm, count_mtx_annot, norm_cell)
-  names(res) <- c("count_mtx_norm", "count_mtx_annot", "norm_cell")
+  res <- list(count_mtx_norm, count_mtx_annot, norm_cell, count_mtx)
+  names(res) <- c("count_mtx_norm", "count_mtx_annot", "norm_cell", "count_mtx")
   
   return(res)
   
