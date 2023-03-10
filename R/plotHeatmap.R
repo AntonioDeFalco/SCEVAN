@@ -1147,63 +1147,72 @@ plotCloneTree <- function(sample,res_subclones){
   library(ggtree)
   library(ggplot2)
   
-  if(packageVersion("dplyr")<="1.0.5"){
-  
-  segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/",sample,"_subclone",x,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
-  #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
-  
-  names(segmList) <- paste0(" ",1:res_subclones$n_subclones," ")
-  
-  segmList <- lapply(segmList, function(x) modifyNameCNV(x, CN = FALSE)[[1]])
-  segmList <- lapply(segmList, function(x) getModifyPosSeg(x))
-  
-  #segmList <- lapply(segmList, function(x) segmPos(x))
-  
-  minPos <- 1
-  add_chr <- sizeGRCh38
-  add_chr <- (add_chr$Size/1000)
-  maxPos <- sum(add_chr)
-  
-  dfL <- lapply(segmList, function(x) {
-    df <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
-    colnames(df) <- c("Pos","Mean")
-    df$Mean[is.na(df$Mean)] <- 0
-    #df$Mean[abs(df$Mean)<0.10] <- 0
-    return(df)
-  })
-  
-  dfLmean <- lapply(dfL, function(x) x$Mean)
-  mtx <- do.call(rbind, dfLmean)
-  
-  distt <- parallelDist::parDist(mtx,threads = 10, method = "euclidean")
+  tryCatch(
+    expr = {
+      segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/",sample,"_subclone",x,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
+      #names(segmList) <- paste0("subclone",1:res_subclones$n_subclones)
+      
+      names(segmList) <- paste0(" ",1:res_subclones$n_subclones," ")
+      
+      segmList <- lapply(segmList, function(x) modifyNameCNV(x, CN = FALSE)[[1]])
+      segmList <- lapply(segmList, function(x) getModifyPosSeg(x))
+      
+      #segmList <- lapply(segmList, function(x) segmPos(x))
+      
+      minPos <- 1
+      add_chr <- sizeGRCh38
+      add_chr <- (add_chr$Size/1000)
+      maxPos <- sum(add_chr)
+      
+      dfL <- lapply(segmList, function(x) {
+        df <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
+        colnames(df) <- c("Pos","Mean")
+        df$Mean[is.na(df$Mean)] <- 0
+        #df$Mean[abs(df$Mean)<0.10] <- 0
+        return(df)
+      })
+      
+      dfLmean <- lapply(dfL, function(x) x$Mean)
+      mtx <- do.call(rbind, dfLmean)
+      
+      distt <- parallelDist::parDist(mtx,threads = 10, method = "euclidean")
+      
+      PhyTree <- ape::nj(distt)
+      
+      colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:res_subclones$n_subclones])
+      colors <- colors_samp(res_subclones$n_subclones)
+      
+      branches <- lapply(1:res_subclones$n_subclones, function(x) x)
+      names(branches) <- paste0("Subclone",1:res_subclones$n_subclones)
+      tree <- groupOTU(PhyTree,branches)
+      
+      colors <- colors_samp(res_subclones$n_subclones)
+      
+      png(paste("./output/",sample,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
+      
+      pp <- ggtree(tree, layout="daylight", size = 2) + 
+        ggtitle(paste0(sample,"-Clone Tree")) + 
+        geom_tiplab(aes(fill=group), geom = "label", size = 4) +
+        scale_fill_manual(values=colors) + 
+        theme_tree2(legend.position = "none") + 
+        geom_nodepoint(color="#606060", alpha=1/3, size=10)  
+      
+      #plot(pp)
+      
+      plot(pp + xlim_expand(c(-5, 5), 'Dot'))
+      
+      dev.off()
+    },
+    error = function(e){ 
+      print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5) try downgrading dprly to 1.0.5 or upgrading ggtree")
+    }
 
-  PhyTree <- ape::nj(distt)
+    )
   
-  colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:res_subclones$n_subclones])
-  colors <- colors_samp(res_subclones$n_subclones)
+  #if(packageVersion("dplyr")<="1.0.5"){
   
-  branches <- lapply(1:res_subclones$n_subclones, function(x) x)
-  names(branches) <- paste0("Subclone",1:res_subclones$n_subclones)
-  tree <- groupOTU(PhyTree,branches)
   
-  colors <- colors_samp(res_subclones$n_subclones)
-  
-  png(paste("./output/",sample,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
-  
-  pp <- ggtree(tree, layout="daylight", size = 2) + 
-    ggtitle(paste0(sample,"-Clone Tree")) + 
-    geom_tiplab(aes(fill=group), geom = "label", size = 4) +
-    scale_fill_manual(values=colors) + 
-    theme_tree2(legend.position = "none") + 
-    geom_nodepoint(color="#606060", alpha=1/3, size=10)  
-  
-  #plot(pp)
-  
-  plot(pp + xlim_expand(c(-5, 5), 'Dot'))
-  
-  dev.off()
-  
-  }else{
-    print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5)")
-  }
+ # }else{
+#    print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5)")
+#  }
 }
