@@ -1,4 +1,4 @@
-#       Single   CEll   Variational   Aneuploidy aNalysis  (SCEVAN) <img src="LogoSCEVAN.png" align="left" width="150">
+# Single   CEll   Variational   Aneuploidy aNalysis  (SCEVAN) <img src="LogoSCEVAN.png" align="right" width="150">
 
 <img src="SCEVAN_workflow.png" align="center" width="833" height="1027">
 
