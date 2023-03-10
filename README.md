@@ -1,6 +1,8 @@
-# Single   CEll   Variational   Aneuploidy aNalysis <img src="LogoSCEVAN.png" align="right" width="150">
-
+# Single   CEll   Variational   Aneuploidy aNalysis 
+<div>
+<img src="LogoSCEVAN.png" align="right" width="150">
 <img src="SCEVAN_workflow.png" align="left" width="833" height="1027">
+</div>
 
 Article: [A variational algorithm to detect the clonal copy number substructure of tumors from scRNA-seq data
 ](https://www.nature.com/articles/s41467-023-36790-9)
