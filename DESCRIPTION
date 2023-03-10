@@ -13,7 +13,7 @@ Imports:
     pheatmap,
     forcats,
     parallel,
-    dplyr,
+    dplyr (== 1.0.5),
     methods,
     fgsea,
     yaGST,
