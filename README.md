@@ -75,6 +75,14 @@ seurObj <-Seurat::AddMetaData(seurObj, metadata = results)
 - [Multi-sample analysis (2 samples)](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamplesHeadNeck.html)
 - [Multi-sample analysis (3 samples)](http://htmlpreview.github.io/?https://github.com/AntonioDeFalco/SCEVAN/blob/main/vignettes/multiSamples.html)
 
+## Docker
+We provide a ready-to-run Docker container that includes SCEVAN R package and dependencies. 
+Example of usage:
+
+```
+docker run -v /Users/antonio/SCEVAN_vignette1:/home/SCEVAN_vignette1 -it anthonyphis/r_scevan:latest Rscript /home/SCEVAN_vignette1/script_vignette1.R
+```
+
 ## Sample Datasets
 
 We provide some pre-processed samples used in the examples (vignettes):
