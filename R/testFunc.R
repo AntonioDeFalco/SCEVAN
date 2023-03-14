@@ -892,6 +892,17 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
 
 
     
+#' annoteBandOncoHeat Annotate with chromosome bands the data frame with difference copy number alterations between subclones
+#'
+#' @param mtx_annot Annotation matrix
+#' @param diffSub Data frame with difference copy number alterations between subclones
+#' @param nSub Number of subclones 
+#' @param organism Organism to be analysed (default = "human")
+#'
+#' @return
+#' @export
+#'
+#' @examples
 annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub, organism = "human"){
   
   diffSub <- diffSub[unlist(lapply(diffSub, function(x) nrow(x)>0))]
