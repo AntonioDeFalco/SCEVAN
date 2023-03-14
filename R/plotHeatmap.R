@@ -961,6 +961,73 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL){
 }
 
 
+plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./output/", colors_samp = NULL){
+  
+  allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[1-9]_CN.seg") )
+  segmList <- lapply(allFile, function(i) read.table(paste0(pathOutput,i), sep="\t", header=TRUE, as.is=TRUE))
+  
+  segmList <- lapply(segmList, function(x) {
+    #colnames(x)[2] <- "Start"
+    colnames(x)[5] <- "Mean"
+    
+    x[x$CN==2,]$Mean <- 0
+    x$CN <- x$Mean
+
+    colnames(x)[4] <- "Mean"
+    as.data.frame(x)
+  })
+  
+  names(segmList) <- paste0("subclone", 1:nSub)
+  
+  segmList <- lapply(segmList, function(x) {
+    x <- modifySEG(x)
+    x <- modifyPOS(x, organism)
+  })
+  
+  minPos <- 1
+  add_chr <- sizeGRCh38
+  add_chr <- (add_chr$Size/1000)
+  maxPos <- sum(add_chr)
+  
+  dfL <- lapply(segmList, function(x) {
+    df <- as.data.frame(approx(x$Pos,x$Mean, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
+    colnames(df) <- c("Pos","Mean")
+    df$Mean[is.na(df$Mean)] <- 0
+    return(df)
+  })
+  
+  segm2_pos <- segmList[[grep("subclone1",names(dfL))]]
+  df <- lapply(1:nSub, function(x) {
+    subb <- paste0("subclone",x)
+    dfL[[grep(subb,names(dfL))]]
+  })
+  
+  
+  df_VEGAchr <- as.data.frame(approx(segm2_pos$Pos,segm2_pos$Chr, seq(minPos,maxPos, length.out = 1000000), ties = "ordered"))
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 12, name = "RdBu")))(n = 999)
+  
+  chr <- as.numeric(df_VEGAchr$y) %% 2+1
+  rbPal1 <- colorRampPalette(c('black','grey'))
+  CHR <- rbPal1(2)[as.numeric(chr)]
+  chr1 <- cbind(CHR,CHR)
+  
+  if(length(colors_samp)==0) colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
+
+  cells <- rbind(colors_samp(nSub),colors_samp(nSub))
+
+  df_VEGAchr$y[is.na(df_VEGAchr$y)] <- 0
+  
+  png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
+  heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",
+            cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
+            ColSideColors=chr1,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Sample:", samp), cex.main=4, margins=c(10,10), key=FALSE,
+            notecol="black",col=my_palette, RowSideColors=cells)
+  dev.off()
+  
+  
+}
+
 
 plotCNAlineOnlyTumor <- function(samp){
   

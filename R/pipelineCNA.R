@@ -225,6 +225,8 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         #diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
+        plotConsensusCNA(samp = sample, nSub = res_subclones$n_subclones, organism = organism)
+        
         perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
         
         oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
