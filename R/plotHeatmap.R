@@ -1074,11 +1074,13 @@ plotOncoHeat <- function(oncoHeat, nSub, samp, annotdf, mycolors, organism = "hu
   }
   
   png(paste("./output/",samp,"OncoHeat2.png",sep=""), height=2350, width=1050, res=150)
-  pp <- pheatmap::pheatmap(t(oncoHeat), color = legendColors, cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = legendBreaks, legend_labels = legendLabels,cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
-  h = grid::convertHeight(sum(pp$gtable$heights), "in", TRUE)
-  w = grid::convertWidth(sum(pp$gtable$widths), "in", TRUE)
-  ggplot2::ggsave(paste("./output/",samp,"OncoHeat.png",sep=""), device = "png", pp$gtable, width=w, height=h, dpi=300)
+  plotHeatmapOncoHeat <- pheatmap::pheatmap(t(oncoHeat), color = legendColors, cluster_rows = FALSE, cluster_cols = FALSE, annotation_col = annotdf, annotation_colors = mycolors, legend_breaks = legendBreaks, legend_labels = legendLabels,cellwidth = 30, annotation_legend = TRUE, fontsize = 14, labels_col = rep("",nrow(oncoHeat)))  
+  h = grid::convertHeight(sum(plotHeatmapOncoHeat$gtable$heights), "in", TRUE)
+  w = grid::convertWidth(sum(plotHeatmapOncoHeat$gtable$widths), "in", TRUE)
+  ggplot2::ggsave(paste("./output/",samp,"OncoHeat.png",sep=""), device = "png", plotHeatmapOncoHeat$gtable, width=w, height=h, dpi=300)
   dev.off()
+  
+  save(oncoHeat, plotHeatmapOncoHeat, file = paste0("./output/",samp,"PlotOncoHeat.RData"))
 }
 
 
