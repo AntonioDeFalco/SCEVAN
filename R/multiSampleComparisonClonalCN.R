@@ -76,7 +76,7 @@ plotAllClonalCN <- function(samples, name){
 #'
 #' @examples 
 #' 
-multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", organism = "human" , par_cores = 20){
+multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", organism = "human" , par_cores = 20, plotTree = TRUE){
 
   resList <- lapply(names(listCountMtx), function(x) {
     pipelineCNA(listCountMtx[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism=organism)
@@ -109,6 +109,8 @@ multiSampleComparisonClonalCN <- function(listCountMtx, analysisName = "all", or
   plotOncoHeatSubclones(oncoHeat, length(names(listCountMtx)), analysisName, NULL, organism)
   
   plotAllClonalCN(names(listCountMtx), name = analysisName)
+  
+  if(length(names(listCountMtx))>2 & plotTree) plotCloneTreeNew(names(listCountMtx), CLONAL_MULTI = TRUE)
   
   for(i in 1:length(names(listCountMtx))){
     names(diffList) <- gsub(paste0("subclone",i), names(listCountMtx)[i], names(diffList))
