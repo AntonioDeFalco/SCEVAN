@@ -1287,7 +1287,7 @@ plotCloneTree <- function(sample,res_subclones){
 }
 
 
-plotCloneTreeNew <- function(sample, res_subclones = 0, CLONAL_MULTI = FALSE){
+plotCloneTreeNew <- function(sample, res_subclones = 0, CLONAL_MULTI = FALSE, analysisName = ""){
   
   library(tidytree)
   library(ape)
@@ -1304,6 +1304,7 @@ plotCloneTreeNew <- function(sample, res_subclones = 0, CLONAL_MULTI = FALSE){
         res_subclones <- c()
         res_subclones$n_subclones <- length(samples)
       }else{
+        analysisName <- sample
         segmList <- lapply(1:res_subclones$n_subclones, function(x) read.table(paste0("./output/",sample,"_subclone",x,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE))
         names(segmList) <- paste0(" ",1:res_subclones$n_subclones," ")
       }
@@ -1350,10 +1351,10 @@ plotCloneTreeNew <- function(sample, res_subclones = 0, CLONAL_MULTI = FALSE){
       
       colors <- colors_samp(res_subclones$n_subclones)
       
-      png(paste("./output/",sample,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
+      png(paste("./output/",analysisName,"CloneTree.png",sep=""), height=1650, width=1650, res=200)
       
       pp <- ggtree(tree, layout="daylight", size = 2) + 
-        ggtitle(paste0(sample,"-Clone Tree")) + 
+        ggtitle(paste0(analysisName,"-Clone Tree")) + 
         geom_tiplab(aes(fill=group), geom = "label", size = 4) +
         scale_fill_manual(values=colors) + 
         theme_tree2(legend.position = "none") + 
@@ -1361,7 +1362,7 @@ plotCloneTreeNew <- function(sample, res_subclones = 0, CLONAL_MULTI = FALSE){
       
       #plot(pp)
       
-      plot(pp + xlim_expand(c(-5, 5), 'Dot'))
+      plot(pp + xlim_expand(c(-50, 50), 'Dot'))
       
       dev.off()
     },
