@@ -205,7 +205,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if(res_subclones$n_subclones>1){
           #res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
           
-          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub)
+          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub, organism = organism)
           
           sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
           
