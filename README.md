@@ -46,6 +46,7 @@ results <- pipelineCNA(count_mtx)
 A single call (multiSampleComparisonClonalCN) allows the comparison of clonal profiles of multiple samples.
 
 - ***listCountMtx*** : Named list of raw count matrix of samples to be analysed
+- ***listNormCells*** : List of normal cells of each samples to be analysed
 - ***analysisName*** : Name of the analysis (optional)
 - ***organism*** : Organism to be analysed (optional - "mouse" or "human" - default "human")
 - ***par_cores*** : Number of cores (default 20)
