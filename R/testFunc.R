@@ -919,7 +919,7 @@ annoteBandOncoHeat <- function(mtx_annot,diffSub, nSub, organism = "human"){
           found_genes <- intersect(geneToAnn,biomartGeneInfo$geneSymbol)
           min_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[1]),]$band 
           max_band <- biomartGeneInfo[which(biomartGeneInfo$geneSymbol %in% found_genes[length(found_genes)]),]$band 
-          band_str <- paste(min_band,max_band, sep = "-")
+          band_str <- paste(min_band,max_band, sep = "-")[1]
           diffSub[[elem]][r,1] <- paste0(diffSub[[elem]][r,1], " (", band_str, ") ")
         }
       }else{
