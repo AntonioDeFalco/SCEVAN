@@ -963,7 +963,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL){
 
 plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./output/", colors_samp = NULL){
   
-  allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[1-9]_CN.seg") )
+  allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[1-9]{1,2}_CN.seg") )
   segmList <- lapply(allFile, function(i) read.table(paste0(pathOutput,i), sep="\t", header=TRUE, as.is=TRUE))
   
   segmList <- lapply(segmList, function(x) {
