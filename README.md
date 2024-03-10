@@ -69,6 +69,22 @@ seurObj <- Seurat::CreateSeuratObject(count_mtx, meta.data = results)
 #or add SCEVAN info to an existing Seurat object
 seurObj <-Seurat::AddMetaData(seurObj, metadata = results)
 ```
+If you want to plot CN information at the single-cell level, you can obtain the region of the alteration of interest from the *.seg file and plot the inferred CN ratio from CNA matrix, for example, like this:
+
+```
+load("output/MGH106_count_mtx_annot.RData")
+load("output/MGH106_CNAmtx.RData")
+
+chr3 <- apply(CNA_mtx_relat[count_mtx_annot$seqnames==3 & count_mtx_annot$start>=158644278 & count_mtx_annot$end<=194498364,], 2, mean)
+chr3 <- chr3[rownames(seur_obj@meta.data)]
+names(chr3) <- rownames(seur_obj@meta.data)
+chr3 <- as.data.frame(chr3)
+
+seur_obj <- AddMetaData(seur_obj, metadata = chr3)
+Seurat::FeaturePlot(seur_obj, "chr3", cols = c("gray", "red"))
+```
+![image](https://github.com/AntonioDeFalco/SCEVAN/assets/11536289/d52b0656-c656-4e80-8d32-a6aeeb6888fd)
+
 
 ## Usage examples (vignettes)
 
