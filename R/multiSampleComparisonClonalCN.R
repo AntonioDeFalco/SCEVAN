@@ -76,11 +76,75 @@ plotAllClonalCN <- function(samples, name){
 #'
 #' @examples 
 #' 
-multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, analysisName = "all", organism = "human" , par_cores = 20, plotTree = TRUE){
+multiSampleComparisonClonalCN <- function(listCountMtx, 
+                                          listNormCells = NULL, 
+                                          analysisName = "all", 
+                                          organism = "human" , 
+                                          par_cores = 20, 
+                                          plotTree = TRUE,
+                                          SUBCLONES = FALSE
+                                          ) {
 
-  resList <- lapply(names(listCountMtx), function(x) {
-    pipelineCNA(listCountMtx[[x]], norm_cell = listNormCells[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism=organism)
-  })
+  # resList <- lapply(names(listCountMtx), function(x) {
+  #   pipelineCNA(listCountMtx[[x]], 
+  # norm_cell = listNormCells[[x]], 
+  # sample = x, 
+  # SUBCLONES = FALSE, 
+  # ClonalCN = TRUE, 
+  # par_cores = par_cores, 
+  # organism=organism)
+  # })
+
+  dir <- "samples/"
+
+  if (!dir.exists(dir_path)) {
+  dir.create(dir)
+  }
+
+  for(x in names(listCountMtx)) {
+  cat(paste("\n 1. Current File name ....\n",x))
+  # Construct the file path with the sample name
+  file_path <- paste0(dir, x, ".rds")
+  
+  # Check if the file already exists
+  if(file.exists(file_path)) {
+    # Skip the rest of this loop iteration if the file exists
+    cat(paste("\n 2.", x ,"File Already exists....\n"))
+    next
+
+  }
+  
+  # Execute the pipelineCNA function only if the file does not exist
+  result <- pipelineCNA(
+    listCountMtx[[x]],
+    sample = x,
+    par_cores = par_cores,
+    norm_cell = listNormCells[[x]],
+    SUBCLONES = FALSE,
+    beta_vega = 0.5,
+    ClonalCN = TRUE,
+    plotTree = plotTree,
+    AdditionalGeneSets = NULL,
+    organism = organism
+  )
+  
+  # Save the result as an RDS file
+  saveRDS(result, file = file_path)
+  
+  # Remove the result object from memory
+  rm(result)
+  
+  # Call the garbage collector to reclaim unused memory
+  gc()
+}
+
+  files <- list.files(dir, pattern = "\\.rds$", full.names = TRUE)
+  resList<- list()
+
+  for(i in 1:length(files)) {
+    resList[[i]] <- readRDS(files[i])
+  }
+
   names(resList) <- names(listCountMtx)
   
   sampleAlterList <- lapply(names(listCountMtx), function(x) {
