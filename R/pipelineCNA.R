@@ -25,6 +25,8 @@ NULL
 #' @param AdditionalGeneSets list of additional signatures of normal cell types (optional)
 #' @param SCEVANsignatures FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)
 #' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
+#' @param ngenes_chr Minimum number of genes expressed on chromosome (optional - default 5)
+#' @param perc_genes Minimum percentage gene expressed in each cell (optional - default 10)
 #'
 #' @return
 #' @export
