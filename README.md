@@ -94,6 +94,11 @@ Seurat::FeaturePlot(seur_obj, "chr3", cols = c("gray", "red"))
 
 ## Docker
 We provide a ready-to-run Docker container that includes SCEVAN R package and dependencies. 
+
+```
+docker pull anthonyphis/r_scevan
+```
+
 Example of usage:
 
 ```
