@@ -93,7 +93,7 @@ float pval_threshold;
   void compute_pvalue();
   float calc_mean(float vals[], int n_elem);
   float calc_std(float vals[], int n_elem);
-  int generate_binomial(float theta);
+  int generate_binomial(float theta, int seed);
   void write_segementation();
   /*--------End Funtion Headers -------------------*/
     
