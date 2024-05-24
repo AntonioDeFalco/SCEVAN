@@ -76,6 +76,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     #if(packageVersion("scran")>"1.16.0"){
     #  graph <- scran::buildSNNGraph(relativeSmoothMtx, k = 10, type = "number",  d =dd)#, type = "number")
     #}else{
+    set.seed(1)
     graph <- buildSNNGraph(relativeSmoothMtx, k = 10, type = "number", d =dd)
     #}install.packages("igraph")
     lc <- cluster_louvain(graph)
