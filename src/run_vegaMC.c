@@ -93,7 +93,7 @@ float pval_threshold;
   void compute_pvalue();
   float calc_mean(float vals[], int n_elem);
   float calc_std(float vals[], int n_elem);
-  int generate_binomial(float theta, int seed);
+  int generate_binomial(float theta);
   void write_segementation();
   /*--------End Funtion Headers -------------------*/
     
@@ -251,12 +251,12 @@ float pval_threshold;
       count_loh = 0;
       for (j = 0; j < num_samples; j++) {
         theta = (float) num_loss_sample[j] / num_seg_regions;
-        count_loss += generate_binomial(theta, k+j+1);
+        count_loss += generate_binomial(theta);
         theta = (float) num_gain_sample[j] / num_seg_regions;
-        count_gain += generate_binomial(theta, k+j+2);
+        count_gain += generate_binomial(theta);
         if (baf[0] == 1) {
           theta = (float) num_loh_sample[j] / num_seg_regions;
-          count_loh += generate_binomial(theta, k+j+3);
+          count_loh += generate_binomial(theta);
         }
       }
       null_dist_loss[count_loss] += 1;
@@ -685,9 +685,8 @@ float pval_threshold;
     
   }
   
-  int generate_binomial(float theta, int seed)
+  int generate_binomial(float theta)
   {
-    srand(seed);
     float r = (float) rand() / RAND_MAX;
     int r2 = (int) (r * ROUND_CNST);
     r = (float) r2 / ROUND_CNST;
