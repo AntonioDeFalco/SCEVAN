@@ -251,12 +251,12 @@ float pval_threshold;
       count_loh = 0;
       for (j = 0; j < num_samples; j++) {
         theta = (float) num_loss_sample[j] / num_seg_regions;
-        count_loss += generate_binomial(theta);
+        count_loss += generate_binomial(theta, k+j+1);
         theta = (float) num_gain_sample[j] / num_seg_regions;
-        count_gain += generate_binomial(theta);
+        count_gain += generate_binomial(theta, k+j+2);
         if (baf[0] == 1) {
           theta = (float) num_loh_sample[j] / num_seg_regions;
-          count_loh += generate_binomial(theta);
+          count_loh += generate_binomial(theta, k+j+3);
         }
       }
       null_dist_loss[count_loss] += 1;
@@ -685,8 +685,9 @@ float pval_threshold;
     
   }
   
-  int generate_binomial(float theta)
+  int generate_binomial(float theta, int seed)
   {
+    srand(seed);
     float r = (float) rand() / RAND_MAX;
     int r2 = (int) (r * ROUND_CNST);
     r = (float) r2 / ROUND_CNST;
