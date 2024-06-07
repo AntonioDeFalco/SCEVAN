@@ -29,8 +29,13 @@ annotateGenes <- function(mtx, organism = "human"){
   genes_inters <- intersect(rownames(mtx), edb[[use_geneID]])
   mtx <- mtx[which(rownames(mtx) %in% genes_inters),]
   edb <- edb[which(as.vector(edb[[use_geneID]]) %in% genes_inters),]
-  edb <- edb[!duplicated(edb$gene_name),]
   edb <- edb[order(match(edb[[use_geneID]], rownames(mtx))),]
+  
+  Dupl_GeneName <- duplicated(edb$gene_name)
+  edb <- edb[!Dupl_GeneName,]
+  mtx <- mtx[!Dupl_GeneName,]
+
+  
   if(class(mtx)[1]=="dgCMatrix"){
     mtx_annot <- cbind(edb, as.matrix(mtx))
   }else{
