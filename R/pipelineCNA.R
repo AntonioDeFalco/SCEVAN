@@ -27,7 +27,7 @@ NULL
 #' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
 #' @param ngenes_chr Minimum number of genes expressed on chromosome (optional - default 5)
 #' @param perc_genes Minimum percentage gene expressed in each cell (optional - default 10)
-#' @param FIXED_NORMAL_CELLS TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)
+#' @param FIXED_NORMAL_CELLS TRUE if norm_cell vector to be used as fixed reference, if you are only interested in clonal structure and not normal/tumor classification (default FALSE)
 #'
 #' @return
 #' @export

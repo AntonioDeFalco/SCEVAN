@@ -48,7 +48,7 @@ pipelineCNA(
 
 \item{perc_genes}{Minimum percentage gene expressed in each cell (optional - default 10)}
 
-\item{FIXED_NORMAL_CELLS}{TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)}
+\item{FIXED_NORMAL_CELLS}{TRUE if norm_cell vector to be used as fixed reference, if you are only interested in clonal structure and not normal/tumor classification (default FALSE)}
 }
 \description{
 pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.

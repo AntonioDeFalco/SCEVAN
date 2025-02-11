@@ -29,7 +29,8 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 - ***count_mtx*** : Count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 - ***sample*** : Sample name to save results (optional)
 - ***par_cores*** : Number of cores to run the pipeline  (optional - default 20)
-- ***norm_cells*** : Vector of confident normal cells if known, to be used as reference (optional)
+- ***norm_cells*** :Vector of possible known normal cells to be used as confident normal cells (optional)
+- ***FIXED_NORMAL_CELLS*** : TRUE if norm_cell vector to be used as fixed reference, if you are only interested in clonal structure and not normal/tumor classification (default FALSE)
 - ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)
 - ***beta_vega*** : Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
 - ***ClonalCN*** :  Get clonal CN profile inference from all tumour cells (optional)
