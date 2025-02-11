@@ -15,7 +15,10 @@ pipelineCNA(
   plotTree = TRUE,
   AdditionalGeneSets = NULL,
   SCEVANsignatures = TRUE,
-  organism = "human"
+  organism = "human",
+  ngenes_chr = 5,
+  perc_genes = 10,
+  FIXED_NORMAL_CELLS = FALSE
 )
 }
 \arguments{
@@ -25,7 +28,7 @@ pipelineCNA(
 
 \item{par_cores}{Number of cores to run the pipeline (optional - default 20)}
 
-\item{norm_cell}{Vector of normal cells if the classification is already known and you are only interested in the clonal structure (optional)}
+\item{norm_cell}{Vector of possible known normal cells to be used as confident normal cells (optional)}
 
 \item{SUBCLONES}{Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)}
 
@@ -40,6 +43,12 @@ pipelineCNA(
 \item{SCEVANsignatures}{FALSE if you only want to use only the signatures specified in AdditionalGeneSets (default TRUE)}
 
 \item{organism}{Organism to be analysed (optional - "mouse" or "human" - default "human")}
+
+\item{ngenes_chr}{Minimum number of genes expressed on chromosome (optional - default 5)}
+
+\item{perc_genes}{Minimum percentage gene expressed in each cell (optional - default 10)}
+
+\item{FIXED_NORMAL_CELLS}{TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)}
 }
 \description{
 pipelineCNA Executes the entire SCEVAN pipeline that classifies tumour and normal cells from the raw count matrix, infer the clonal profile of cancer cells and looks for possible sub-clones in the tumour cell matrix automatically analysing the specific and shared alterations of each subclone and a differential analysis of pathways and genes expressed in each subclone.

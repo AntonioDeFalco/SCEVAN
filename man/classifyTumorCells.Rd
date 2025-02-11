@@ -14,7 +14,8 @@ classifyTumorCells(
   norm_cell_names = NULL,
   SEGMENTATION_CLASS = TRUE,
   SMOOTH = TRUE,
-  beta_vega = 0.5
+  beta_vega = 0.5,
+  FIXED_NORMAL_CELLS = FALSE
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ classifyTumorCells(
 \item{SMOOTH}{Boolean value to perform smoothing (default TRUE)}
 
 \item{beta_vega}{specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5)}
+
+\item{FIXED_NORMAL_CELLS}{TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)}
 
 \item{gr_truth}{ground truth of classification (optional)}
 }
