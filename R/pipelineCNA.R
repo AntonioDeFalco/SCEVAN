@@ -17,7 +17,7 @@ NULL
 #' @param count_mtx Raw count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 #' @param sample Sample name to save results (optional)
 #' @param par_cores Number of cores to run the pipeline (optional - default 20)
-#' @param norm_cell Vector of normal cells if the classification is already known and you are only interested in the clonal structure (optional)
+#' @param norm_cell Vector of possible known normal cells to be used as confident normal cells (optional)
 #' @param SUBCLONES Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)
 #' @param beta_vega Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
 #' @param ClonalCN Get clonal CN profile inference from all tumour cells (optional)
@@ -27,13 +27,14 @@ NULL
 #' @param organism Organism to be analysed (optional - "mouse" or "human" - default "human")
 #' @param ngenes_chr Minimum number of genes expressed on chromosome (optional - default 5)
 #' @param perc_genes Minimum percentage gene expressed in each cell (optional - default 10)
+#' @param FIXED_NORMAL_CELLS TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)
 #'
 #' @return
 #' @export
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE){
   
   dir.create(file.path("./output"), showWarnings = FALSE)
   
@@ -44,8 +45,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, ngenes_chr = ngenes_chr, perc_genes = (perc_genes/100))
   
   if(normalNotKnown) norm_cell <- names(res_proc$norm_cell)
-
-  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega)
+  
+  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega, FIXED_NORMAL_CELLS = FIXED_NORMAL_CELLS)
   
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
   classDf <- data.frame(class = rep("filtered", length(colnames(res_proc$count_mtx))), row.names = colnames(res_proc$count_mtx))
@@ -55,11 +56,11 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
-
+  
   if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism)
   
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
-
+  
   if (SUBCLONES) {
     res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism)
     #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
@@ -97,7 +98,7 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   # hcc2 <- cutree(hcc,2)
   # clonalClust <- as.integer(names(which.max(table(hcc2))))
   # mtx <- mtx[,names(hcc2[hcc2==clonalClust])]
- 
+  
   mtx_vega <- cbind(res_class$CNAmat[,1:3], mtx)
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)

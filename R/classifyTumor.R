@@ -10,7 +10,7 @@
 #'
 removeSyntheticBaseline <- function(count_mtx, par_cores = 20){ 
   
-
+  
   d <- parallelDist::parDist(t(count_mtx), threads = par_cores) 
   hcc <- hclust(d, method="ward.D2")
   sCalinsky <- calinsky(hcc, d, gMax = 10)
@@ -47,23 +47,23 @@ removeSyntheticBaseline <- function(count_mtx, par_cores = 20){
 computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
   
   n <- nrow(count_mtx)
-
+  
   startBreaks <- breaks[-length(breaks)]
   endBreaks <- c(startBreaks[-1])
   endBreaks <- c(endBreaks-1,n)
-
+  
   funcCNA <- function(z){
-
+    
     x<-numeric(n)
     for (i in 1:length(startBreaks)){
-
+      
       if(segmAlt[i]){
         #meanValue <- (mean(count_mtx[breaks[i]:breaks[i+1],z]) - mean(count_mtx[,z])) / sd(count_mtx[,z])
         meanValue <- mean(count_mtx[startBreaks[i]:endBreaks[i],z])
       }else{
         meanValue <- 0
       }
-
+      
       x[startBreaks[i]:endBreaks[i]] <- meanValue
     }
     return(x)
@@ -157,13 +157,14 @@ classifyCluster <- function(hcc2, norm_cell_names){
 #' @param SEGMENTATION_CLASS Boolean value to perform segmentation before classification (default TRUE)
 #' @param SMOOTH Boolean value to perform smoothing (default TRUE)
 #' @param beta_vega specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (default 0.5) 
-#'
+#' @param FIXED_NORMAL_CELLS TRUE if vector of norm_cell to be used as reference fixed, if you are interested only in clonal structure e non nella classificazione normal/tumor (default FALSE)
+#' 
 #' @return
 #'
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = 0.5){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = 0.5, FIXED_NORMAL_CELLS = FALSE){
   
   set.seed(1)
   
@@ -223,8 +224,8 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     rm(test.mc)
     colnames(count_mtx_smooth) <- colnames(count_mtx_relat)
     count_mtx_relat <- count_mtx_smooth
-   }
-    
+  }
+  
   ##### Segmentation with VegaMC #####
   
   if(SEGMENTATION_CLASS & length(norm_cell_names) > 0){ #){
@@ -268,7 +269,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     
     plotCNA(annot_mtx$seqnames, CNA_mtx, hcc, sample)
     save(CNA_mtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
-
+    
   } else {
     
     if(distance=="euclidean"){
@@ -280,7 +281,14 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     hcc2 <- cutree(hcc,2)
     names(hcc2) <- colnames(CNA_mtx)
     
-    cellType_pred <- classifyCluster(hcc2, norm_cell_names)
+    if(FIXED_NORMAL_CELLS){
+      cellType_pred <- names(hcc2)
+      cellType_pred[!cellType_pred %in% norm_cell_names] <- "malignant"
+      cellType_pred[cellType_pred %in% norm_cell_names] <- "non malignant"
+      names(cellType_pred) <- names(hcc2)
+    }else{
+      cellType_pred <- classifyCluster(hcc2, norm_cell_names)
+    }
     
     ################removed baseline adjustment
     CNA_mtx_relat <- CNA_mtx-apply(CNA_mtx[,which(cellType_pred=="non malignant")], 1, mean)
@@ -305,7 +313,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     hcc2 <- cutree(hcc,2)
     names(hcc2) <- colnames(CNA_mtx_relat)
     
-    cellType_pred <- classifyCluster(hcc2, norm_cell_names)
+    if(!FIXED_NORMAL_CELLS) cellType_pred <- classifyCluster(hcc2, norm_cell_names)
     
     res <- cbind(names(cellType_pred), cellType_pred)
     colnames(res) <- c("cell.names", "pred")

@@ -479,19 +479,19 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NUL
   cells <- rbind(prediction,prediction)
   
   if(length(pred)>0){
-
-  prediction <- rbPal5(2)[as.numeric(factor(pred))]
-  cells <- rbind(prediction,prediction)
-  
-  if(length(ground_truth) > 0){
-    classCorr <- ground_truth[names(pred)]
-    classCorr[classCorr!="malignant"] <- "non malignant"
     
-    rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
-    Ground_Truth <- rbPal5(2)[as.numeric(factor(classCorr))]
-    cells <- rbind(prediction,Ground_Truth)
-  }
-  
+    prediction <- rbPal5(2)[as.numeric(factor(pred))]
+    cells <- rbind(prediction,prediction)
+    
+    if(length(ground_truth) > 0){
+      classCorr <- ground_truth[names(pred)]
+      classCorr[classCorr!="malignant"] <- "non malignant"
+      
+      rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
+      Ground_Truth <- rbPal5(2)[as.numeric(factor(classCorr))]
+      cells <- rbind(prediction,Ground_Truth)
+    }
+    
   }
   
   heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
@@ -509,37 +509,37 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NUL
 
 
 plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, samp, par_cores=20){
-
-chr <- as.numeric(chr_lab) %% 2+1
-rbPal1 <- colorRampPalette(c('black','grey'))
-CHR <- rbPal1(2)[as.numeric(chr)]
-chr1 <- cbind(CHR,CHR)
-
-my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
-col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
-
-hc.clus <- cutree(hcc,n_subclones)
-rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:n_subclones])
-subclones <- rbPal5(n_subclones)[as.numeric(factor(hc.clus))]
-cells <- rbind(subclones,subclones)
-
-if (ncol(mtx_CNA)< 3000){
-  h <- 10
-} else {
-  h <- 15
-}
-
-png(paste("./output/",samp,"heatmap_subclones.png",sep=""), height=h*250, width=4000, res=100)
-
-heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
-          ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
-          notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
-          keysize=1, density.info="none", trace="none",
-          cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
-          symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
-
-dev.off()
-
+  
+  chr <- as.numeric(chr_lab) %% 2+1
+  rbPal1 <- colorRampPalette(c('black','grey'))
+  CHR <- rbPal1(2)[as.numeric(chr)]
+  chr1 <- cbind(CHR,CHR)
+  
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
+  col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
+  
+  hc.clus <- cutree(hcc,n_subclones)
+  rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:n_subclones])
+  subclones <- rbPal5(n_subclones)[as.numeric(factor(hc.clus))]
+  cells <- rbind(subclones,subclones)
+  
+  if (ncol(mtx_CNA)< 3000){
+    h <- 10
+  } else {
+    h <- 15
+  }
+  
+  png(paste("./output/",samp,"heatmap_subclones.png",sep=""), height=h*250, width=4000, res=100)
+  
+  heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
+            ColSideColors=chr1,RowSideColors=cells,Colv=NA, Rowv=TRUE,
+            notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
+            keysize=1, density.info="none", trace="none",
+            cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", samp), cex.main=4, margins=c(10,10))
+  
+  dev.off()
+  
 }
 
 plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
@@ -584,7 +584,7 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   plot(pp)
   dev.off()
   if(length(unique(clustersSub))>0){
-
+    
     #tsne <- Rtsne(t(as.matrix(CNAmat[,tum_cells])))
     
     tsne <- tryCatch(
@@ -617,7 +617,7 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
 }
 
 plotCNsubclones <- function(samp) {
-
+  
   segmentation <- read.table(paste0("./output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   segmentation2 <- read.table(paste0("./output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   
@@ -695,7 +695,7 @@ plotCNsubclones <- function(samp) {
   
   legend("topright", inset=c(0,0), legend=c("Shared Gain", "Shared Loss", "Subclone 1", "Subclone 2"),
          col=c("red", "blue", "darkgreen", "purple"), lty=1, cex=0.7)
-
+  
 }
 
 plotCN <- function(segmentation) {
@@ -723,10 +723,10 @@ plotCN <- function(segmentation) {
   }
   
   segm <- segmPos(segmentation)
-
+  
   df <- as.data.frame(approx(segm$Pos,segm$Mean, seq(min(segm$Pos), max(segm$Pos), length.out = 1000), ties = "ordered"))
   colnames(df) <- c("Pos","Mean")
-
+  
   plot(df, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm[,2])+105000,max(segm[,2])-105000))#, ylim = c(min(segm[,3]-0.3),max(segm[,3])+0.3))
   
   plotSeg <- function(segm, col_lin){
@@ -739,10 +739,10 @@ plotCN <- function(segmentation) {
     lines(segmentationLoss$Pos,segmentationLoss$Mean, type="l", col=col_lin[2], lwd=3, pch=19)
   }
   
-
+  
   
   plotSeg(df, c("red","blue"))
- 
+  
   abline(h = 0, col = "gray60", lwd = 5)
   
   extr_chr <- segm[unlist(lapply(1:22, function(x) max(which(segm$CHR==x)))),]$Pos
@@ -834,7 +834,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL){
   for(i in 1:nSub){
     segmList[[i]][!(abs(segmList[[i]]$Mean)>0.10 | (segmList[[i]]$L.pv<=0.5 | segmList[[i]]$G.pv<=0.5)),]$Mean <- 0
   }
-
+  
   segmList <- lapply(segmList, function(x) segmPos(x))
   
   minPos <- 1
@@ -972,7 +972,7 @@ plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./out
     
     x[x$CN==2,]$Mean <- 0
     x$CN <- x$Mean
-
+    
     colnames(x)[4] <- "Mean"
     as.data.frame(x)
   })
@@ -1012,9 +1012,9 @@ plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./out
   chr1 <- cbind(CHR,CHR)
   
   if(length(colors_samp)==0) colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 12, name = "Paired")[1:nSub])
-
+  
   cells <- rbind(colors_samp(nSub),colors_samp(nSub))
-
+  
   df_VEGAchr$y[is.na(df_VEGAchr$y)] <- 0
   
   png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
@@ -1069,7 +1069,7 @@ plotCNAlineOnlyTumor <- function(samp){
   dev.off()
   
   df_share <- dfL
-
+  
   png(paste("./output/",samp,"plotCNline.png",sep=""), height=1050, width=2250, res=250)
   
   plot(df_share, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm2_pos[,2])+105000,max(segm2_pos[,2])-105000), main = samp)
@@ -1210,7 +1210,7 @@ modifyNameCNV <- function(CNV, CN = TRUE){
 
 
 plotCloneTree <- function(sample,res_subclones){
-    
+  
   library(tidytree)
   library(ape)
   library(ggtree)
@@ -1275,15 +1275,121 @@ plotCloneTree <- function(sample,res_subclones){
     error = function(e){ 
       print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5) try downgrading dprly to 1.0.5 or upgrading ggtree")
     }
-
-    )
+    
+  )
   
   #if(packageVersion("dplyr")<="1.0.5"){
   
   
- # }else{
-#    print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5)")
-#  }
+  # }else{
+  #    print("Phylogenic tree cannot be plotted (ggtree requires dplyr version 1.0.5)")
+  #  }
+}
+
+
+plotCNA_withAnnotCells <- function(SampleName, metadata,COLUMNS_TO_PLOT,outputPATH = "./output/", SUBCLONE = FALSE, hcc = NULL, plotNAME = "heatmap_with_annotation.png", par_cores = 20){
+  
+  if(SUBCLONE){
+    load(paste0(outputPATH,SampleName, "_CNAmtxSubclones.RData"))
+    mtx_CNA <- results.com
+  }else{
+    load(paste0(outputPATH,SampleName, "_CNAmtx.RData"))
+    mtx_CNA <- CNA_mtx_relat
+  }
+  
+  load(paste0(outputPATH,SampleName, "_count_mtx_annot.RData"))
+  
+  my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
+  
+  chr_lab <- count_mtx_annot$seqnames
+  chr <- as.numeric(chr_lab) %% 2+1
+  rbPal1 <- colorRampPalette(c('black','grey'))
+  CHR <- rbPal1(2)[as.numeric(chr)]
+  chr1 <- cbind(CHR,CHR)
+  
+  if (ncol(mtx_CNA)< 3000){
+    h <- 10
+  } else {
+    h <- 15
+  }
+  col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
+  
+  if(is.null(hcc)){
+    set.seed(1)
+    distance <- "euclidean"
+    hcc <- hclust(parallelDist::parDist(t(mtx_CNA),threads =par_cores, method = distance), method = "ward.D")
+  }
+  
+  metadata <- metadata[colnames(mtx_CNA),]
+  library(RColorBrewer)
+  df_colors <- brewer.pal.info[brewer.pal.info$category=="qual",]
+  OK_IND_sub <- which(rownames(df_colors)=="Paired")
+  df_colors_subclones <- df_colors[OK_IND_sub,]
+  df_colors <- df_colors[-c(OK_IND_sub),]
+  
+  all_colors <- lapply(COLUMNS_TO_PLOT, function(VARIABLE_NAME){
+    print(VARIABLE_NAME)
+    VARIABLE <- metadata[[VARIABLE_NAME]]
+    
+    if(VARIABLE_NAME == "class"){
+      myColors <- c("darkred", "darkgreen")
+      names(myColors) <- c("tumor", "normal")
+    }else{
+      
+      lenVAR <- length(unique(VARIABLE))
+      
+      if(VARIABLE_NAME=="subclone"){
+        myColors <- brewer.pal(lenVAR,rownames(df_colors_subclones))
+      }else{
+        OK_IND <- which(df_colors$maxcolors>=lenVAR)[1]
+        myColors <- brewer.pal(lenVAR,rownames(df_colors[OK_IND,]))
+        df_colors <<- df_colors[c(-OK_IND),]
+      }
+      
+      VARIABLE <- as.factor(VARIABLE)
+      names(myColors) <- levels(VARIABLE)
+    }
+    
+    colors <- myColors[VARIABLE]
+    names(colors) <- metadata$cell
+    colors
+    list(myColors, colors)
+  })
+  legends <-  lapply(all_colors, function(x) x[[1]])
+  all_colors <- lapply(all_colors, function(x) x[[2]])
+  names(all_colors) <- COLUMNS_TO_PLOT
+  names(legends) <- COLUMNS_TO_PLOT
+  
+  legends <- lapply(legends, function(x){
+    x[!is.na(names(x))]
+  })
+  
+  row_annotation=Reduce(rbind, all_colors)
+  rownames(row_annotation) <- COLUMNS_TO_PLOT
+  
+  # library(SCEVAN)
+  # setwd("/home3/adefalco/SCEVAN_debug")
+  # lapply(as.list(list.files("SCEVAN/R/", pattern = ".R")), function(x) source(paste0("SCEVAN/R/",x)))
+  # 
+  positions <- c("bottomright", "bottom", "bottomleft", "topright", "right", "bottomright")
+  positions <- positions[1:length(legends)]
+  names(positions) <- names(legends)
+  
+  plotLegends <- function(){
+    lapply(names(legends), function(x){
+      (legend(positions[[x]], legend = names(legends[[x]]), fill = legends[[x]], title = x))
+    })
+  }
+  
+  png(paste(outputPATH, SampleName,plotNAME,sep=""), height=h*250, width=4000, res=300)
+  heatmap.3(t(mtx_CNA),dendrogram="r", hcr = hcc,
+            ColSideColors=chr1,RowSideColorsSize = 3, RowSideColors=row_annotation[,colnames(mtx_CNA)],Colv=NA, Rowv=TRUE,
+            notecol="black",col=my_palette,breaks=col_breaks, key=TRUE, chr_lab = chr_lab,
+            keysize=1, density.info="none", trace="none",
+            cexRow=3.0,cexCol=3.0,cex.main=3.0,cex.lab=3.0,
+            symm=F,symkey=F,symbreaks=T,cex=3.0, main=paste("Heatmap ", SampleName), cex.main=4, margins=c(20,20))
+  plotLegends()
+  dev.off()
 }
 
 
