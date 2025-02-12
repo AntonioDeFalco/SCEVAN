@@ -1367,7 +1367,7 @@ plotCNA_withAnnotCells <- function(SampleName, metadata,COLUMNS_TO_PLOT,outputPA
     }
     
     colors <- myColors[VARIABLE]
-    names(colors) <- metadata$cell
+    names(colors) <- rownames(metadata)
     colors
     list(myColors, colors)
   })
