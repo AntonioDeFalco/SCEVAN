@@ -86,6 +86,15 @@ Seurat::FeaturePlot(seur_obj, "chr3", cols = c("gray", "red"))
 ```
 ![image](https://github.com/AntonioDeFalco/SCEVAN/assets/11536289/d52b0656-c656-4e80-8d32-a6aeeb6888fd)
 
+## Plot CNA heatmap with cell annotation (example)
+
+The plotCNA_withAnnotCells function generates a heatmap of the copy number profile for each cell, incorporating cell annotations as tracks.
+
+```
+plotCNA_withAnnotCells(SampleName = "MGH106", metadata = pDataMGH, COLUMNS_TO_PLOT = c("cell.assignment", "GBM.type", "patient"), plotNAME = "MGH106_annot.png"
+```
+
+![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/MGH106_annot.png?raw=true)
 
 ## Usage examples (vignettes)
 
