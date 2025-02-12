@@ -91,7 +91,7 @@ Seurat::FeaturePlot(seur_obj, "chr3", cols = c("gray", "red"))
 The plotCNA_withAnnotCells function generates a heatmap of the copy number profile for each cell, incorporating cell annotations as tracks. The metadata parameter is a data.frame, where row names represent cell names and columns contain annotations. Additionally, setting SUBCLONE = TRUE enables plotting the copy number profile specifically inferred for subclones.
 
 ```
-plotCNA_withAnnotCells(SampleName = "MGH106", metadata = pDataMGH, COLUMNS_TO_PLOT = c("cell.assignment", "GBM.type", "patient"), plotNAME = "MGH106_annot.png"
+plotCNA_withAnnotCells(SampleName = "MGH106", metadata = pDataMGH, COLUMNS_TO_PLOT = c("cell.assignment", "GBM.type", "patient"))"
 ```
 
 ![image](https://github.com/AntonioDeFalco/SCEVAN/blob/main/MGH106_annot.png?raw=true)
