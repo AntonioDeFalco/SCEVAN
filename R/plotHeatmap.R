@@ -1287,6 +1287,22 @@ plotCloneTree <- function(sample,res_subclones){
 }
 
 
+
+#' plotCNA_withAnnotCells allows generating a heatmap of the copy number profile of each cell, adding cell annotations as tracks on the heatmap.
+#'
+#' @param SampleName Sample name used in pipelineCNA
+#' @param metadata data.frame cells (rownames) and annotations (columns)
+#' @param COLUMNS_TO_PLOT columns of metadata to be added as tracks in the heatmap
+#' @param outputPATH output folder of pipelineCNA (optional)
+#' @param SUBCLONE Boolean value TRUE if you are interested in CNA matrix of sublclone and FALSE if you are interested in CNA matrix of all cells.
+#' @param hcc  if you have previously computed clustering for the heatmap (optional - default 0.5)
+#' @param plotNAME name file to save the figure (optional)
+#' @param par_cores number of cores used for clustering (optional - default 20)
+#' 
+#' @return
+#' @export
+#'
+#' @examples plotCNA_withAnnotCells(SampleName, metadata, c("CellType","Tissue","Cluster"))
 plotCNA_withAnnotCells <- function(SampleName, metadata,COLUMNS_TO_PLOT,outputPATH = "./output/", SUBCLONE = FALSE, hcc = NULL, plotNAME = "heatmap_with_annotation.png", par_cores = 20){
   
   if(SUBCLONE){
