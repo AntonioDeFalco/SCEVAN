@@ -29,7 +29,7 @@ A single call (pipelineCNA) allows the execution of the entire analysis of class
 - ***count_mtx*** : Count matrix with genes on rows (both Gene Symbol or Ensembl ID are allowed) and cells on columns.
 - ***sample*** : Sample name to save results (optional)
 - ***par_cores*** : Number of cores to run the pipeline  (optional - default 20)
-- ***norm_cells*** :Vector of possible known normal cells to be used as confident normal cells (optional)
+- ***norm_cells*** : Vector of possible known normal cells to be used as confident normal cells (optional)
 - ***FIXED_NORMAL_CELLS*** : TRUE if norm_cell vector to be used as fixed reference, if you are only interested in clonal structure and not normal/tumor classification (default FALSE)
 - ***SUBCLONES*** : Boolean value TRUE if you are interested in analysing the clonal structure and FALSE if you are only interested in the classification of malignant and non-malignant cells (optional - default TRUE)
 - ***beta_vega*** : Specifies beta parameter for segmentation, higher beta for more coarse-grained segmentation. (optional - default 0.5)
@@ -88,7 +88,7 @@ Seurat::FeaturePlot(seur_obj, "chr3", cols = c("gray", "red"))
 
 ## Plot CNA heatmap with cell annotation (example)
 
-The plotCNA_withAnnotCells function generates a heatmap of the copy number profile for each cell, incorporating cell annotations as tracks.
+The plotCNA_withAnnotCells function generates a heatmap of the copy number profile for each cell, incorporating cell annotations as tracks. The metadata parameter is a data.frame, where row names represent cell names and columns contain annotations. Additionally, setting SUBCLONE = TRUE enables plotting the copy number profile specifically inferred for subclones.
 
 ```
 plotCNA_withAnnotCells(SampleName = "MGH106", metadata = pDataMGH, COLUMNS_TO_PLOT = c("cell.assignment", "GBM.type", "patient"), plotNAME = "MGH106_annot.png"
