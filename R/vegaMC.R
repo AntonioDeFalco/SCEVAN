@@ -6,7 +6,11 @@ vegaMC_R <- function(mtx, output_file_name="output",
                      mart_database="ensembl",
                      ensembl_dataset="hsapiens_gene_ensembl"){
   
-  
+  #TODO - this line checks for empty output string and whether it ends in "/".
+  # most likely for handling how "run_vegaMC" handles the saving later on.
+  # changing the default here to require an input from pipelineCNA would
+  # already fix the problem if the default there is changed to be consistent
+  # across the package.
   if( output_file_name == "" || 
       substr(output_file_name, 
              nchar(output_file_name), nchar(output_file_name)) == "/" ){
@@ -92,6 +96,8 @@ vegaMC_R <- function(mtx, output_file_name="output",
   #segmentation[ind_overflow,2] <- segmentation[ind_overflow,2] + (2 * (maxINT + 1))
   #segmentation[ind_overflow,3] <- segmentation[ind_overflow,3] + (2 * (maxINT + 1))
   
+  #TODO - same thing as above here - changing the default output_file_name
+  # would allow the user to give a specific output dir to write to
   write.table(segmentation, output_file_name, sep="\t", row.names=FALSE,
               col.names=TRUE, quote=FALSE, eol="\n")
   

@@ -1,6 +1,7 @@
 
 
 getCorrelationCN <- function(CNVref, CNVcomp){
+  #TODO - add the standard output dir as var for the function
   
   df_1 <- as.data.frame(approx(CNVcomp$Pos,CNVcomp$Mean, seq(min(CNVref$Pos,CNVcomp$Pos),max(CNVref$Pos,CNVcomp$Pos), by = 1), ties = "ordered"))
   df_2 <- as.data.frame(approx(CNVref$Pos,CNVref$Mean, seq(min(CNVref$Pos,CNVcomp$Pos), max(CNVref$Pos,CNVcomp$Pos), by = 1), ties = "ordered"))
@@ -155,6 +156,8 @@ plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE, CN = 
 
 getScevanCNVfinal <- function(sample , path = "", subclone = NULL){
   if(is.null(subclone)){
+    #TODO
+    # change fro ./output to output dir
     CNV_infer <- read.table(paste0(path,"./output/",sample, "_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
   }else{
     CNV_infer <- read.table(paste0(path,"./output/",sample,"_subclone",subclone,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
@@ -164,6 +167,8 @@ getScevanCNVfinal <- function(sample , path = "", subclone = NULL){
 
 
 getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
+  #TODO the read.table functions also refer to the ./output folder, meanign that 
+  # those need to be changed around as well
   CNV_infer <- read.table(paste0(path,"./output/ ",sample, beta," vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   
   if(filter) CNV_infer[!((CNV_infer$Mean<(-0.10) | CNV_infer$L.pv<0.01) | (CNV_infer$Mean>0.10 | CNV_infer$G.pv<0.01)),]$Mean <- 0 
@@ -247,6 +252,8 @@ plotCNclonal_old <- function(sample,ClonalCN, organism = "human"){
       file = "_fine-grain_"
     }
     
+    #TODO
+    # change from ./output to output_dir
     segm <- getScevanCNV(paste0(sample,name))
     png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
     plotSegmentation(CNV = segm, organism = organism)
@@ -280,6 +287,9 @@ plotCNclonal <- function(sample, ClonalCN, organism = "human"){
     }else{
       segm <- getScevanCNV(paste0(sample,name))
     }
+    
+    #TODO
+    # change from ./output to output_dir
     png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
     plotSegmentation(CNV = segm, organism = organism)
     dev.off()

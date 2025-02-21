@@ -36,6 +36,8 @@ NULL
 
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE){
   
+  #TODO - add conditional to create a var tracking the output dir - this can be 
+  # "./output" or the directory given by the user
   dir.create(file.path("./output"), showWarnings = FALSE)
   
   start_time <- Sys.time()
@@ -80,6 +82,8 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   #save annotated matrix
   count_mtx_annot <- res_proc$count_mtx_annot
+  
+  #TODO modify to use the newly defined output_dir, not ./output
   save(count_mtx_annot, file = paste0("./output/",sample,"_count_mtx_annot.RData"))
   
   
@@ -113,6 +117,8 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
   CNV <- cbind(CNV,segm.mean)
+  
+  # TODO change from ./output to new saving directory variable
   write.table(CNV, file = paste0("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
   file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
   
@@ -243,6 +249,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
         pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism)
         
+        #TODO change to output_dir var
         save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
         
         FOUND_SUBCLONES <- TRUE
