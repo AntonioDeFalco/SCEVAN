@@ -164,7 +164,7 @@ classifyCluster <- function(hcc2, norm_cell_names){
 #' @examples
 #' 
 #' @export
-classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = 0.5, FIXED_NORMAL_CELLS = FALSE){
+classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="euclidean", par_cores=20, ground_truth = NULL, norm_cell_names = NULL, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = 0.5, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
   set.seed(1)
   
@@ -237,7 +237,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     
     breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample, beta_vega)
     
-    subSegm <- read.csv(paste0("./output/ ",sample," vega_output"), sep = "\t")
+    subSegm <- read.csv(file.path(output_dir, paste0(sample, "vega_output")), sep = "\t")
     
     segmAlt <- abs(subSegm$Mean)>0.05 | (subSegm$G.pv<0.01 | subSegm$L.pv<0.01)
     #segmAlt <- append(segmAlt[1],append(segmAlt, segmAlt[length(segmAlt)]))
@@ -267,8 +267,9 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     #plot heatmap
     print("11) plot heatmap")
     
-    plotCNA(annot_mtx$seqnames, CNA_mtx, hcc, sample)
-    save(CNA_mtx, file = paste0("./output/",sample,"_CNAmtx.RData"))
+    plotCNA(chr_lab = annot_mtx$seqnames, mtx_CNA = CNA_mtx, hcc = hcc, samp = sample, output_dir = output_dir)
+    
+    save(CNA_mtx, file = file.path(output_dir, paste0(sample, "_CNAmtx.RData")))
     
   } else {
     
@@ -320,9 +321,9 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     
     print("11) plot heatmap")
     
-    plotCNA(annot_mtx$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth)
+    plotCNA(annot_mtx$seqnames, CNA_mtx_relat, hcc, sample, cellType_pred, ground_truth, output_dir)
     
-    save(CNA_mtx_relat, file = paste0("./output/",sample,"_CNAmtx.RData"))
+    save(CNA_mtx_relat, file = file.path(output_dir, paste0(sample, "_CNAmtx.RData")))
     
   }
   if(length(norm_cell_names) < 1){

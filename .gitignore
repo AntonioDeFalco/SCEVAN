@@ -6,3 +6,5 @@
 src/*.o
 src/*.so
 src/*.dll
+R/testing_paths.R
+data

@@ -34,11 +34,9 @@ NULL
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
-  #TODO - add conditional to create a var tracking the output dir - this can be 
-  # "./output" or the directory given by the user
-  dir.create(file.path("./output"), showWarnings = FALSE)
+  dir.create(file.path(output_dir), showWarnings = FALSE)
   
   start_time <- Sys.time()
   
@@ -59,12 +57,12 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
   
-  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism)
+  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism, output_dir = output_dir)
   
   mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
   
   if (SUBCLONES) {
-    res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism)
+    res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism, output_dir)
     #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
@@ -83,19 +81,18 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   #save annotated matrix
   count_mtx_annot <- res_proc$count_mtx_annot
   
-  #TODO modify to use the newly defined output_dir, not ./output
-  save(count_mtx_annot, file = paste0("./output/",sample,"_count_mtx_annot.RData"))
+  save(count_mtx_annot, file = file.path(output_dir, paste0(sample, "_count_mtx_annot.RData")))
   
   
   #remove intermediate files
-  mtx_vega_files <- list.files(path = "./output/", pattern = "_mtx_vega")
-  sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
+  mtx_vega_files <- list.files(path = output_dir, pattern = "_mtx_vega")
+  sapply(mtx_vega_files, function(x) file.remove(file.path(output_dir, x)))
   
   return(classDf)
 }
 
 
-getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3, organism = "human"){
+getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3, organism = "human", output_dir = "./output"){
   
   mtx <- res_class$CNAmat[,res_class$tum_cells]
   # hcc <- hclust(parallelDist::parDist(t(mtx),threads =par_cores, method = "euclidean"), method = "ward.D")
@@ -118,8 +115,12 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
   CNV <- cbind(CNV,segm.mean)
   
-  # TODO change from ./output to new saving directory variable
-  write.table(CNV, file = paste0("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
+  write.table(CNV, file = file.path(output_dir, paste0(sample, "_Clonal_CN.seg")) , sep = "\t", quote = FALSE)
+  
+  
+  #TODO I need to trace back where this file is created before this is changed,
+  # as the removal might be important for size considerations
+  # file.path(output_dir, paste0(sample, "_ClonalCNProfile")) 
   file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
   
   CNV
@@ -146,7 +147,7 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
 }
 
 
-subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE, organism  = "human"){
+subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE, organism  = "human", output_dir = "./output"){
   
   #save(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, file = "debug_subclonesTumorCells.RData")
   
@@ -206,10 +207,11 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
         
         #remove previous segm file
-        mtx_vega_files <- list.files(path = "./output/", pattern = "vega")
+        
+        mtx_vega_files <- list.files(path = output_dir, pattern = "vega")
         mtx_vega_files <- mtx_vega_files[grep(sample,mtx_vega_files)]
-        mtx_vega_files <- mtx_vega_files[grep("subclone",mtx_vega_files)]
-        sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
+        mtx_vega_files <- mtx_vega_files[grep("subclone", mtx_vega_files)]
+        sapply(mtx_vega_files, function(x) file.remove(file.path(output_dir, x)))
         
         if(res_subclones$n_subclones>1){
           #res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
@@ -234,7 +236,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         #diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
-        plotConsensusCNA(samp = sample, nSub = res_subclones$n_subclones, organism = organism)
+        plotConsensusCNA(samp = sample, nSub = res_subclones$n_subclones, pathOutput = output_dir, organism = organism)
         
         perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
         
@@ -242,6 +244,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
         plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism)
         
+        #TODO change to output_dir var
         plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
         classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
         if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
@@ -249,8 +252,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
         pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism)
         
-        #TODO change to output_dir var
-        save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
+        save(diffSubcl, file = file.path(output_dir, paste0(sample, "_SubcloneDiffAnalysis.RData")))
         
         FOUND_SUBCLONES <- TRUE
       }else{
