@@ -117,11 +117,9 @@ vegaMC_R <- function(mtx, output_file_name="output",
 #' @export
 #'
 #' @examples
-getBreaksVegaMC <- function(mtx, chr_vect, sample = "", beta_vega = 0.5){
+getBreaksVegaMC <- function(mtx, chr_vect, sample = "", beta_vega = 0.5, output_dir = "./output"){
   
-  #write.table(mtx, paste("./output/", sample, "_mtx_vega.txt", sep=""), sep="\t", row.names = FALSE, quote = F)
-  
-  res_vega <- vegaMC_R(mtx = mtx, output_file_name=paste("./output/", sample,"vega_output"), beta = beta_vega);
+  res_vega <- vegaMC_R(mtx = mtx, output_file_name = file.path(output_dir, paste0(sample, "vega_output")), beta = beta_vega);
   
   BR <- unlist(lapply(res_vega$Start, function(x) which(chr_vect == x)[1]))
   n <- nrow(mtx)

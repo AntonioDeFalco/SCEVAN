@@ -542,7 +542,7 @@ plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, samp, par_cores=20
   
 }
 
-plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp){
+plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp, output_dir = "./output_dir"){
   
   #save(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, file = paste0(samp,"plotTSNE.RData"))
   
@@ -576,7 +576,7 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
                    y = tsne$Y[,2],
                    CellType = pred)
   
-  png(paste("./output/",samp,"tsne_scRNA.png",sep=""), height=1650, width=1650, res=200)
+  png(file.path(output, paste0(samp, "tsne_scRNA.png")), height=1650, width=1650, res=200)
   
   pp <- ggplot(df, aes(x, y, colour = CellType)) +
     geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
@@ -606,7 +606,8 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
     df <- data.frame(x = tsne$Y[,1],
                      y = tsne$Y[,2],
                      Subclones = pred)
-    png(paste("./output/",samp,"tsne_CNA.png",sep=""), height=1650, width=1650, res=200)
+
+    png(file.path(output_dir, paste0(samp, "tsne_CNA.png")), height=1650, width=1650, res=200)
     
     pp <- ggplot(df, aes(x, y, colour = Subclones)) +
       geom_point() + theme_bw() + scale_color_brewer(palette="Paired")
@@ -616,7 +617,11 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   }
 }
 
-plotCNsubclones <- function(samp) {
+plotCNsubclones <- function(samp, output_dir = "./output") {
+  
+  #TODO this one needs to align with where the subclonal vega outputs are made
+  # is this function even called anywhere else anymore? Can't find any calls
+  # file.path(output, paste0(samp, "_subclone1"))
   
   segmentation <- read.table(paste0("./output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
   segmentation2 <- read.table(paste0("./output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
@@ -870,7 +875,7 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL, 
   if(length(colors_samp)==0) colors_samp <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Paired")[1:nSub])
   cells <- rbind(colors_samp(nSub),colors_samp(nSub))
   
-  png(file.path(output, paste0(samp, "consensus.png")), height=750, width=2850, res=180)
+  png(file.path(output_dir, paste0(samp, "consensus.png")), height=750, width=2850, res=180)
   heatmap.3(t(do.call(cbind,lapply(df, function(x) x$Mean))),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = 1:22, keysize=1, density.info="none", trace="none",
             cexRow=3.0,cexCol=2.0,cex.main=3.0,cex.lab=3.0,
             ColSideColors=chr1,
@@ -1062,7 +1067,7 @@ plotCNAlineOnlyTumor <- function(samp){
   cells <- rbind(rbPal5(1),rbPal5(1))
   
   #TODO
-  file.path(pathOutput, paste0(samp, "consensus.png"))
+  # file.path(pathOutput, paste0(samp, "consensus.png"))
 
     png(paste("./output/",samp,"consensus.png",sep=""), height=750, width=2850, res=180)
   heatmap.3(t(cbind(dfL$Mean,dfL$Mean)),Rowv = FALSE, Colv = FALSE, dendrogram = "none", chr_lab = df_VEGAchr$y, keysize=1, density.info="none", trace="none",

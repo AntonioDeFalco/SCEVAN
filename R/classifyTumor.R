@@ -235,7 +235,7 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     mtx_vega <- cbind(annot_mtx[,c(4,1,3)], count_mtx_relat)
     colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
     
-    breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample, beta_vega)
+    breaks <- getBreaksVegaMC(mtx_vega, annot_mtx[, 3], sample, beta_vega, output_dir = output_dir)
     
     subSegm <- read.csv(file.path(output_dir, paste0(sample, "vega_output")), sep = "\t")
     

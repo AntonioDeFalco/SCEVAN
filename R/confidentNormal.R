@@ -80,5 +80,4 @@ getConfidentNormalCells <- function(mtx, sample = "", par_cores = 20, Additional
   print(paste("found", length(norm.cell.names), "confident non malignant cells", sep=" "))
   
   return(norm.cell.names)
-  
 }

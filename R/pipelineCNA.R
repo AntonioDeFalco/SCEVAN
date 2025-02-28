@@ -42,11 +42,11 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   normalNotKnown <- length(norm_cell)==0
   
-  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, ngenes_chr = ngenes_chr, perc_genes = (perc_genes/100))
+  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, ngenes_chr = ngenes_chr, perc_genes = (perc_genes/100), output_dir = output_dir)
   
   if(normalNotKnown) norm_cell <- names(res_proc$norm_cell)
   
-  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega, FIXED_NORMAL_CELLS = FIXED_NORMAL_CELLS)
+  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega, FIXED_NORMAL_CELLS = FIXED_NORMAL_CELLS, output_dir = output_dir)
   
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
   classDf <- data.frame(class = rep("filtered", length(colnames(res_proc$count_mtx))), row.names = colnames(res_proc$count_mtx))
@@ -63,14 +63,11 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   if (SUBCLONES) {
     res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism, output_dir)
-    #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
   }else{
     FOUND_SUBCLONES <- FALSE
   }
-  
-  #if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample) getClonalCNProfile(sample,)
   
   if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism)
   
@@ -102,7 +99,7 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   mtx_vega <- cbind(res_class$CNAmat[,1:3], mtx)
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega, output_dir = output_dir)
   
   #mtx_CNA3 <- computeCNAmtx(mtx, breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
   
@@ -117,10 +114,10 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   write.table(CNV, file = file.path(output_dir, paste0(sample, "_Clonal_CN.seg")) , sep = "\t", quote = FALSE)
   
-  
   #TODO I need to trace back where this file is created before this is changed,
-  # as the removal might be important for size considerations
-  # file.path(output_dir, paste0(sample, "_ClonalCNProfile")) 
+  # as the removal might be important for size considerations. 
+
+  # file.path(output_dir, paste0(sample, "ClonalCNProfile"))
   file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
   
   CNV
@@ -130,7 +127,7 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
   
   mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"), beta_vega = beta_vega)
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"), beta_vega = beta_vega, output_dir = output_dir)
   
   subSegm <- read.csv(paste0("./output/ ",paste0(sample,"onlytumor")," vega_output"), sep = "\t")
   #segmAlt <- abs(subSegm$Mean)>=0.10 | (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)

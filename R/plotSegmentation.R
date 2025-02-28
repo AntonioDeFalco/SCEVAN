@@ -157,7 +157,7 @@ plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE, CN = 
 getScevanCNVfinal <- function(sample , path = "", subclone = NULL){
   if(is.null(subclone)){
     #TODO
-    # change fro ./output to output dir
+    # change from ./output to output dir
     CNV_infer <- read.table(paste0(path,"./output/",sample, "_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
   }else{
     CNV_infer <- read.table(paste0(path,"./output/",sample,"_subclone",subclone,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
