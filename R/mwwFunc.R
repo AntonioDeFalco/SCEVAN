@@ -62,6 +62,8 @@ ssMwwGst <- function(geData, geneSet, ncore,  minLenGeneSet = 15 , regulon = FAL
   pValue <- sapply(ans, function(x) x$tmp_pValue)
   colnames(NES) <- colnames(pValue) <- colnames(geData)
   FDR <- apply(pValue, 2, function(x) p.adjust(x, method = "fdr"))
+  
+  print(paste0(filename, "_MWW.RData"))
   save(NES, pValue, FDR, file = paste0(filename, "_MWW.RData"))
   #TODO left off here, some mistake happening in loading the MWW.RData file.
 }

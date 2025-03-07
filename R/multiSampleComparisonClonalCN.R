@@ -78,10 +78,9 @@ plotAllClonalCN <- function(samples, name){
 #' 
 multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, analysisName = "all", organism = "human" , par_cores = 20, plotTree = TRUE, output_dir = "./output"){
   #TODO add the output_dir var here as well, apply it to the plotting func
-  # plotCloneTreeNew
   
   resList <- lapply(names(listCountMtx), function(x) {
-    pipelineCNA(listCountMtx[[x]], norm_cell = listNormCells[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism=organism)
+    pipelineCNA(listCountMtx[[x]], norm_cell = listNormCells[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism = organism, output_dir = outpur_dir)
   })
   names(resList) <- names(listCountMtx)
   

@@ -37,6 +37,7 @@ NULL
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
   dir.create(file.path(output_dir), showWarnings = FALSE, recursive = TRUE)
+  dir.create("output")
   
   start_time <- Sys.time()
   
@@ -59,7 +60,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism, output_dir = output_dir)
   
-  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
+  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega, output_dir = output_dir)
   
   if (SUBCLONES) {
     res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism, output_dir)
@@ -109,7 +110,9 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE, organism = organism)
   
-  segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
+  # bugged out here, incorrect file loading.
+  # File does get written - need to fix the path in the sub function
+  segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile", path = output_dir)$Mean
   CNV <- cbind(CNV,segm.mean)
   
   write.table(CNV, file = file.path(output_dir, paste0(sample, "_Clonal_CN.seg")) , sep = "\t", quote = FALSE)
@@ -118,18 +121,18 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   # as the removal might be important for size considerations. 
 
   # file.path(output_dir, paste0(sample, "ClonalCNProfile"))
-  file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
+  file.remove(file.path(output_dir, paste0(sample, "ClonalCNProfile", "vega_output")))
   
   CNV
 }
 
-segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5){
+segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5, output_dir = "./output"){
   
   mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
   breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"), beta_vega = beta_vega, output_dir = output_dir)
   
-  subSegm <- read.csv(paste0("./output/ ",paste0(sample,"onlytumor")," vega_output"), sep = "\t")
+  subSegm <- read.csv(file.path(output_dir, paste0(sample, "onlytumor", "vega_output")), sep = "\t")
   #segmAlt <- abs(subSegm$Mean)>=0.10 | (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
   segmAlt <- (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
   mtx_vega <- computeCNAmtx(res_class$CNAmat[,res_class$tum_cells], breaks_tumor, par_cores,segmAlt ) #rep(TRUE, length(breaks_tumor))
@@ -213,9 +216,9 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         if(res_subclones$n_subclones>1){
           #res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
           
-          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub, organism = organism)
+          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub, organism = organism, output_dir = output_dir)
           
-          sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+          sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones, output_dir = output_dir)
           
           if(length(sampleAlter)>1){
             diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)

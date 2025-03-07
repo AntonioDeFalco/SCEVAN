@@ -154,22 +154,22 @@ plotSegmentation <- function(CNV, organism = "human", modifyPosSeg = TRUE, CN = 
   abline(v=extr_chr, col="black", lwd = 2)
 }
 
-getScevanCNVfinal <- function(sample , path = "", subclone = NULL){
+getScevanCNVfinal <- function(sample , path = "./output", subclone = NULL){
   if(is.null(subclone)){
-    #TODO
-    # change from ./output to output dir
-    CNV_infer <- read.table(paste0(path,"./output/",sample, "_Clonal_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
+
+    CNV_infer <- read.table(file.path(path, paste0(sample, "_Clonal_CN.seg")), sep="\t", header=TRUE, as.is=TRUE)
   }else{
-    CNV_infer <- read.table(paste0(path,"./output/",sample,"_subclone",subclone,"_CN.seg"), sep="\t", header=TRUE, as.is=TRUE)
+    CNV_infer <- read.table(file.path(path, paste0(sample, "_subclone", subclone, "_CN.seg")), sep="\t", header=TRUE, as.is=TRUE)
   }
   CNV_infer
 }
 
 
-getScevanCNV <- function(sample , path = "" , filter = FALSE, beta = ""){
+getScevanCNV <- function(sample , path = "./output" , filter = FALSE, beta = ""){
   #TODO the read.table functions also refer to the ./output folder, meanign that 
   # those need to be changed around as well
-  CNV_infer <- read.table(paste0(path,"./output/ ",sample, beta," vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+  
+  CNV_infer <- read.table(file.path(path, paste0(sample, beta, "vega_output")), sep="\t", header=TRUE, as.is=TRUE)
   
   if(filter) CNV_infer[!((CNV_infer$Mean<(-0.10) | CNV_infer$L.pv<0.01) | (CNV_infer$Mean>0.10 | CNV_infer$G.pv<0.01)),]$Mean <- 0 
   
