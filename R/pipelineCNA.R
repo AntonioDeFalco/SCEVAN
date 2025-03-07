@@ -36,7 +36,7 @@ NULL
 
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
-  dir.create(file.path(output_dir), showWarnings = FALSE)
+  dir.create(file.path(output_dir), showWarnings = FALSE, recursive = TRUE)
   
   start_time <- Sys.time()
   
