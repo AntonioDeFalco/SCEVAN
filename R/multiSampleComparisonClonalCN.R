@@ -111,7 +111,7 @@ multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, an
   
   plotAllClonalCN(names(listCountMtx), name = analysisName)
   
-  if(length(names(listCountMtx))>2 & plotTree) plotCloneTreeNew(names(listCountMtx), CLONAL_MULTI = TRUE, analysisName = analysisName)
+  if(length(names(listCountMtx))>2 & plotTree) plotCloneTreeNew(names(listCountMtx), CLONAL_MULTI = TRUE, analysisName = analysisName, output_dir = output_dir)
   
   for(i in 1:length(names(listCountMtx))){
     names(diffList) <- gsub(paste0("subclone",i), names(listCountMtx)[i], names(diffList))

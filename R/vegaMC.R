@@ -102,7 +102,6 @@ vegaMC_R <- function(mtx, output_file_name="output",
               col.names=TRUE, quote=FALSE, eol="\n")
   
   return(segmentation)   
-  
 }
 
 

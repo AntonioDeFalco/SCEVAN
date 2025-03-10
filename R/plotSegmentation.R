@@ -166,7 +166,7 @@ getScevanCNVfinal <- function(sample , path = "./output", subclone = NULL){
 
 
 getScevanCNV <- function(sample , path = "./output" , filter = FALSE, beta = ""){
-  #TODO the read.table functions also refer to the ./output folder, meanign that 
+  #TODO the read.table functions also refer to the ./output folder, meaning that 
   # those need to be changed around as well
   
   CNV_infer <- read.table(file.path(path, paste0(sample, beta, "vega_output")), sep="\t", header=TRUE, as.is=TRUE)
@@ -236,37 +236,37 @@ heatmapConsensusPlot <- function(CNV,sample,file, CN = TRUE){
     
 }
 
-plotCNclonal_old <- function(sample,ClonalCN, organism = "human"){
-  
-  if(ClonalCN) {
-    fileNames <- c("ClonalCNProfile","onlytumor")
-  }else{
-    fileNames <- c("onlytumor")
-  }
-  
-  for(name in fileNames){
-    
-    if(name == "ClonalCNProfile"){
-      file = "_coarse-grained"
-    }else{
-      file = "_fine-grain_"
-    }
-    
-    #TODO
-    # change from ./output to output_dir
-    segm <- getScevanCNV(paste0(sample,name))
-    png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
-    plotSegmentation(CNV = segm, organism = organism)
-    dev.off()
-    png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
-    heatmapConsensusPlot(segm,sample,file)
-    dev.off()
-    }
-}
+# plotCNclonal_old <- function(sample,ClonalCN, organism = "human"){
+#   
+#   if(ClonalCN) {
+#     fileNames <- c("ClonalCNProfile","onlytumor")
+#   }else{
+#     fileNames <- c("onlytumor")
+#   }
+#   
+#   for(name in fileNames){
+#     
+#     if(name == "ClonalCNProfile"){
+#       file = "_coarse-grained"
+#     }else{
+#       file = "_fine-grain_"
+#     }
+#     
+#     #TODO
+#     # change from ./output to output_dir
+#     segm <- getScevanCNV(paste0(sample,name))
+#     png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
+#     plotSegmentation(CNV = segm, organism = organism)
+#     dev.off()
+#     png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
+#     heatmapConsensusPlot(segm,sample,file)
+#     dev.off()
+#     }
+# }
   
 
 
-plotCNclonal <- function(sample, ClonalCN, organism = "human"){
+plotCNclonal <- function(sample, ClonalCN, organism = "human", output_dir = "./output"){
   
   if(ClonalCN) {
     fileNames <- c("ClonalCNProfile","onlytumor")
@@ -288,12 +288,12 @@ plotCNclonal <- function(sample, ClonalCN, organism = "human"){
       segm <- getScevanCNV(paste0(sample,name))
     }
     
-    #TODO
-    # change from ./output to output_dir
-    png(paste("./output/",sample,file,"ClonalCNProfile.png",sep=""), height=1050, width=2250, res=250) 
+    
+    png(file.path(output_dir, paste0(sample, file, "ClonalCNProfile.png")), height=1050, width=2250, res=250) 
     plotSegmentation(CNV = segm, organism = organism)
     dev.off()
-    png(paste("./output/",sample,file,"consensus.png",sep=""), height=650, width=3150, res=180)
+    
+    png(file.path(output_dir, paste0(sample, file, "consensus.png")), height=650, width=3150, res=180)
     heatmapConsensusPlot(segm,sample,file)
     dev.off()
   }

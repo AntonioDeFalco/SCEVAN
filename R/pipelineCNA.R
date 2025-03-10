@@ -70,7 +70,7 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
     FOUND_SUBCLONES <- FALSE
   }
   
-  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism)
+  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism, output_dir = output_dir)
   
   #save CNA matrix
   #CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
@@ -80,7 +80,6 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   count_mtx_annot <- res_proc$count_mtx_annot
   
   save(count_mtx_annot, file = file.path(output_dir, paste0(sample, "_count_mtx_annot.RData")))
-  
   
   #remove intermediate files
   mtx_vega_files <- list.files(path = output_dir, pattern = "_mtx_vega")
@@ -155,7 +154,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   FOUND_SUBCLONES <- FALSE
   
-  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism)
+  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism, output_dir = output_dir)
   
   if(length(setdiff(res_class$tum_cells,names(res_subclones$clustersSub)))>0){
     classDf[setdiff(res_class$tum_cells,names(res_subclones$clustersSub)),]$class <- "normal"
@@ -167,7 +166,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   #save(tum_cells,clustersSub, file = paste0(sample,"subcl.RData"))
   
   if(res_subclones$n_subclones>1){
-    sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+    sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones, output_dir = output_dir)
     
     if(length(sampleAlter)>1){
       
@@ -242,15 +241,15 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
-        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism)
+        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism, output_dir = output_dir)
         
         #TODO change to output_dir var
         plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
         classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
-        if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
+        if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones, output_dir = output_dir)
         
-        if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism)
+        if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))], output_dir = output_dir)
+        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism, output_dir = output_dir)
         
         save(diffSubcl, file = file.path(output_dir, paste0(sample, "_SubcloneDiffAnalysis.RData")))
         
