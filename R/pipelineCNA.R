@@ -34,19 +34,19 @@ NULL
 #'
 #' @examples res_pip <- pipelineCNA(count_mtx)
 
-pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE){
+pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
-  dir.create(file.path("./output"), showWarnings = FALSE)
+  dir.create(file.path(output_dir), showWarnings = FALSE, recursive = TRUE)
   
   start_time <- Sys.time()
   
   normalNotKnown <- length(norm_cell)==0
   
-  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, ngenes_chr = ngenes_chr, perc_genes = (perc_genes/100))
+  res_proc <- preprocessingMtx(count_mtx,sample, par_cores=par_cores, findConfident = normalNotKnown, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, ngenes_chr = ngenes_chr, perc_genes = (perc_genes/100), output_dir = output_dir)
   
   if(normalNotKnown) norm_cell <- names(res_proc$norm_cell)
   
-  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega, FIXED_NORMAL_CELLS = FIXED_NORMAL_CELLS)
+  res_class <- classifyTumorCells(res_proc$count_mtx_norm, res_proc$count_mtx_annot, sample, par_cores=par_cores, ground_truth = NULL,  norm_cell_names = norm_cell, SEGMENTATION_CLASS = TRUE, SMOOTH = TRUE, beta_vega = beta_vega, FIXED_NORMAL_CELLS = FIXED_NORMAL_CELLS, output_dir = output_dir)
   
   print(paste("found", length(res_class$tum_cells), "tumor cells"))
   classDf <- data.frame(class = rep("filtered", length(colnames(res_proc$count_mtx))), row.names = colnames(res_proc$count_mtx))
@@ -57,22 +57,19 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   end_time<- Sys.time()
   print(paste("time classify tumor cells: ", end_time -start_time))
   
-  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism)
+  if(ClonalCN) getClonalCNProfile(res_class, res_proc, sample, par_cores, organism = organism, output_dir = output_dir)
   
-  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega)
+  mtx_vega <- segmTumorMatrix(res_proc, res_class, sample, par_cores, beta_vega, output_dir = output_dir)
   
   if (SUBCLONES) {
-    res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism)
-    #res_subclones <- subcloneAnalysisPipeline(count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, 3, plotTree)
+    res_subclones <- subcloneAnalysisPipeline(res_proc$count_mtx, res_class, res_proc,mtx_vega, sample, par_cores, classDf, beta_vega, plotTree, organism, output_dir)
     FOUND_SUBCLONES <- res_subclones$FOUND_SUBCLONES
     classDf <- res_subclones$classDf
   }else{
     FOUND_SUBCLONES <- FALSE
   }
   
-  #if(!FOUND_SUBCLONES) plotCNAlineOnlyTumor(sample) getClonalCNProfile(sample,)
-  
-  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism)
+  if(!FOUND_SUBCLONES) plotCNclonal(sample,ClonalCN, organism, output_dir = output_dir)
   
   #save CNA matrix
   #CNAmtx <- res_class$CNAmat[,-c(1,2,3)]
@@ -80,18 +77,18 @@ pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, 
   
   #save annotated matrix
   count_mtx_annot <- res_proc$count_mtx_annot
-  save(count_mtx_annot, file = paste0("./output/",sample,"_count_mtx_annot.RData"))
   
+  save(count_mtx_annot, file = file.path(output_dir, paste0(sample, "_count_mtx_annot.RData")))
   
   #remove intermediate files
-  mtx_vega_files <- list.files(path = "./output/", pattern = "_mtx_vega")
-  sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
+  mtx_vega_files <- list.files(path = output_dir, pattern = "_mtx_vega")
+  sapply(mtx_vega_files, function(x) file.remove(file.path(output_dir, x)))
   
   return(classDf)
 }
 
 
-getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3, organism = "human"){
+getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega = 3, organism = "human", output_dir = "./output"){
   
   mtx <- res_class$CNAmat[,res_class$tum_cells]
   # hcc <- hclust(parallelDist::parDist(t(mtx),threads =par_cores, method = "euclidean"), method = "ward.D")
@@ -101,7 +98,7 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   mtx_vega <- cbind(res_class$CNAmat[,1:3], mtx)
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega)
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_class$CNAmat[,3], paste0(sample,"ClonalCNProfile"), beta_vega = beta_vega, output_dir = output_dir)
   
   #mtx_CNA3 <- computeCNAmtx(mtx, breaks_tumor, par_cores, rep(TRUE, length(breaks_tumor)))
   
@@ -111,21 +108,29 @@ getClonalCNProfile <- function(res_class, res_proc, sample, par_cores, beta_vega
   
   CNV <- getCNcall(mtx, res_proc$count_mtx_annot, breaks_tumor, sample = sample, CLONAL = TRUE, organism = organism)
   
-  segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile")$Mean
+  # bugged out here, incorrect file loading.
+  # File does get written - need to fix the path in the sub function
+  segm.mean <- getScevanCNV(sample, beta = "ClonalCNProfile", path = output_dir)$Mean
   CNV <- cbind(CNV,segm.mean)
-  write.table(CNV, file = paste0("./output/",sample,"_Clonal_CN.seg"), sep = "\t", quote = FALSE)
-  file.remove(paste0("./output/ ",paste0(sample,"ClonalCNProfile")," vega_output"))
+  
+  write.table(CNV, file = file.path(output_dir, paste0(sample, "_Clonal_CN.seg")) , sep = "\t", quote = FALSE)
+  
+  #TODO I need to trace back where this file is created before this is changed,
+  # as the removal might be important for size considerations. 
+
+  # file.path(output_dir, paste0(sample, "ClonalCNProfile"))
+  file.remove(file.path(output_dir, paste0(sample, "ClonalCNProfile", "vega_output")))
   
   CNV
 }
 
-segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5){
+segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 0.5, output_dir = "./output"){
   
   mtx_vega <- cbind(res_class$CNAmat[,1:3], res_class$CNAmat[,res_class$tum_cells])
   colnames(mtx_vega)[1:3] <- c("Name","Chr","Position")
-  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"), beta_vega = beta_vega)
+  breaks_tumor <- getBreaksVegaMC(mtx_vega, res_proc$count_mtx_annot[,3], paste0(sample,"onlytumor"), beta_vega = beta_vega, output_dir = output_dir)
   
-  subSegm <- read.csv(paste0("./output/ ",paste0(sample,"onlytumor")," vega_output"), sep = "\t")
+  subSegm <- read.csv(file.path(output_dir, paste0(sample, "onlytumor", "vega_output")), sep = "\t")
   #segmAlt <- abs(subSegm$Mean)>=0.10 | (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
   segmAlt <- (subSegm$G.pv<=0.5 | subSegm$L.pv<=0.5)
   mtx_vega <- computeCNAmtx(res_class$CNAmat[,res_class$tum_cells], breaks_tumor, par_cores,segmAlt ) #rep(TRUE, length(breaks_tumor))
@@ -134,13 +139,15 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
   colnames(mtx_vega) <- colnames(res_class$CNAmat[,res_class$tum_cells])
   rownames(mtx_vega) <- rownames(res_class$CNAmat[,res_class$tum_cells])
   hcc <- hclust(parallelDist::parDist(t(mtx_vega),threads = par_cores, method = "euclidean"), method = "ward.D")
-  plotCNA(res_proc$count_mtx_annot$seqnames, mtx_vega, hcc, paste0(sample,"onlytumor"))
+  
+  #TODO check is everything still gets plotted correctly, as I added the name var
+  plotCNA(res_proc$count_mtx_annot$seqnames, mtx_vega, hcc, samp = sample, output_dir = output_dir, name = "onlytumor")
   
   return(mtx_vega)
 }
 
 
-subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE, organism  = "human"){
+subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, plotTree = FALSE, organism  = "human", output_dir = "./output"){
   
   #save(count_mtx, res_class, res_proc, mtx_vega,  sample, par_cores, classDf, beta_vega, file = "debug_subclonesTumorCells.RData")
   
@@ -148,7 +155,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   
   FOUND_SUBCLONES <- FALSE
   
-  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism)
+  res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, NULL, mtx_vega, organism = organism, output_dir = output_dir)
   
   if(length(setdiff(res_class$tum_cells,names(res_subclones$clustersSub)))>0){
     classDf[setdiff(res_class$tum_cells,names(res_subclones$clustersSub)),]$class <- "normal"
@@ -160,7 +167,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
   #save(tum_cells,clustersSub, file = paste0(sample,"subcl.RData"))
   
   if(res_subclones$n_subclones>1){
-    sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+    sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones, output_dir = output_dir)
     
     if(length(sampleAlter)>1){
       
@@ -200,17 +207,18 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         res_subclones$n_subclones <- length(unique(res_subclones$clustersSub))
         
         #remove previous segm file
-        mtx_vega_files <- list.files(path = "./output/", pattern = "vega")
+        
+        mtx_vega_files <- list.files(path = output_dir, pattern = "vega")
         mtx_vega_files <- mtx_vega_files[grep(sample,mtx_vega_files)]
-        mtx_vega_files <- mtx_vega_files[grep("subclone",mtx_vega_files)]
-        sapply(mtx_vega_files, function(x) file.remove(paste0("./output/",x)))
+        mtx_vega_files <- mtx_vega_files[grep("subclone", mtx_vega_files)]
+        sapply(mtx_vega_files, function(x) file.remove(file.path(output_dir, x)))
         
         if(res_subclones$n_subclones>1){
           #res_subclones <- ReSegmSubclones(res_class$tum_cells, res_class$CNAmat, sample, res_subclones$clustersSub, par_cores, beta_vega)
           
-          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub, organism = organism)
+          res_subclones <- subclonesTumorCells(res_class$tum_cells, res_class$CNAmat, sample, par_cores, beta_vega, res_proc, res_subclones$clustersSub, organism = organism, output_dir = output_dir)
           
-          sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones)
+          sampleAlter <- analyzeSegm(sample, nSub = res_subclones$n_subclones, output_dir = output_dir)
           
           if(length(sampleAlter)>1){
             diffSubcl <- diffSubclones(sampleAlter, sample, nSub = res_subclones$n_subclones)
@@ -228,22 +236,22 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         
         #diffSubcl[[grep("_clone",names(diffSubcl))]] <- diffSubcl[[grep("_clone",names(diffSubcl))]][1:min(10,nrow(diffSubcl[[grep("_clone",names(diffSubcl))]])),]
         
-        plotConsensusCNA(samp = sample, nSub = res_subclones$n_subclones, organism = organism)
+        plotConsensusCNA(samp = sample, nSub = res_subclones$n_subclones, pathOutput = output_dir, organism = organism)
         
         perc_cells_subclones <- table(res_subclones$clustersSub)/length(res_subclones$clustersSub)
         
         oncoHeat <- annoteBandOncoHeat(res_proc$count_mtx_annot, diffSubcl, res_subclones$n_subclones, organism)
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
-        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism)
+        plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism, output_dir = output_dir)
         
-        plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
+        plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample, output_dir = output_dir)
         classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
-        if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones)
+        if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones, output_dir = output_dir)
         
-        if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))])
-        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism)
+        if (length(grep("subclone",names(diffSubcl)))>0) genesDE(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, diffSubcl[grep("subclone",names(diffSubcl))], output_dir = output_dir)
+        pathwayAnalysis(res_proc$count_mtx_norm, res_proc$count_mtx_annot, res_subclones$clustersSub, sample, organism = organism, output_dir = output_dir)
         
-        save(diffSubcl, file = paste0("./output/ ",sample,"_SubcloneDiffAnalysis.RData"))
+        save(diffSubcl, file = file.path(output_dir, paste0(sample, "_SubcloneDiffAnalysis.RData")))
         
         FOUND_SUBCLONES <- TRUE
       }else{

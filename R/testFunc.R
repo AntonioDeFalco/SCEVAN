@@ -49,7 +49,7 @@ calinsky <- function (hhc, dist = NULL, gMax = round(1 + 3.3 * log(length(hhc$or
   return(ans)
 }
 
-subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res_proc, hc.clus = NULL, relativeSmoothMtx = NULL, organism = "human"){
+subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res_proc, hc.clus = NULL, relativeSmoothMtx = NULL, organism = "human", output_dir = "./output"){
   
   library(scran)
   
@@ -114,7 +114,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     perc_cells_subclones <- table(hc.clus)/length(hc.clus)
     
     print(paste("found", n_subclones, "subclones", sep = " "))
-    names(perc_cells_subclones) <- paste0("percentage_cells_subsclone_",names(perc_cells_subclones))
+    names(perc_cells_subclones) <- paste0("percentage_cells_subclone_",names(perc_cells_subclones))
     print(perc_cells_subclones)
     
     breaks_subclones <- list()
@@ -139,7 +139,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
       
       i <- i - length(falseSub)
       
-      breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = 0.5)
+      breaks_subclones[[i]] <- getBreaksVegaMC(mtx_vega, CNAmat[,3], paste0(samp,"_subclone",i), beta_vega = 0.5, output_dir = output_dir)
       
       #mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, rep(TRUE, length(breaks_subclones[[i]])))
       
@@ -151,10 +151,11 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
       CNV[[i]] <- getCNcall(norm.mat.relat[,tum_cells_sub1], res_proc$count_mtx_annot, breaks_subclones[[i]], sample = samp, subclone = i, par_cores = n.cores, organism = organism)
       
       if(any(CNV[[i]]$CN!=2)){
-        segm.mean <- getScevanCNV(paste0(samp,"_subclone",i))$Mean
+        segm.mean <- getScevanCNV(paste0(samp,"_subclone",i), path = output_dir)$Mean
         CNV[[i]] <- cbind(CNV[[i]],segm.mean)
-        write.table(CNV[[i]], file = paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t", quote = FALSE)
-        file.remove(paste0("./output/ ",paste0(samp,"_subclone",i)," vega_output"))
+        
+        write.table(CNV[[i]], file = file.path(output_dir, paste0(samp, "_subclone", i, "_CN.seg")), sep = "\t", quote = FALSE)
+        file.remove(file.path(output_dir, paste0(samp, "_subclone", i, "vega_output")))
         
         mtx_CNA3 <- computeCNAmtx(norm.mat.relat[,tum_cells_sub1], breaks_subclones[[i]], n.cores, CNV[[i]]$CN != 2)
         
@@ -190,8 +191,10 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     
     hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
     
-    plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp)
-    save(results.com, file = paste0("./output/",samp,"_CNAmtxSubclones.RData"))
+    plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp, output_dir = output_dir)
+    
+    
+    save(results.com, file = file.path(output_dir, paste0(samp, "_CNAmtxSubclones.RData")))
     
   }else{
     n_subclones <- 0
@@ -207,14 +210,15 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
 }
 
 
-analyzeSegm <- function(samp, nSub = 1){
+analyzeSegm <- function(samp, nSub = 1, output_dir = "./output"){
+  #TODO this one needs to be updated as well
   
   all_segm <- list()
   
   if(nSub > 0){
     for (i in 1:nSub){
-
-      segm <- read.csv(paste0("./output/",samp,"_subclone",i,"_CN.seg"), sep = "\t")
+      
+      segm <- read.csv(file.path(output_dir, paste0(samp, "_subclone", i, "_CN.seg")), sep = "\t")
       specSegm <- getPossibleSpecAltFromSeg(segm)
       if(is.null(specSegm)) specSegm <- data.frame()
       all_segm[[paste0(samp,"_subclone", i)]] <- specSegm
@@ -222,7 +226,8 @@ analyzeSegm <- function(samp, nSub = 1){
     }
   }else{
     #segm <- read.csv(paste0("./output/ ",samp," _  _CN.seg"), sep = "\t")
-    segm <- read.csv(paste0("./output/",samp,"_Clonal_CN.seg"), sep = "\t")
+    
+    segm <- read.csv(file.path(output_dir, paste0(samp, "_Clonal_CN.seg")), sep = "\t")
     all_segm <- getPossibleSpecAltFromSeg(segm)
   }
   
@@ -230,19 +235,21 @@ analyzeSegm <- function(samp, nSub = 1){
   
 }
 
+# This whole function is never called anywhere - can be depreciated. 
+# Outside the scope of my PR (Alex van Kaam, 07-03-2025)
 analyzeSegm2 <- function(samp, nSub = 1){
-  
+
   all_segm <- list()
-  
+
   for (i in 1:nSub){
-    
+
     segm <- read.csv(paste0("./output/ ",samp,"_subclone",i," vega_output"), sep = "\t")
     all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
-    
+
   }
-  
+
   return(all_segm)
-  
+
 }
 
 getPossibleSpecAltFromSeg <- function(segm, name){
@@ -300,7 +307,6 @@ getPossibleSpecAltFromSeg <- function(segm, name){
   
   
   return(segm_new)
-  
 } 
 
 
@@ -739,7 +745,7 @@ testSpecificSubclonesAlteration <- function(listAltSubclones, nSub = 2, samp){
   return(subclonesAlt2)
 }
 
-genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20){
+genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores = 20, output_dir = "./output"){
 
   #save(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_cores, file = paste0(samp,"genesDE.RData"))
   
@@ -811,7 +817,10 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       
       if(FOUND_SIGN_DE){
       
-      png(paste("./output/",samp,"-DE", "chr",chrr,"-",startpos,"-",endpos, "_subclones.png",sep=""), height=850, width=1250, res=150)
+      #TODO
+      # add output_dir var and update calls to include output_dir
+      
+      png(file.path(output_dir, paste0(samp, "-DE", "chr", chrr, "-", startpos, "-", endpos, "_subclones.png")), height=850, width=1250, res=150)
       
       p1 <- ggplot(fact_spec2, aes(fc, p_value, label = geneID)) + geom_point() + txtRepel +
         xlab("log2 Fold Change") + ylab("-log10 pvalue") + ggtitle(paste(samp,"- DE", "chr",chrr,":",startpos,":",endpos)) + theme_bw(base_size = 16) + 
@@ -827,7 +836,7 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
   
 }
 
-pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_cores = 20, organism = "human"){
+pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_cores = 20, organism = "human", output_dir = "./output"){
 
   library(forcats)
   library(ggplot2)
@@ -871,8 +880,9 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
   topPathways <- topUp %>% 
     arrange(-NES)
   
+  #TODO update to include output_dir
   #save(fgseaRes,topPathways, file = paste(samp,"pathwayAnalysis_subclones",sub,".RDATA"))
-  png(paste("./output/",samp,"pathwayAnalysis_subclones",sub,".png",sep=""), width = 1600, height = 1080, units = "px", res=100)
+  png(file.path(output_dir, paste0(samp, "pathwayAnalysis_subclones", sub, ".png")), width = 1600, height = 1080, units = "px", res=100)
 
   colnames(fgseaRes)[3] <- "pvalue"
   
@@ -890,9 +900,6 @@ pathwayAnalysis <- function(count_mtx, count_mtx_annot, clustersSub, samp, par_c
   
 }
 
-
-
-    
 #' annoteBandOncoHeat Annotate with chromosome bands the data frame with difference copy number alterations between subclones
 #'
 #' @param mtx_annot Annotation matrix
