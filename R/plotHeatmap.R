@@ -454,8 +454,7 @@ heatmap.3 <- function(x,
 }
 
 
-plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NULL, output_dir = "./output"){
-  
+plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NULL, output_dir = "./output", name = ""){
   
   my_palette <- colorRampPalette(rev(RColorBrewer::brewer.pal(n = 3, name = "RdBu")))(n = 999)
   
@@ -472,7 +471,7 @@ plotCNA <- function(chr_lab, mtx_CNA, hcc, samp, pred = NULL, ground_truth = NUL
   
   col_breaks = c(seq(-1,-0.4,length=50),seq(-0.4,-0.2,length=150),seq(-0.2,0.2,length=600),seq(0.2,0.4,length=150),seq(0.4, 1,length=50))
   
-  png(file.path(output_dir, paste0(samp, "heatmap.png")), height=h*250, width=4000, res=100)
+  png(file.path(output_dir, paste0(samp, name, "heatmap.png")), height=h*250, width=4000, res=100)
   
   rbPal5 <- colorRampPalette(RColorBrewer::brewer.pal(n = 8, name = "Dark2")[2:1])
   prediction <- rep(rbPal5(1), ncol(mtx_CNA))
@@ -543,7 +542,7 @@ plotSubclones <- function(chr_lab, mtx_CNA, hcc, n_subclones, samp, par_cores=20
   
 }
 
-plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp, output_dir = "./output_dir"){
+plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, samp, output_dir = "./output"){
   
   #save(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub, file = paste0(samp,"plotTSNE.RData"))
   
@@ -577,7 +576,7 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
                    y = tsne$Y[,2],
                    CellType = pred)
   
-  png(file.path(output, paste0(samp, "tsne_scRNA.png")), height=1650, width=1650, res=200)
+  png(file.path(output_dir, paste0(samp, "tsne_scRNA.png")), height=1650, width=1650, res=200)
   
   pp <- ggplot(df, aes(x, y, colour = CellType)) +
     geom_point() + theme_bw() + scale_color_manual(breaks = c("tumor", "normal"),
@@ -618,91 +617,92 @@ plotTSNE <- function(raw_count_mtx, CNAmat , filt_genes, tum_cells, clustersSub,
   }
 }
 
-plotCNsubclones <- function(samp, output_dir = "./output") {
-  
-  #TODO this one needs to align with where the subclonal vega outputs are made
-  # is this function even called anywhere else anymore? Can't find any calls
-  # file.path(output, paste0(samp, "_subclone1"))
-  
-  segmentation <- read.table(paste0("./output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-  segmentation2 <- read.table(paste0("./output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
-  
-  segmPos <- function(segmentation){
-    segmentation$Start <- segmentation$Start/1000
-    segmentation$End <- segmentation$End/1000
-    extr_chr <- unlist(lapply(1:22, function(x) max(which(segmentation$Chr==x))))
-    add_chr <- segmentation$End[extr_chr[1:(length(extr_chr)-1)]]
-    sum_chr <- unlist(lapply(1:22, function(x) sum(segmentation$Chr==x)))
-    for (i in 1:21){
-      segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start <- (segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start + sum(add_chr[1:i]))
-      segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$End <- (segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$End + sum(add_chr[1:i]))
-    }
-    
-    x <- segmentation[1,]
-    segm <- cbind(rbind(as.numeric(x[1]),as.numeric(x[1])),rbind(as.numeric(x[2]),as.numeric(x[3])), rbind(x[5],x[5]))
-    for(i in 2:nrow(segmentation)){
-      x <- segmentation[i,]
-      abspos <- rbind(segm, cbind(rbind(as.numeric(x[1]),as.numeric(x[1])),rbind(as.numeric(x[2]),as.numeric(x[3])), rbind(x[5],x[5])))
-      segm <- abspos
-    }  
-    colnames(segm) <- c("CHR","Pos","Mean")
-    return(segm)
-  }
-  
-  segm <- segmPos(segmentation)
-  segm2 <- segmPos(segmentation2)
-  
-  df <- as.data.frame(approx(segm$Pos,segm$Mean, seq(min(segm$Pos), max(segm$Pos), length.out = 1000), ties = "ordered"))
-  df2 <- as.data.frame(approx(segm2$Pos,segm2$Mean, seq(min(segm2$Pos), max(segm2$Pos), length.out = 1000), ties = "ordered"))
-  colnames(df) <- c("Pos","Mean")
-  colnames(df2) <- c("Pos","Mean")
-  
-  plot(df, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm[,2])+105000,max(segm[,2])-105000))#, ylim = c(min(segm[,3]-0.3),max(segm[,3])+0.3))
-  
-  plotSeg <- function(segm, col_lin){
-    segmentationGain <- segm
-    segmentationGain[segmentationGain$Mean<0,]$Mean <- 0
-    lines(segmentationGain$Pos,segmentationGain$Mean, type="l", col=col_lin[1], lwd=3, pch=19)
-    
-    segmentationLoss <- segm
-    segmentationLoss[segmentationLoss$Mean>0,]$Mean <- 0
-    lines(segmentationLoss$Pos,segmentationLoss$Mean, type="l", col=col_lin[2], lwd=3, pch=19)
-  }
-  
-  
-  df_diff <- df
-  thresh <- 0.08
-  df_diff$Mean[abs(df$Mean - df2$Mean)<thresh] <- rowMeans(cbind(df$Mean[abs(df$Mean - df2$Mean)<thresh],df2$Mean[abs(df$Mean - df2$Mean)<thresh]))
-  df_diff$Mean[abs(df$Mean - df2$Mean)>thresh] <- 0
-  mmed <- function(x,n=5){runmed(x,n)} #Median
-  df_diff$Mean <- mmed(df_diff$Mean, 11)
-  plot(df_diff$Pos, df_diff$Mean, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm[,2])+105000,max(segm[,2])-105000))#, ylim = c(min(segm[,3]-0.3),max(segm[,3])+0.3))
-  plotSeg(df_diff, c("red","blue"))
-  
-  df_Spec <- df
-  df_Spec$Mean[abs(df$Mean - df2$Mean)<thresh] <- 0
-  df_Spec$Mean <- mmed(df_Spec$Mean, 11)
-  plotSeg(df_Spec, c("darkgreen","darkgreen"))
-  
-  
-  df_Spec2 <- df2
-  df_Spec2$Mean[abs(df$Mean - df2$Mean)<thresh] <- 0
-  df_Spec2$Mean <- mmed(df_Spec2$Mean, 11)
-  plotSeg(df_Spec2, c("purple","purple"))
-  
-  abline(h = 0, col = "gray60", lwd = 5)
-  
-  extr_chr <- segm[unlist(lapply(1:22, function(x) max(which(segm$CHR==x)))),]$Pos
-  
-  abline(v=extr_chr, col="black", lwd = 1)
-  extr_chr <- append(1, extr_chr)
-  axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
-       cex.axis = 1.0, gap.axis = 0)
-  
-  legend("topright", inset=c(0,0), legend=c("Shared Gain", "Shared Loss", "Subclone 1", "Subclone 2"),
-         col=c("red", "blue", "darkgreen", "purple"), lty=1, cex=0.7)
-  
-}
+# Also not used anywhere in the codebase, 10-03-2025
+# plotCNsubclones <- function(samp, output_dir = "./output") {
+#   
+#   #TODO this one needs to align with where the subclonal vega outputs are made
+#   # is this function even called anywhere else anymore? Can't find any calls
+#   # file.path(output, paste0(samp, "_subclone1"))
+#   
+#   segmentation <- read.table(paste0("./output/ ",samp,"_subclone1 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+#   segmentation2 <- read.table(paste0("./output/ ",samp,"_subclone2 vega_output"), sep="\t", header=TRUE, as.is=TRUE)
+#   
+#   segmPos <- function(segmentation){
+#     segmentation$Start <- segmentation$Start/1000
+#     segmentation$End <- segmentation$End/1000
+#     extr_chr <- unlist(lapply(1:22, function(x) max(which(segmentation$Chr==x))))
+#     add_chr <- segmentation$End[extr_chr[1:(length(extr_chr)-1)]]
+#     sum_chr <- unlist(lapply(1:22, function(x) sum(segmentation$Chr==x)))
+#     for (i in 1:21){
+#       segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start <- (segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$Start + sum(add_chr[1:i]))
+#       segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$End <- (segmentation[(extr_chr[i]+1):extr_chr[(i+1)],]$End + sum(add_chr[1:i]))
+#     }
+#     
+#     x <- segmentation[1,]
+#     segm <- cbind(rbind(as.numeric(x[1]),as.numeric(x[1])),rbind(as.numeric(x[2]),as.numeric(x[3])), rbind(x[5],x[5]))
+#     for(i in 2:nrow(segmentation)){
+#       x <- segmentation[i,]
+#       abspos <- rbind(segm, cbind(rbind(as.numeric(x[1]),as.numeric(x[1])),rbind(as.numeric(x[2]),as.numeric(x[3])), rbind(x[5],x[5])))
+#       segm <- abspos
+#     }  
+#     colnames(segm) <- c("CHR","Pos","Mean")
+#     return(segm)
+#   }
+#   
+#   segm <- segmPos(segmentation)
+#   segm2 <- segmPos(segmentation2)
+#   
+#   df <- as.data.frame(approx(segm$Pos,segm$Mean, seq(min(segm$Pos), max(segm$Pos), length.out = 1000), ties = "ordered"))
+#   df2 <- as.data.frame(approx(segm2$Pos,segm2$Mean, seq(min(segm2$Pos), max(segm2$Pos), length.out = 1000), ties = "ordered"))
+#   colnames(df) <- c("Pos","Mean")
+#   colnames(df2) <- c("Pos","Mean")
+#   
+#   plot(df, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm[,2])+105000,max(segm[,2])-105000))#, ylim = c(min(segm[,3]-0.3),max(segm[,3])+0.3))
+#   
+#   plotSeg <- function(segm, col_lin){
+#     segmentationGain <- segm
+#     segmentationGain[segmentationGain$Mean<0,]$Mean <- 0
+#     lines(segmentationGain$Pos,segmentationGain$Mean, type="l", col=col_lin[1], lwd=3, pch=19)
+#     
+#     segmentationLoss <- segm
+#     segmentationLoss[segmentationLoss$Mean>0,]$Mean <- 0
+#     lines(segmentationLoss$Pos,segmentationLoss$Mean, type="l", col=col_lin[2], lwd=3, pch=19)
+#   }
+#   
+#   
+#   df_diff <- df
+#   thresh <- 0.08
+#   df_diff$Mean[abs(df$Mean - df2$Mean)<thresh] <- rowMeans(cbind(df$Mean[abs(df$Mean - df2$Mean)<thresh],df2$Mean[abs(df$Mean - df2$Mean)<thresh]))
+#   df_diff$Mean[abs(df$Mean - df2$Mean)>thresh] <- 0
+#   mmed <- function(x,n=5){runmed(x,n)} #Median
+#   df_diff$Mean <- mmed(df_diff$Mean, 11)
+#   plot(df_diff$Pos, df_diff$Mean, ylab = "Copy number",  xlab="CHR", xaxt='n', type="l", xlim = c(min(segm[,2])+105000,max(segm[,2])-105000))#, ylim = c(min(segm[,3]-0.3),max(segm[,3])+0.3))
+#   plotSeg(df_diff, c("red","blue"))
+#   
+#   df_Spec <- df
+#   df_Spec$Mean[abs(df$Mean - df2$Mean)<thresh] <- 0
+#   df_Spec$Mean <- mmed(df_Spec$Mean, 11)
+#   plotSeg(df_Spec, c("darkgreen","darkgreen"))
+#   
+#   
+#   df_Spec2 <- df2
+#   df_Spec2$Mean[abs(df$Mean - df2$Mean)<thresh] <- 0
+#   df_Spec2$Mean <- mmed(df_Spec2$Mean, 11)
+#   plotSeg(df_Spec2, c("purple","purple"))
+#   
+#   abline(h = 0, col = "gray60", lwd = 5)
+#   
+#   extr_chr <- segm[unlist(lapply(1:22, function(x) max(which(segm$CHR==x)))),]$Pos
+#   
+#   abline(v=extr_chr, col="black", lwd = 1)
+#   extr_chr <- append(1, extr_chr)
+#   axis(1, extr_chr[2:23] - diff(extr_chr)/2, labels = 1:22, las = 1, line = 0.2, tick = 0,
+#        cex.axis = 1.0, gap.axis = 0)
+#   
+#   legend("topright", inset=c(0,0), legend=c("Shared Gain", "Shared Loss", "Subclone 1", "Subclone 2"),
+#          col=c("red", "blue", "darkgreen", "purple"), lty=1, cex=0.7)
+#   
+# }
 
 plotCN <- function(segmentation) {
   

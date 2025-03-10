@@ -114,7 +114,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     perc_cells_subclones <- table(hc.clus)/length(hc.clus)
     
     print(paste("found", n_subclones, "subclones", sep = " "))
-    names(perc_cells_subclones) <- paste0("percentage_cells_subsclone_",names(perc_cells_subclones))
+    names(perc_cells_subclones) <- paste0("percentage_cells_subclone_",names(perc_cells_subclones))
     print(perc_cells_subclones)
     
     breaks_subclones <- list()
@@ -191,7 +191,7 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
     
     hcc <- hclust(parallelDist::parDist(t(results.com),threads = 20, method = "euclidean"), method = "ward.D")
     
-    plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp)
+    plotSubclones(CNAmat[,2], results.com,hcc, n_subclones, samp, output_dir = output_dir)
     
     
     save(results.com, file = file.path(output_dir, paste0(samp, "_CNAmtxSubclones.RData")))
@@ -237,20 +237,20 @@ analyzeSegm <- function(samp, nSub = 1, output_dir = "./output"){
 
 # This whole function is never called anywhere - can be depreciated. 
 # Outside the scope of my PR (Alex van Kaam, 07-03-2025)
-# analyzeSegm2 <- function(samp, nSub = 1){
-#   #TODO needs to be updated
-#   all_segm <- list()
-#   
-#   for (i in 1:nSub){
-#     
-#     segm <- read.csv(paste0("./output/ ",samp,"_subclone",i," vega_output"), sep = "\t")
-#     all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
-#     
-#   }
-#   
-#   return(all_segm)
-#   
-# }
+analyzeSegm2 <- function(samp, nSub = 1){
+
+  all_segm <- list()
+
+  for (i in 1:nSub){
+
+    segm <- read.csv(paste0("./output/ ",samp,"_subclone",i," vega_output"), sep = "\t")
+    all_segm[[paste0(samp,"_subclone", i)]] <- getPossibleSpecAltFromSeg(segm)
+
+  }
+
+  return(all_segm)
+
+}
 
 getPossibleSpecAltFromSeg <- function(segm, name){
   

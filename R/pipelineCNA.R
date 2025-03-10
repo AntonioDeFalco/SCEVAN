@@ -37,7 +37,6 @@ NULL
 pipelineCNA <- function(count_mtx, sample="", par_cores = 20, norm_cell = NULL, SUBCLONES = TRUE, beta_vega = 0.5, ClonalCN = TRUE, plotTree = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", ngenes_chr = 5, perc_genes = 10, FIXED_NORMAL_CELLS = FALSE, output_dir = "./output"){
   
   dir.create(file.path(output_dir), showWarnings = FALSE, recursive = TRUE)
-  dir.create("output")
   
   start_time <- Sys.time()
   
@@ -140,7 +139,9 @@ segmTumorMatrix <- function(res_proc, res_class, sample, par_cores, beta_vega = 
   colnames(mtx_vega) <- colnames(res_class$CNAmat[,res_class$tum_cells])
   rownames(mtx_vega) <- rownames(res_class$CNAmat[,res_class$tum_cells])
   hcc <- hclust(parallelDist::parDist(t(mtx_vega),threads = par_cores, method = "euclidean"), method = "ward.D")
-  plotCNA(res_proc$count_mtx_annot$seqnames, mtx_vega, hcc, paste0(sample,"onlytumor"))
+  
+  #TODO check is everything still gets plotted correctly, as I added the name var
+  plotCNA(res_proc$count_mtx_annot$seqnames, mtx_vega, hcc, samp = sample, output_dir = output_dir, name = "onlytumor")
   
   return(mtx_vega)
 }
@@ -243,8 +244,7 @@ subcloneAnalysisPipeline <- function(count_mtx, res_class, res_proc, mtx_vega,  
         #save(oncoHeat, file = paste0(sample,"_oncoheat.RData"))
         plotOncoHeatSubclones(oncoHeat, res_subclones$n_subclones, sample, perc_cells_subclones, organism, output_dir = output_dir)
         
-        #TODO change to output_dir var
-        plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample)
+        plotTSNE(count_mtx, res_class$CNAmat, rownames(res_proc$count_mtx_norm), res_class$tum_cells, res_subclones$clustersSub, sample, output_dir = output_dir)
         classDf[names(res_subclones$clustersSub), "subclone"] <- res_subclones$clustersSub
         if(res_subclones$n_subclones>2 & plotTree) plotCloneTree(sample, res_subclones, output_dir = output_dir)
         
