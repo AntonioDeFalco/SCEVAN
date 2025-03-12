@@ -71,7 +71,7 @@ annotateGenes <- function(mtx, organism = "human"){
 #' @examples
 #' count_mtx_annot <- annotateGenes(count_mtx)
 #' @export
-preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, par_cores=20, findConfident = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human"){
+preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, par_cores=20, findConfident = TRUE, AdditionalGeneSets = NULL, SCEVANsignatures = TRUE, organism = "human", output_dir = "./output"){
   
   set.seed(123)
   
@@ -111,7 +111,7 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   rownames(count_mtx) <- count_mtx_annot$gene_name
   
   if(findConfident){
-    norm_cell <- getConfidentNormalCells(count_mtx, sample, par_cores = par_cores, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism)
+    norm_cell <- getConfidentNormalCells(count_mtx, sample, par_cores = par_cores, AdditionalGeneSets = AdditionalGeneSets, SCEVANsignatures = SCEVANsignatures, organism = organism, output_dir = output_dir)
   }else{
     norm_cell <- NULL
   }

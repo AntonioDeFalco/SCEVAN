@@ -76,10 +76,11 @@ plotAllClonalCN <- function(samples, name){
 #'
 #' @examples 
 #' 
-multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, analysisName = "all", organism = "human" , par_cores = 20, plotTree = TRUE){
-
+multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, analysisName = "all", organism = "human" , par_cores = 20, plotTree = TRUE, output_dir = "./output"){
+  #TODO add the output_dir var here as well, apply it to the plotting func
+  
   resList <- lapply(names(listCountMtx), function(x) {
-    pipelineCNA(listCountMtx[[x]], norm_cell = listNormCells[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism=organism)
+    pipelineCNA(listCountMtx[[x]], norm_cell = listNormCells[[x]], sample = x, SUBCLONES = FALSE, ClonalCN = TRUE, par_cores = par_cores, organism = organism, output_dir = outpur_dir)
   })
   names(resList) <- names(listCountMtx)
   
@@ -110,7 +111,7 @@ multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, an
   
   plotAllClonalCN(names(listCountMtx), name = analysisName)
   
-  if(length(names(listCountMtx))>2 & plotTree) plotCloneTreeNew(names(listCountMtx), CLONAL_MULTI = TRUE, analysisName = analysisName)
+  if(length(names(listCountMtx))>2 & plotTree) plotCloneTreeNew(names(listCountMtx), CLONAL_MULTI = TRUE, analysisName = analysisName, output_dir = output_dir)
   
   for(i in 1:length(names(listCountMtx))){
     names(diffList) <- gsub(paste0("subclone",i), names(listCountMtx)[i], names(diffList))
@@ -120,7 +121,8 @@ multiSampleComparisonClonalCN <- function(listCountMtx, listNormCells = NULL, an
 
   outputAnalysis <- list(resList, diffList)
   
-  save(outputAnalysis, file = paste0("./output/",analysisName,"_outputAnalysis.RData"))
+  
+  save(outputAnalysis, file = file.path(output_dir, paste0(analysisName, "_outputAnalysis.RData")))
   
   outputAnalysis
   
