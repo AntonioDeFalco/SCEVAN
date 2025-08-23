@@ -766,8 +766,10 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       #top_genes <- rownames(count_mtx)
       top_genes <- count_mtx_annot$gene_name[strr:endd]
       
-      
-      subInd <- substr(names(specAlt)[nsub],nchar(names(specAlt)[nsub]),nchar(names(specAlt)[nsub]))
+      # MODIFIED - to handle n_subclone>=10
+      # subInd <- substr(names(specAlt)[nsub],nchar(names(specAlt)[nsub]),nchar(names(specAlt)[nsub]))
+      subclone_name <- names(specAlt)[nsub]
+      subInd <- sub(".*_subclone", "", subclone_name)
       
       cells_sub1 <- names(clustersSub[clustersSub==subInd])
       cells_sub2 <- names(clustersSub[clustersSub!=subInd])
