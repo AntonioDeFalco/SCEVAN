@@ -97,7 +97,12 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
         hc.clus[hc.clus>remIdx] <- hc.clus[hc.clus>remIdx]-1
       }
     } 
-  
+
+    # FIX: Renumber subclones to be consecutive (1,2,3,...,n) 
+    # Resolves subclone mislabeling error which occurs when small(<2%) subclones are removed
+    unique_ids <- sort(unique(hc.clus))
+    for(i in seq_along(unique_ids)){hc.clus[hc.clus == unique_ids[i]] <- i}
+    
     modular_lc <- modularity(lc)
     
   }else{
