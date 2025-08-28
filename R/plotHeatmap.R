@@ -968,7 +968,9 @@ plotCNAline <- function(segmList, segmListSpec, samp, nSub, colors_samp = NULL, 
 
 plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./output/", colors_samp = NULL){
   
-  allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[1-9]{1,2}_CN.seg") )
+  # MODIFIED - to handle n_subclone>=10
+  # allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[1-9]{1,2}_CN.seg") )  
+  allFile <- list.files(pathOutput, pattern = paste0(samp,"_subclone[0-9]+_CN.seg")) 
   segmList <- lapply(allFile, function(i) read.table(file.path(pathOutput, i), sep="\t", header=TRUE, as.is=TRUE))
   
   segmList <- lapply(segmList, function(x) {
@@ -1001,7 +1003,9 @@ plotConsensusCNA <- function(samp, nSub, organism = "human", pathOutput = "./out
     return(df)
   })
   
-  segm2_pos <- segmList[[grep("subclone1",names(dfL))]]
+  # MODIFIED - to handle n_subclone>=10
+  # segm2_pos <- segmList[[grep("subclone1",names(dfL))]]
+  segm2_pos <- segmList[[grep("^subclone1$", names(dfL))]]
   df <- lapply(1:nSub, function(x) {
     subb <- paste0("subclone",x)
     dfL[[grep(subb,names(dfL))]]

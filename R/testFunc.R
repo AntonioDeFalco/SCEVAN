@@ -97,7 +97,12 @@ subclonesTumorCells <- function(tum_cells, CNAmat, samp, n.cores, beta_vega, res
         hc.clus[hc.clus>remIdx] <- hc.clus[hc.clus>remIdx]-1
       }
     } 
-  
+
+    # FIX: Renumber subclones to be consecutive (1,2,3,...,n) 
+    # Resolves subclone mislabeling error which occurs when small(<2%) subclones are removed
+    unique_ids <- sort(unique(hc.clus))
+    for(i in seq_along(unique_ids)){hc.clus[hc.clus == unique_ids[i]] <- i}
+    
     modular_lc <- modularity(lc)
     
   }else{
@@ -766,8 +771,10 @@ genesDE <- function(count_mtx, count_mtx_annot, clustersSub, samp, specAlt, par_
       #top_genes <- rownames(count_mtx)
       top_genes <- count_mtx_annot$gene_name[strr:endd]
       
-      
-      subInd <- substr(names(specAlt)[nsub],nchar(names(specAlt)[nsub]),nchar(names(specAlt)[nsub]))
+      # MODIFIED - to handle n_subclone>=10
+      # subInd <- substr(names(specAlt)[nsub],nchar(names(specAlt)[nsub]),nchar(names(specAlt)[nsub]))
+      subclone_name <- names(specAlt)[nsub]
+      subInd <- sub(".*_subclone", "", subclone_name)
       
       cells_sub1 <- names(clustersSub[clustersSub==subInd])
       cells_sub2 <- names(clustersSub[clustersSub!=subInd])

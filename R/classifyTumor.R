@@ -117,6 +117,9 @@ computeCNAmtx <- function(count_mtx, breaks, par_cores = 20, segmAlt){
   
   CNA <- matrix(unlist(seg.test), ncol = ncol(count_mtx), byrow = FALSE)
   
+  # FIX: preserve gene rownames from input count_mtx 
+  rownames(CNA) <- rownames(count_mtx)
+  
   return(CNA)
 }
 
@@ -223,6 +226,10 @@ classifyTumorCells <- function(count_mtx, annot_mtx, sample = "", distance="eucl
     count_mtx_smooth <- matrix(unlist(test.mc), ncol = ncol(count_mtx_relat), byrow = FALSE)
     rm(test.mc)
     colnames(count_mtx_smooth) <- colnames(count_mtx_relat)
+    
+    # FIX: preserve gene rownames lost by matrix() 
+    rownames(count_mtx_smooth) <- rownames(count_mtx_relat)
+    
     count_mtx_relat <- count_mtx_smooth
   }
   
