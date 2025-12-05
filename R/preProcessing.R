@@ -148,7 +148,7 @@ preprocessingMtx <- function(count_mtx, sample, ngenes_chr=5, perc_genes=0.1, pa
   
   for(i in 6:ncol(count_mtx_annot)){
     cellChr <- cbind(count_mtx_annot$seqnames, count_mtx_annot[,i])
-    cellChr <- cellChr[cellChr[,2]!=0,]
+    cellChr <- cellChr[cellChr[,2]!=0, , drop = FALSE] 
     if(length(rle(cellChr[,1])$length)<totChr|min(rle(cellChr[,1])$length)< ngenes_chr){
       cellsFilt <- c(cellsFilt, colnames(count_mtx_annot)[i])
     }
